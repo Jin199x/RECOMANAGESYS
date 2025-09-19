@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static RECOMANAGESYS.loginform;
 
 namespace RECOMANAGESYS
 {
@@ -155,7 +156,7 @@ namespace RECOMANAGESYS
 
         private void OfficerInfo_Load(object sender, EventArgs e)
         {
-
+            viewLockAccounts.Visible = CurrentUser.Role == "President" || CurrentUser.Role == "Developer";
         }
 
         private void registerbtn_Click(object sender, EventArgs e)
@@ -243,6 +244,12 @@ namespace RECOMANAGESYS
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
 
 
+        }
+
+        private void viewLockAccounts_Click(object sender, EventArgs e)
+        {
+            UnlockAccountsForm unlockAcct = new UnlockAccountsForm();
+            unlockAcct.ShowDialog();    
         }
     }
 }

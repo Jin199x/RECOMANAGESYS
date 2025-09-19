@@ -16,13 +16,13 @@ namespace RECOMANAGESYS
 {
     public partial class loginform : Form
     {
-
         private const int MinimumPasswordLength = 8;
 
         public loginform()
         {
             InitializeComponent();
         }
+
         private void hide_Click(object sender, EventArgs e)
         {
             if (txtpassword.PasswordChar == '\0')
@@ -31,6 +31,7 @@ namespace RECOMANAGESYS
                 txtpassword.PasswordChar = '*';
             }
         }
+
         private void unhide_Click(object sender, EventArgs e)
         {
             if (txtpassword.PasswordChar == '*')
@@ -39,14 +40,12 @@ namespace RECOMANAGESYS
                 txtpassword.PasswordChar = '\0';
             }
         }
+
         private void label5_Click(object sender, EventArgs e)
         {
             registerform registerform = new registerform();
             registerform.Show();
         }
-
-
-
 
         public static class CurrentUser
         {
@@ -120,10 +119,20 @@ namespace RECOMANAGESYS
                 conn.Open();
 
                 string query = @"SELECT u.UserID, u.Username, u.PasswordHash, u.Firstname, u.Lastname, 
-                                u.RoleId, r.RoleName 
+                                u.RoleId, r.RoleName, u.FailedLoginAttempts, u.IsLocked
                          FROM Users u 
                          INNER JOIN TBL_Roles r ON u.RoleId = r.RoleId 
                          WHERE u.Username = @username";
+
+                int userId = 0;
+                string dbUsername = "";
+                string firstName = "";
+                string lastName = "";
+                int roleId = 0;
+                string roleName = "";
+                string storedHash = "";
+                bool isLocked = false;
+                int attempts = 0;
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -131,49 +140,90 @@ namespace RECOMANAGESYS
 
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        if (reader.Read())
-                        {
-                            string storedHash = reader["PasswordHash"].ToString();
-
-                            bool isValid = false;
-
-                            // Special Dev account login (plain password)
-                            if (reader["Username"].ToString() == "dev account" && password == "developer")
-                            {
-                                isValid = true;
-                            }
-                            else
-                            {
-                                // Normal users use hashed password
-                                isValid = BCrypt.Net.BCrypt.Verify(password, storedHash);
-                            }
-
-                            if (!isValid)
-                            {
-                                MessageBox.Show("Invalid password.", "Login Failed",
-                                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                                return false;
-                            }
-
-                            CurrentUser.UserId = Convert.ToInt32(reader["UserID"]);
-                            CurrentUser.Username = reader["Username"].ToString();
-                            CurrentUser.FullName = $"{reader["Firstname"]} {reader["Lastname"]}";
-                            CurrentUser.RoleId = Convert.ToInt32(reader["RoleId"]);
-                            CurrentUser.Role = reader["RoleName"].ToString();
-                        }
-                        else
+                        if (!reader.Read())
                         {
                             MessageBox.Show("Username not found.", "Login Failed",
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             return false;
                         }
-                    }
+
+                        userId = Convert.ToInt32(reader["UserID"]);
+                        dbUsername = reader["Username"].ToString();
+                        firstName = reader["Firstname"].ToString();
+                        lastName = reader["Lastname"].ToString();
+                        roleId = Convert.ToInt32(reader["RoleId"]);
+                        roleName = reader["RoleName"].ToString();
+                        storedHash = reader["PasswordHash"].ToString();
+                        isLocked = reader["IsLocked"] != DBNull.Value ? Convert.ToBoolean(reader["IsLocked"]) : false;
+                        attempts = reader["FailedLoginAttempts"] != DBNull.Value ? Convert.ToInt32(reader["FailedLoginAttempts"]) : 0;
+                    } // reader automatically closed here
                 }
 
-                CurrentUser.Permissions = LoadUserPermissions(CurrentUser.RoleId);
-            }
+                // Developer bypass: ignore failed attempts and lock
+                if (dbUsername == "dev account" && password == "developer")
+                {
+                    CurrentUser.UserId = userId;
+                    CurrentUser.Username = dbUsername;
+                    CurrentUser.FullName = $"{firstName} {lastName}";
+                    CurrentUser.RoleId = roleId;
+                    CurrentUser.Role = roleName;
+                    CurrentUser.Permissions = LoadUserPermissions(roleId);
+                    return true;
+                }
 
-            return true;
+                if (isLocked)
+                {
+                    MessageBox.Show("Your account is locked. Please contact President or Developer to unlock.",
+                                    "Account Locked", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return false;
+                }
+
+                bool isValid = BCrypt.Net.BCrypt.Verify(password, storedHash);
+
+                if (!isValid)
+                {
+                    attempts++;
+
+                    string updateAttemptsQuery = @"UPDATE Users 
+                                           SET FailedLoginAttempts = @attempts,
+                                               IsLocked = CASE WHEN @attempts >= 3 THEN 1 ELSE 0 END
+                                           WHERE Username = @username";
+
+                    using (SqlCommand updateCmd = new SqlCommand(updateAttemptsQuery, conn))
+                    {
+                        updateCmd.Parameters.AddWithValue("@attempts", attempts);
+                        updateCmd.Parameters.AddWithValue("@username", username);
+                        updateCmd.ExecuteNonQuery();
+                    }
+
+                    if (attempts >= 3)
+                        MessageBox.Show("Your account has been locked after 3 failed login attempts.",
+                                        "Account Locked", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    else
+                        MessageBox.Show($"Invalid password. Attempt {attempts}/3.",
+                                        "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                    return false;
+                }
+
+                // Reset failed attempts if login successful
+                string resetAttemptsQuery = @"UPDATE Users SET FailedLoginAttempts = 0 WHERE Username=@username";
+                using (SqlCommand resetCmd = new SqlCommand(resetAttemptsQuery, conn))
+                {
+                    resetCmd.Parameters.AddWithValue("@username", username);
+                    resetCmd.ExecuteNonQuery();
+                }
+
+                // Load user info
+                CurrentUser.UserId = userId;
+                CurrentUser.Username = dbUsername;
+                CurrentUser.FullName = $"{firstName} {lastName}";
+                CurrentUser.RoleId = roleId;
+                CurrentUser.Role = roleName;
+                CurrentUser.Permissions = LoadUserPermissions(roleId);
+
+                return true;
+            }
         }
 
         private List<string> LoadUserPermissions(int roleId)
