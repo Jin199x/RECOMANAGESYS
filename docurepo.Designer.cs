@@ -30,13 +30,13 @@
         {
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel2 = new System.Windows.Forms.Panel();
-            this.textBox1 = new System.Windows.Forms.TextBox();
-            this.buttonAddFolder = new System.Windows.Forms.Button();
-            this.buttonAddFile = new System.Windows.Forms.Button();
-            this.button1 = new System.Windows.Forms.Button();
+            this.buttonBack = new System.Windows.Forms.Button();
             this.panelDesktop = new System.Windows.Forms.Panel();
             this.searchbtn = new FontAwesome.Sharp.IconButton();
-            this.buttonBack = new System.Windows.Forms.Button();
+            this.searchDocu = new System.Windows.Forms.TextBox();
+            this.buttonAddFolder = new System.Windows.Forms.Button();
+            this.buttonAddFile = new System.Windows.Forms.Button();
+            this.btnSafeguard = new System.Windows.Forms.Button();
             this.panel2.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -57,10 +57,10 @@
             this.panel2.Controls.Add(this.buttonBack);
             this.panel2.Controls.Add(this.panelDesktop);
             this.panel2.Controls.Add(this.searchbtn);
-            this.panel2.Controls.Add(this.textBox1);
+            this.panel2.Controls.Add(this.searchDocu);
             this.panel2.Controls.Add(this.buttonAddFolder);
             this.panel2.Controls.Add(this.buttonAddFile);
-            this.panel2.Controls.Add(this.button1);
+            this.panel2.Controls.Add(this.btnSafeguard);
             this.panel2.Location = new System.Drawing.Point(29, 134);
             this.panel2.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.panel2.Name = "panel2";
@@ -68,15 +68,48 @@
             this.panel2.TabIndex = 1;
             this.panel2.Paint += new System.Windows.Forms.PaintEventHandler(this.panel2_Paint);
             // 
-            // textBox1
+            // buttonBack
             // 
-            this.textBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.textBox1.Location = new System.Drawing.Point(762, 34);
-            this.textBox1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.textBox1.Multiline = true;
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(397, 47);
-            this.textBox1.TabIndex = 10;
+            this.buttonBack.BackColor = System.Drawing.Color.LightSkyBlue;
+            this.buttonBack.Location = new System.Drawing.Point(211, 109);
+            this.buttonBack.Name = "buttonBack";
+            this.buttonBack.Size = new System.Drawing.Size(91, 35);
+            this.buttonBack.TabIndex = 13;
+            this.buttonBack.Text = "Back";
+            this.buttonBack.UseVisualStyleBackColor = false;
+            // 
+            // panelDesktop
+            // 
+            this.panelDesktop.Location = new System.Drawing.Point(36, 172);
+            this.panelDesktop.Name = "panelDesktop";
+            this.panelDesktop.Size = new System.Drawing.Size(1134, 554);
+            this.panelDesktop.TabIndex = 12;
+            // 
+            // searchbtn
+            // 
+            this.searchbtn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.searchbtn.IconChar = FontAwesome.Sharp.IconChar.MagnifyingGlass;
+            this.searchbtn.IconColor = System.Drawing.Color.Black;
+            this.searchbtn.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            this.searchbtn.IconSize = 28;
+            this.searchbtn.Location = new System.Drawing.Point(1102, 34);
+            this.searchbtn.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.searchbtn.Name = "searchbtn";
+            this.searchbtn.Size = new System.Drawing.Size(56, 48);
+            this.searchbtn.TabIndex = 11;
+            this.searchbtn.UseVisualStyleBackColor = true;
+            this.searchbtn.Click += new System.EventHandler(this.searchbtn_Click);
+            // 
+            // searchDocu
+            // 
+            this.searchDocu.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.searchDocu.Location = new System.Drawing.Point(762, 34);
+            this.searchDocu.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.searchDocu.Multiline = true;
+            this.searchDocu.Name = "searchDocu";
+            this.searchDocu.Size = new System.Drawing.Size(397, 47);
+            this.searchDocu.TabIndex = 10;
+            this.searchDocu.TextChanged += new System.EventHandler(this.searchDocu_TextChanged);
             // 
             // buttonAddFolder
             // 
@@ -112,51 +145,21 @@
             this.buttonAddFile.UseVisualStyleBackColor = false;
             this.buttonAddFile.Click += new System.EventHandler(this.buttonAddFile_Click);
             // 
-            // button1
+            // btnSafeguard
             // 
-            this.button1.BackColor = System.Drawing.SystemColors.HotTrack;
-            this.button1.FlatAppearance.BorderSize = 0;
-            this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button1.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button1.ForeColor = System.Drawing.Color.White;
-            this.button1.Location = new System.Drawing.Point(986, 100);
-            this.button1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(169, 48);
-            this.button1.TabIndex = 5;
-            this.button1.Text = "Generate File";
-            this.button1.UseVisualStyleBackColor = false;
-            // 
-            // panelDesktop
-            // 
-            this.panelDesktop.Location = new System.Drawing.Point(36, 172);
-            this.panelDesktop.Name = "panelDesktop";
-            this.panelDesktop.Size = new System.Drawing.Size(1134, 554);
-            this.panelDesktop.TabIndex = 12;
-            // 
-            // searchbtn
-            // 
-            this.searchbtn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.searchbtn.IconChar = FontAwesome.Sharp.IconChar.MagnifyingGlass;
-            this.searchbtn.IconColor = System.Drawing.Color.Black;
-            this.searchbtn.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.searchbtn.IconSize = 28;
-            this.searchbtn.Location = new System.Drawing.Point(1102, 34);
-            this.searchbtn.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.searchbtn.Name = "searchbtn";
-            this.searchbtn.Size = new System.Drawing.Size(56, 48);
-            this.searchbtn.TabIndex = 11;
-            this.searchbtn.UseVisualStyleBackColor = true;
-            // 
-            // buttonBack
-            // 
-            this.buttonBack.BackColor = System.Drawing.Color.LightSkyBlue;
-            this.buttonBack.Location = new System.Drawing.Point(253, 100);
-            this.buttonBack.Name = "buttonBack";
-            this.buttonBack.Size = new System.Drawing.Size(91, 35);
-            this.buttonBack.TabIndex = 13;
-            this.buttonBack.Text = "Back";
-            this.buttonBack.UseVisualStyleBackColor = false;
+            this.btnSafeguard.BackColor = System.Drawing.SystemColors.HotTrack;
+            this.btnSafeguard.FlatAppearance.BorderSize = 0;
+            this.btnSafeguard.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnSafeguard.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnSafeguard.ForeColor = System.Drawing.Color.White;
+            this.btnSafeguard.Location = new System.Drawing.Point(869, 100);
+            this.btnSafeguard.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.btnSafeguard.Name = "btnSafeguard";
+            this.btnSafeguard.Size = new System.Drawing.Size(286, 48);
+            this.btnSafeguard.TabIndex = 5;
+            this.btnSafeguard.Text = "Backup Restore Manager";
+            this.btnSafeguard.UseVisualStyleBackColor = false;
+            this.btnSafeguard.Click += new System.EventHandler(this.btnSafeguard_Click);
             // 
             // docurepo
             // 
@@ -178,10 +181,10 @@
 
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Panel panel2;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button btnSafeguard;
         private System.Windows.Forms.Button buttonAddFile;
         private System.Windows.Forms.Button buttonAddFolder;
-        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.TextBox searchDocu;
         private FontAwesome.Sharp.IconButton searchbtn;
         private System.Windows.Forms.Panel panelDesktop;
         private System.Windows.Forms.Button buttonBack;

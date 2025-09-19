@@ -179,6 +179,7 @@
             // 
             // clbMissedMonths
             // 
+            this.clbMissedMonths.BackColor = System.Drawing.SystemColors.ControlLight;
             this.clbMissedMonths.FormattingEnabled = true;
             this.clbMissedMonths.Location = new System.Drawing.Point(716, 142);
             this.clbMissedMonths.Name = "clbMissedMonths";

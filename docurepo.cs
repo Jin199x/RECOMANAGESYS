@@ -21,6 +21,51 @@ namespace RECOMANAGESYS
             LoadDesktopItems(); // load items from DB on start
         }
 
+        // --- UPDATED: RefreshAllData fetches directly from DB ---
+        public void RefreshAllData()
+        {
+            // Clear and reload desktopItems from DB without changing layout
+            desktopItems.Clear();
+
+            using (SqlConnection conn = DatabaseHelper.GetConnection())
+            {
+                conn.Open();
+                SqlCommand cmd = new SqlCommand("SELECT * FROM DesktopItems", conn);
+                SqlDataReader reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    DesktopItem item = new DesktopItem
+                    {
+                        ItemId = (int)reader["ItemId"],
+                        Name = (string)reader["Name"],
+                        IsFolder = (bool)reader["IsFolder"],
+                        FilePath = reader["FilePath"] == DBNull.Value ? null : (string)reader["FilePath"],
+                        ParentId = reader["ParentId"] == DBNull.Value ? null : (int?)reader["ParentId"]
+                    };
+                    desktopItems.Add(item);
+                }
+            }
+
+            // Rebuild parent-child relationships
+            foreach (var item in desktopItems)
+            {
+                if (item.ParentId.HasValue)
+                {
+                    var parent = desktopItems.FirstOrDefault(d => d.ItemId == item.ParentId.Value);
+                    if (parent != null)
+                    {
+                        item.Parent = parent;
+                        parent.Children.Add(item);
+                    }
+                }
+            }
+
+            // Redisplay current folder or root
+            DisplayItems(currentFolder == null
+                ? desktopItems.Where(d => d.Parent == null).ToList()
+                : currentFolder.Children);
+        }
+
         private void button2_Click(object sender, EventArgs e) { }
         private void panel2_Paint(object sender, PaintEventArgs e) { }
 
@@ -213,7 +258,6 @@ namespace RECOMANAGESYS
             nameLabel.MouseUp += (s, e) => ItemPanel_MouseUp(itemPanel, e);
         }
 
-        // --- Add this method inside your class ---
         private Image GetItemIcon(DesktopItem item)
         {
             if (item.IsFolder)
@@ -225,7 +269,6 @@ namespace RECOMANAGESYS
 
                 switch (ext)
                 {
-                    // Images
                     case ".jpg":
                     case ".jpeg":
                     case ".png":
@@ -233,30 +276,24 @@ namespace RECOMANAGESYS
                     case ".bmp":
                         return Properties.Resources.imageIcon;
 
-                    // Word
                     case ".doc":
                     case ".docx":
                         return Properties.Resources.wordIcon;
 
-                    // Excel
                     case ".xls":
                     case ".xlsx":
                         return Properties.Resources.excelIcon;
 
-                    // PowerPoint
                     case ".ppt":
                     case ".pptx":
                         return Properties.Resources.pptIcon;
 
-                    // PDF
                     case ".pdf":
                         return Properties.Resources.pdfIcon;
 
-                    // Text
                     case ".txt":
                         return Properties.Resources.textIcon;
 
-                    // Music
                     case ".mp3":
                     case ".wav":
                     case ".flac":
@@ -264,7 +301,6 @@ namespace RECOMANAGESYS
                     case ".ogg":
                         return Properties.Resources.musicIcon;
 
-                    // Video
                     case ".mp4":
                     case ".avi":
                     case ".mkv":
@@ -275,11 +311,9 @@ namespace RECOMANAGESYS
                 }
             }
 
-            return Properties.Resources.fileIcon; // default
+            return Properties.Resources.fileIcon;
         }
 
-
-        // Double-click folder or file
         private void ItemPanel_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             Panel panel = sender as Panel;
@@ -292,13 +326,11 @@ namespace RECOMANAGESYS
                 }
                 else if (!string.IsNullOrEmpty(item.FilePath))
                 {
-                    // Open the actual file
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(item.FilePath) { UseShellExecute = true });
                 }
             }
         }
 
-        // Right-click menu
         private void ItemPanel_MouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
@@ -317,7 +349,6 @@ namespace RECOMANAGESYS
             }
         }
 
-        // Context menu click
         private void ContextMenu_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
             if (contextMenu.Tag is Panel panel && panel.Tag is DesktopItem item)
@@ -335,8 +366,6 @@ namespace RECOMANAGESYS
                     if (!string.IsNullOrWhiteSpace(newName))
                     {
                         RenameItem(item, newName);
-
-                        // Update label in UI
                         Label lbl = panel.Controls.OfType<Label>().FirstOrDefault();
                         if (lbl != null) lbl.Text = newName;
                     }
@@ -344,7 +373,6 @@ namespace RECOMANAGESYS
             }
         }
 
-        // Update item in DB + memory
         private void RenameItem(DesktopItem item, string newName)
         {
             using (SqlConnection conn = DatabaseHelper.GetConnection())
@@ -356,7 +384,7 @@ namespace RECOMANAGESYS
                 cmd.ExecuteNonQuery();
             }
 
-            item.Name = newName; // update in-memory object
+            item.Name = newName;
         }
 
         private void DeleteItem(DesktopItem item)
@@ -375,7 +403,6 @@ namespace RECOMANAGESYS
                 item.Parent.Children.Remove(item);
         }
 
-        // Back button click
         private void buttonBack_Click(object sender, EventArgs e)
         {
             if (currentFolder != null)
@@ -385,6 +412,81 @@ namespace RECOMANAGESYS
                     ? desktopItems.Where(d => d.Parent == null).ToList()
                     : currentFolder.Children);
             }
+        }
+
+        private void searchbtn_Click(object sender, EventArgs e)
+        {
+            string query = searchDocu.Text.Trim();
+            SearchItemsInDatabase(query);
+        }
+
+        private void SearchItemsInDatabase(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                DisplayItems(currentFolder == null
+                    ? desktopItems.Where(d => d.Parent == null).ToList()
+                    : currentFolder.Children);
+                return;
+            }
+
+            List<DesktopItem> results = new List<DesktopItem>();
+
+            using (SqlConnection conn = DatabaseHelper.GetConnection())
+            {
+                conn.Open();
+                string sql = @"
+                SELECT * FROM DesktopItems
+                WHERE Name LIKE @query
+                AND (ParentId = @parentId OR @parentId IS NULL)";
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@query", "%" + query + "%");
+                    cmd.Parameters.AddWithValue("@parentId", currentFolder?.ItemId ?? (object)DBNull.Value);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            DesktopItem item = new DesktopItem
+                            {
+                                ItemId = (int)reader["ItemId"],
+                                Name = (string)reader["Name"],
+                                IsFolder = (bool)reader["IsFolder"],
+                                FilePath = reader["FilePath"] == DBNull.Value ? null : (string)reader["FilePath"],
+                                ParentId = reader["ParentId"] == DBNull.Value ? null : (int?)reader["ParentId"]
+                            };
+                            results.Add(item);
+                        }
+                    }
+                }
+            }
+
+            foreach (var item in results)
+            {
+                if (item.ParentId.HasValue)
+                    item.Parent = desktopItems.FirstOrDefault(d => d.ItemId == item.ParentId.Value);
+            }
+
+            DisplayItems(results);
+        }
+
+        private void searchDocu_TextChanged(object sender, EventArgs e)
+        {
+            string query = searchDocu.Text.Trim();
+
+            if (string.IsNullOrEmpty(query))
+            {
+                DisplayItems(currentFolder == null
+                    ? desktopItems.Where(d => d.Parent == null).ToList()
+                    : currentFolder.Children);
+            }
+        }
+
+        private void btnSafeguard_Click(object sender, EventArgs e)
+        {
+            BackupRestoreManager backupRestoreManager = new BackupRestoreManager(this);
+            backupRestoreManager.Show();
         }
     }
 }
