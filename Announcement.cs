@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace RECOMANAGESYS
@@ -20,7 +14,7 @@ namespace RECOMANAGESYS
 
         private void button3_Click(object sender, EventArgs e) //btnPostAnnouncement
         {
-            PostAnnouncement postForm = new PostAnnouncement(this); // pass reference
+            PostAnnouncement postForm = new PostAnnouncement(this); // open form
             postForm.Show();
         }
 
@@ -33,14 +27,25 @@ namespace RECOMANAGESYS
         {
             LoadAnnouncement();
         }
+
         public void LoadAnnouncement()
         {
-            PanelAnnouncement.Controls.Clear();
+            panelAnnouncement.Controls.Clear();
+            panelAnnouncement.AutoScroll = true;
 
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
                 conn.Open();
-                string query = "SELECT Id, Title, Message, DatePosted FROM Announcements ORDER BY DatePosted DESC";
+
+                // Delete expired announcements from DB
+                string cleanupQuery = "DELETE FROM Announcements WHERE ExpirationDate IS NOT NULL AND ExpirationDate < GETDATE()";
+                SqlCommand cleanupCmd = new SqlCommand(cleanupQuery, conn);
+                cleanupCmd.ExecuteNonQuery();
+
+                string query = @"SELECT Id, Title, Message, DatePosted, ExpirationDate 
+                         FROM Announcements 
+                         WHERE ExpirationDate IS NULL OR ExpirationDate >= GETDATE()
+                         ORDER BY DatePosted DESC";
                 SqlCommand cmd = new SqlCommand(query, conn);
                 SqlDataReader reader = cmd.ExecuteReader();
 
@@ -51,34 +56,66 @@ namespace RECOMANAGESYS
                     int announcementId = Convert.ToInt32(reader["Id"]);
 
                     Panel panel = new Panel();
-                    panel.Width = PanelAnnouncement.Width - 40;
-                    panel.Height = 120;
+                    panel.Width = panelAnnouncement.Width - 40;
                     panel.Left = 10;
                     panel.Top = y;
                     panel.BorderStyle = BorderStyle.FixedSingle;
+                    panel.BackColor = Color.White;
 
+                    // Flow container for labels
+                    FlowLayoutPanel container = new FlowLayoutPanel();
+                    container.FlowDirection = FlowDirection.TopDown;
+                    container.WrapContents = false;
+                    container.AutoSize = true;
+                    container.Location = new Point(10, 10);
+                    container.BackColor = Color.Transparent;
+
+                    // Title 
                     Label lblTitle = new Label();
                     lblTitle.Text = reader["Title"].ToString();
                     lblTitle.Font = new Font("Arial", 12, FontStyle.Bold);
                     lblTitle.AutoSize = true;
-                    lblTitle.Location = new Point(10, 10);
+                    lblTitle.BackColor = Color.Transparent;
+                    container.Controls.Add(lblTitle);
 
+                    // Posted date
                     Label lblDate = new Label();
-                    lblDate.Text = Convert.ToDateTime(reader["DatePosted"]).ToString("g");
-                    lblDate.Font = new Font("Arial", 8, FontStyle.Italic);
+                    lblDate.Text = "Posted: " + Convert.ToDateTime(reader["DatePosted"]).ToString("g");
+                    lblDate.Font = new Font("Arial", 6, FontStyle.Italic);
                     lblDate.AutoSize = true;
-                    lblDate.Location = new Point(10, 35);
+                    lblDate.BackColor = Color.Transparent;
+                    container.Controls.Add(lblDate);
 
+                    // Expiration date
+                    if (reader["ExpirationDate"] != DBNull.Value)
+                    {
+                        Label lblExpire = new Label();
+                        lblExpire.Text = "Expires: " + Convert.ToDateTime(reader["ExpirationDate"]).ToString("d");
+                        lblExpire.Font = new Font("Arial", 6, FontStyle.Italic);
+                        lblExpire.AutoSize = true;
+                        lblExpire.BackColor = Color.Transparent;
+                        container.Controls.Add(lblExpire);
+                    }
+
+                    // Message
                     Label lblMessage = new Label();
                     lblMessage.Text = reader["Message"].ToString();
+                    lblMessage.Font = new Font("Arial", 9, FontStyle.Regular);
                     lblMessage.AutoSize = true;
-                    lblMessage.MaximumSize = new Size(panel.Width - 150, 0); // leave space for buttons
-                    lblMessage.Location = new Point(10, 55);
+                    lblMessage.MaximumSize = new Size(panel.Width - 150, 0);
+                    lblMessage.BackColor = Color.Transparent;
+                    container.Controls.Add(lblMessage);
 
-                    //Edit Button
+                    // Add container to panel
+                    panel.Controls.Add(container);
+
+                    // Auto-resize panel height based on content
+                    panel.Height = container.Height + 20;
+
+                    // Edit Button
                     Button btnEdit = new Button();
                     btnEdit.Text = "Edit";
-                    btnEdit.Tag = announcementId; // store ID
+                    btnEdit.Tag = announcementId;
                     btnEdit.Width = 60;
                     btnEdit.Location = new Point(panel.Width - 140, 10);
                     btnEdit.Click += (s, e) => EditAnnouncement((int)btnEdit.Tag);
@@ -86,31 +123,31 @@ namespace RECOMANAGESYS
                     // Delete Button
                     Button btnDelete = new Button();
                     btnDelete.Text = "Delete";
-                    btnDelete.Tag = announcementId; // store ID
+                    btnDelete.Tag = announcementId;
                     btnDelete.Width = 60;
                     btnDelete.Location = new Point(panel.Width - 70, 10);
                     btnDelete.Click += (s, e) => DeleteAnnouncement((int)btnDelete.Tag);
 
-                    // Add to panel
-                    panel.Controls.Add(lblTitle);
-                    panel.Controls.Add(lblDate);
-                    panel.Controls.Add(lblMessage);
                     panel.Controls.Add(btnEdit);
                     panel.Controls.Add(btnDelete);
 
-                    PanelAnnouncement.Controls.Add(panel);
+                    panelAnnouncement.Controls.Add(panel);
                     y += panel.Height + 10;
                 }
             }
         }
+
+
         private void EditAnnouncement(int id)
         {
-            // Fetch current title & message from DB
+            // current title & message (and expiration)
             string currentTitle = "", currentMessage = "";
+            DateTime? currentExpire = null;
+
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
                 conn.Open();
-                string query = "SELECT Title, Message FROM Announcements WHERE Id=@id";
+                string query = "SELECT Title, Message, ExpirationDate FROM Announcements WHERE Id=@id";
                 SqlCommand cmd = new SqlCommand(query, conn);
                 cmd.Parameters.AddWithValue("@id", id);
                 SqlDataReader reader = cmd.ExecuteReader();
@@ -118,15 +155,15 @@ namespace RECOMANAGESYS
                 {
                     currentTitle = reader["Title"].ToString();
                     currentMessage = reader["Message"].ToString();
+                    if (reader["ExpirationDate"] != DBNull.Value)
+                        currentExpire = Convert.ToDateTime(reader["ExpirationDate"]);
                 }
             }
 
-            // Open PostAnnouncement form in "edit mode"
-            PostAnnouncement editForm = new PostAnnouncement(this, id, currentTitle, currentMessage);
+            // Open PostAnnouncement form in edit mode
+            PostAnnouncement editForm = new PostAnnouncement(this, id, currentTitle, currentMessage, currentExpire);
             editForm.ShowDialog();
         }
-
-        
         private void DeleteAnnouncement(int id)
         {
             DialogResult result = MessageBox.Show("Are you sure you want to delete this announcement?",
@@ -143,10 +180,8 @@ namespace RECOMANAGESYS
                     cmd.ExecuteNonQuery();
                 }
 
-                LoadAnnouncement(); // refresh display
+                LoadAnnouncement(); // refresh
             }
         }
     }
-    
 }
-

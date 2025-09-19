@@ -15,12 +15,34 @@ namespace RECOMANAGESYS
     public partial class PostAnnouncement : Form
     {
         private Announcement parentControl;
-        private int editId = -1; 
+        private int editId = -1;
+
+        // Original constructor (kept)
         public PostAnnouncement(Announcement parent)
         {
             InitializeComponent();
             parentControl = parent;
+
+            try
+            {
+                if (chkNoExpire != null)
+                {
+                    chkNoExpire.CheckedChanged -= chkNoExpire_CheckedChanged;
+                    chkNoExpire.CheckedChanged += chkNoExpire_CheckedChanged;
+                    chkNoExpire.Checked = true; // default: No Expiration checked
+                }
+
+                if (dtpExpire != null)
+                {
+                    dtpExpire.ShowCheckBox = true;   // ✅ allow unchecked state
+                    dtpExpire.Checked = false;       // default: not picked
+                    dtpExpire.Enabled = !(chkNoExpire?.Checked ?? true);
+                }
+            }
+            catch { }
         }
+
+        // Original 4-arg constructor (kept)
         public PostAnnouncement(Announcement parent, int id, string title, string message)
         {
             InitializeComponent();
@@ -28,45 +50,156 @@ namespace RECOMANAGESYS
             editId = id;
             txtTitle.Text = title;
             txtMessage.Text = message;
+
+            try
+            {
+                if (chkNoExpire != null)
+                {
+                    chkNoExpire.CheckedChanged -= chkNoExpire_CheckedChanged;
+                    chkNoExpire.CheckedChanged += chkNoExpire_CheckedChanged;
+                    chkNoExpire.Checked = true;
+                }
+
+                if (dtpExpire != null)
+                {
+                    dtpExpire.ShowCheckBox = true;   // ✅ allow unchecked state
+                    dtpExpire.Checked = false;       // default: not picked
+                    dtpExpire.Enabled = !(chkNoExpire?.Checked ?? true);
+                }
+            }
+            catch { }
         }
+
+        // Optional overload: constructor with expiration
+        public PostAnnouncement(Announcement parent, int id, string title, string message, DateTime? expireDate)
+        {
+            InitializeComponent();
+            parentControl = parent;
+            editId = id;
+            txtTitle.Text = title;
+            txtMessage.Text = message;
+
+            try
+            {
+                if (chkNoExpire != null)
+                {
+                    chkNoExpire.CheckedChanged -= chkNoExpire_CheckedChanged;
+                    chkNoExpire.CheckedChanged += chkNoExpire_CheckedChanged;
+                }
+
+                if (dtpExpire != null)
+                {
+                    dtpExpire.ShowCheckBox = true;   // ✅ allow unchecked state
+                    if (expireDate.HasValue)
+                    {
+                        dtpExpire.Value = expireDate.Value;
+                        dtpExpire.Checked = true;
+                        dtpExpire.Enabled = true;
+                    }
+                    else
+                    {
+                        dtpExpire.Checked = false;
+                        dtpExpire.Enabled = false;
+                    }
+                }
+
+                if (expireDate.HasValue)
+                {
+                    if (chkNoExpire != null) chkNoExpire.Checked = false;
+                }
+                else
+                {
+                    if (chkNoExpire != null) chkNoExpire.Checked = true;
+                }
+            }
+            catch { }
+        }
+
         private void label1_Click(object sender, EventArgs e)
         {
+            // kept as you had it
+        }
 
+        private void chkNoExpire_CheckedChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                if (dtpExpire != null && chkNoExpire != null)
+                    dtpExpire.Enabled = !chkNoExpire.Checked;
+            }
+            catch { }
         }
 
         private void btnPost_Click(object sender, EventArgs e)
         {
+            // 🔹 Validation before saving
+            if (string.IsNullOrWhiteSpace(txtTitle.Text))
+            {
+                MessageBox.Show("A title is required.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // 🔹 Expiration validation
+            if (chkNoExpire != null && !chkNoExpire.Checked)
+            {
+                if (dtpExpire == null || !dtpExpire.Checked) // ✅ must pick a date
+                {
+                    MessageBox.Show("Please select an expiration date or check 'No Expiration'.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    dtpExpire?.Focus();
+                    return;
+                }
+
+                if (dtpExpire.Value.Date < DateTime.Today)
+                {
+                    MessageBox.Show("Expiration date cannot be in the past.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+            }
+
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
                 conn.Open();
                 SqlCommand cmd;
 
+                // Determine expiration date (nullable)
+                DateTime? expireDate = null;
+                try
+                {
+                    if (chkNoExpire != null && !chkNoExpire.Checked && dtpExpire != null && dtpExpire.Checked)
+                        expireDate = dtpExpire.Value;
+                }
+                catch { }
+
                 if (editId == -1)
                 {
-                    // New announcement
-                    string query = "INSERT INTO Announcements (Title, Message, DatePosted) VALUES (@title, @msg, @date)";
+                    string query = "INSERT INTO Announcements (Title, Message, DatePosted, ExpirationDate) VALUES (@title, @msg, @date, @expire)";
                     cmd = new SqlCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@title", txtTitle.Text);
-                    cmd.Parameters.AddWithValue("@msg", txtMessage.Text);
+                    cmd.Parameters.AddWithValue("@title", txtTitle.Text.Trim());
+                    cmd.Parameters.AddWithValue("@msg", txtMessage.Text.Trim());
                     cmd.Parameters.AddWithValue("@date", DateTime.Now);
+                    if (expireDate.HasValue)
+                        cmd.Parameters.AddWithValue("@expire", expireDate.Value);
+                    else
+                        cmd.Parameters.AddWithValue("@expire", DBNull.Value);
                 }
                 else
                 {
-                    // Editing existing announcement
-                    string query = "UPDATE Announcements SET Title=@title, Message=@msg WHERE Id=@id";
+                    string query = "UPDATE Announcements SET Title=@title, Message=@msg, ExpirationDate=@expire WHERE Id=@id";
                     cmd = new SqlCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@title", txtTitle.Text);
-                    cmd.Parameters.AddWithValue("@msg", txtMessage.Text);
+                    cmd.Parameters.AddWithValue("@title", txtTitle.Text.Trim());
+                    cmd.Parameters.AddWithValue("@msg", txtMessage.Text.Trim());
                     cmd.Parameters.AddWithValue("@id", editId);
+                    if (expireDate.HasValue)
+                        cmd.Parameters.AddWithValue("@expire", expireDate.Value);
+                    else
+                        cmd.Parameters.AddWithValue("@expire", DBNull.Value);
                 }
 
                 cmd.ExecuteNonQuery();
             }
 
             if (parentControl != null)
-            {
-                parentControl.LoadAnnouncement(); // refresh display after post/edit
-            }
+                parentControl.LoadAnnouncement();
 
             MessageBox.Show(editId == -1 ? "Announcement posted successfully!" : "Announcement updated successfully!");
 
@@ -81,4 +214,3 @@ namespace RECOMANAGESYS
         }
     }
 }
-

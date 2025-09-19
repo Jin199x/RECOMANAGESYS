@@ -34,6 +34,9 @@
             this.btnCancel = new System.Windows.Forms.Button();
             this.txtTitle = new System.Windows.Forms.TextBox();
             this.lblTitle = new System.Windows.Forms.Label();
+            this.dtpExpire = new System.Windows.Forms.DateTimePicker();
+            this.chkNoExpire = new System.Windows.Forms.CheckBox();
+            this.label2 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // txtMessage
@@ -54,7 +57,7 @@
             this.btnPost.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnPost.Font = new System.Drawing.Font("Microsoft YaHei UI", 10.2F, System.Drawing.FontStyle.Bold);
             this.btnPost.ForeColor = System.Drawing.Color.White;
-            this.btnPost.Location = new System.Drawing.Point(588, 518);
+            this.btnPost.Location = new System.Drawing.Point(831, 518);
             this.btnPost.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnPost.Name = "btnPost";
             this.btnPost.Size = new System.Drawing.Size(112, 52);
@@ -70,7 +73,7 @@
             this.btnCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnCancel.Font = new System.Drawing.Font("Microsoft YaHei UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnCancel.ForeColor = System.Drawing.Color.Black;
-            this.btnCancel.Location = new System.Drawing.Point(346, 518);
+            this.btnCancel.Location = new System.Drawing.Point(698, 518);
             this.btnCancel.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(112, 52);
@@ -82,7 +85,7 @@
             // txtTitle
             // 
             this.txtTitle.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtTitle.Location = new System.Drawing.Point(203, 142);
+            this.txtTitle.Location = new System.Drawing.Point(234, 141);
             this.txtTitle.Multiline = true;
             this.txtTitle.Name = "txtTitle";
             this.txtTitle.Size = new System.Drawing.Size(576, 39);
@@ -100,6 +103,36 @@
             this.lblTitle.Text = "Title:";
             this.lblTitle.Click += new System.EventHandler(this.label1_Click);
             // 
+            // dtpExpire
+            // 
+            this.dtpExpire.Location = new System.Drawing.Point(329, 513);
+            this.dtpExpire.Name = "dtpExpire";
+            this.dtpExpire.Size = new System.Drawing.Size(200, 26);
+            this.dtpExpire.TabIndex = 24;
+            // 
+            // chkNoExpire
+            // 
+            this.chkNoExpire.AutoSize = true;
+            this.chkNoExpire.BackColor = System.Drawing.Color.Transparent;
+            this.chkNoExpire.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.chkNoExpire.Location = new System.Drawing.Point(329, 550);
+            this.chkNoExpire.Name = "chkNoExpire";
+            this.chkNoExpire.Size = new System.Drawing.Size(142, 24);
+            this.chkNoExpire.TabIndex = 25;
+            this.chkNoExpire.Text = "No Expiration";
+            this.chkNoExpire.UseVisualStyleBackColor = false;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.BackColor = System.Drawing.Color.Transparent;
+            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label2.Location = new System.Drawing.Point(98, 518);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(222, 20);
+            this.label2.TabIndex = 27;
+            this.label2.Text = "Expiry Anouncement Date:";
+            // 
             // PostAnnouncement
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -107,6 +140,9 @@
             this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(1045, 646);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.chkNoExpire);
+            this.Controls.Add(this.dtpExpire);
             this.Controls.Add(this.lblTitle);
             this.Controls.Add(this.txtTitle);
             this.Controls.Add(this.btnCancel);
@@ -128,5 +164,8 @@
         private System.Windows.Forms.Button btnCancel;
         private System.Windows.Forms.TextBox txtTitle;
         private System.Windows.Forms.Label lblTitle;
+        private System.Windows.Forms.DateTimePicker dtpExpire;
+        private System.Windows.Forms.CheckBox chkNoExpire;
+        private System.Windows.Forms.Label label2;
     }
 }

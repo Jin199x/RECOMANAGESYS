@@ -476,13 +476,23 @@ CREATE TABLE MonthlyDues (
 
 
 
---ANNOUNCEMENTS
+-- Create Announcements with expiration date
 CREATE TABLE Announcements (
     Id INT PRIMARY KEY IDENTITY(1,1),
     Title NVARCHAR(200) NOT NULL,
     Message NVARCHAR(MAX) NOT NULL,
-    DatePosted DATETIME DEFAULT GETDATE()
+    DatePosted DATETIME DEFAULT GETDATE(),
+    ExpirationDate DATETIME NULL
 );
+
+-- Stored procedure to delete expired announcements
+CREATE OR ALTER PROCEDURE DeleteExpiredAnnouncements
+AS
+BEGIN
+    DELETE FROM Announcements
+    WHERE ExpirationDate IS NOT NULL AND ExpirationDate < GETDATE();
+END;
+
 
 --VISITORS LOG(fixed trailing comma)
 CREATE TABLE TBL_VisitorsLog(
