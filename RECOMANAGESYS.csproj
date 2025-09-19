@@ -325,13 +325,37 @@
     <None Include="Resources\Little red riding hood %281%29.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\folderIcon.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\fileIcon.png" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Little_red_riding_hood__1_.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\imageIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\musicIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\pptIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\textIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\wordIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\videoIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\excelIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\pdfIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\folderIcon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="packages\Avalonia.BuildServices.0.0.31\build\Avalonia.BuildServices.targets" Condition="Exists('packages\Avalonia.BuildServices.0.0.31\build\Avalonia.BuildServices.targets')" />

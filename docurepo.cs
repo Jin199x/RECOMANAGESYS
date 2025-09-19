@@ -175,7 +175,7 @@ namespace RECOMANAGESYS
             itemPanel.Tag = item;
 
             PictureBox icon = new PictureBox();
-            icon.Image = item.IsFolder ? Properties.Resources.folderIcon : Properties.Resources.fileIcon;
+            icon.Image = GetItemIcon(item);
             icon.SizeMode = PictureBoxSizeMode.StretchImage;
             icon.Width = 60;
             icon.Height = 60;
@@ -213,6 +213,72 @@ namespace RECOMANAGESYS
             nameLabel.MouseUp += (s, e) => ItemPanel_MouseUp(itemPanel, e);
         }
 
+        // --- Add this method inside your class ---
+        private Image GetItemIcon(DesktopItem item)
+        {
+            if (item.IsFolder)
+                return Properties.Resources.folderIcon;
+
+            if (!string.IsNullOrEmpty(item.FilePath))
+            {
+                string ext = System.IO.Path.GetExtension(item.FilePath).ToLower();
+
+                switch (ext)
+                {
+                    // Images
+                    case ".jpg":
+                    case ".jpeg":
+                    case ".png":
+                    case ".gif":
+                    case ".bmp":
+                        return Properties.Resources.imageIcon;
+
+                    // Word
+                    case ".doc":
+                    case ".docx":
+                        return Properties.Resources.wordIcon;
+
+                    // Excel
+                    case ".xls":
+                    case ".xlsx":
+                        return Properties.Resources.excelIcon;
+
+                    // PowerPoint
+                    case ".ppt":
+                    case ".pptx":
+                        return Properties.Resources.pptIcon;
+
+                    // PDF
+                    case ".pdf":
+                        return Properties.Resources.pdfIcon;
+
+                    // Text
+                    case ".txt":
+                        return Properties.Resources.textIcon;
+
+                    // Music
+                    case ".mp3":
+                    case ".wav":
+                    case ".flac":
+                    case ".aac":
+                    case ".ogg":
+                        return Properties.Resources.musicIcon;
+
+                    // Video
+                    case ".mp4":
+                    case ".avi":
+                    case ".mkv":
+                    case ".mov":
+                    case ".wmv":
+                    case ".flv":
+                        return Properties.Resources.videoIcon;
+                }
+            }
+
+            return Properties.Resources.fileIcon; // default
+        }
+
+
         // Double-click folder or file
         private void ItemPanel_MouseDoubleClick(object sender, MouseEventArgs e)
         {
@@ -242,6 +308,7 @@ namespace RECOMANAGESYS
                 {
                     contextMenu.Tag = panel;
                     contextMenu.Items.Clear();
+                    contextMenu.Items.Add("Rename");
                     contextMenu.Items.Add("Delete");
                     contextMenu.ItemClicked -= ContextMenu_ItemClicked;
                     contextMenu.ItemClicked += ContextMenu_ItemClicked;
@@ -250,13 +317,46 @@ namespace RECOMANAGESYS
             }
         }
 
+        // Context menu click
         private void ContextMenu_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
-            if (e.ClickedItem.Text == "Delete" && contextMenu.Tag is Panel panel && panel.Tag is DesktopItem item)
+            if (contextMenu.Tag is Panel panel && panel.Tag is DesktopItem item)
             {
-                DeleteItem(item);
-                panelDesktop.Controls.Remove(panel);
+                if (e.ClickedItem.Text == "Delete")
+                {
+                    DeleteItem(item);
+                    panelDesktop.Controls.Remove(panel);
+                }
+                else if (e.ClickedItem.Text == "Rename")
+                {
+                    string newName = Microsoft.VisualBasic.Interaction.InputBox(
+                        "Enter new name:", "Rename Item", item.Name);
+
+                    if (!string.IsNullOrWhiteSpace(newName))
+                    {
+                        RenameItem(item, newName);
+
+                        // Update label in UI
+                        Label lbl = panel.Controls.OfType<Label>().FirstOrDefault();
+                        if (lbl != null) lbl.Text = newName;
+                    }
+                }
             }
+        }
+
+        // Update item in DB + memory
+        private void RenameItem(DesktopItem item, string newName)
+        {
+            using (SqlConnection conn = DatabaseHelper.GetConnection())
+            {
+                conn.Open();
+                SqlCommand cmd = new SqlCommand("UPDATE DesktopItems SET Name = @name WHERE ItemId = @id", conn);
+                cmd.Parameters.AddWithValue("@name", newName);
+                cmd.Parameters.AddWithValue("@id", item.ItemId);
+                cmd.ExecuteNonQuery();
+            }
+
+            item.Name = newName; // update in-memory object
         }
 
         private void DeleteItem(DesktopItem item)
