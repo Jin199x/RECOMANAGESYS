@@ -7,7 +7,9 @@ using System.Windows.Forms;
 namespace RECOMANAGESYS
 {
     public partial class UpdateMonthlyDues : Form
+
     {
+        public Action OnPaymentSaved;
         private int selectedHomeownerId;
         private List<Tuple<int, string>> residentUnits; // UnitID, Address
         private decimal dueRate = 100; // fixed per month
@@ -42,12 +44,12 @@ namespace RECOMANAGESYS
             lblRemainingDebt.Text = "0.00";
             lblTotalAmount.Text = "0.00";
 
-            // Fetch resident info
+            // Fetch resident info with IsActive check
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             using (SqlCommand cmd = new SqlCommand(
-                @"SELECT FirstName, MiddleName, LastName, HomeAddress 
-                  FROM Residents 
-                  WHERE HomeownerID=@residentId", conn))
+                @"SELECT FirstName, MiddleName, LastName, HomeAddress, IsActive 
+          FROM Residents 
+          WHERE HomeownerID=@residentId", conn))
             {
                 cmd.Parameters.AddWithValue("@residentId", selectedHomeownerId);
                 conn.Open();
@@ -55,6 +57,14 @@ namespace RECOMANAGESYS
                 {
                     if (reader.Read())
                     {
+                        bool isActive = Convert.ToBoolean(reader["IsActive"]);
+                        if (!isActive)
+                        {
+                            MessageBox.Show("This resident is inactive.", "Inactive Resident", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            this.Close();
+                            return;
+                        }
+
                         lblResidentName.Text = $"{reader["FirstName"]} {reader["MiddleName"]} {reader["LastName"]}";
                         string defaultAddress = reader["HomeAddress"].ToString();
 
@@ -62,9 +72,9 @@ namespace RECOMANAGESYS
                         using (SqlConnection conn2 = DatabaseHelper.GetConnection())
                         using (SqlCommand cmd2 = new SqlCommand(
                             @"SELECT hu.UnitID, r.HomeAddress 
-                              FROM HomeownerUnits hu
-                              INNER JOIN Residents r ON hu.HomeownerID = r.HomeownerID
-                              WHERE hu.HomeownerID=@residentId", conn2))
+                      FROM HomeownerUnits hu
+                      INNER JOIN Residents r ON hu.HomeownerID = r.HomeownerID
+                      WHERE hu.HomeownerID=@residentId", conn2))
                         {
                             cmd2.Parameters.AddWithValue("@residentId", selectedHomeownerId);
                             conn2.Open();
@@ -102,6 +112,7 @@ namespace RECOMANAGESYS
                 }
             }
         }
+
 
         private void cmbUnits_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -218,6 +229,8 @@ namespace RECOMANAGESYS
 
             MessageBox.Show("Payment(s) saved successfully!");
             LoadMissedMonths(residentUnits[cmbUnits.SelectedIndex].Item1);
+            OnPaymentSaved?.Invoke();
+            this.Close();
         }
 
         private void UpdateMonthlyDues_Load(object sender, EventArgs e)

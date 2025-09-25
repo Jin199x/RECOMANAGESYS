@@ -122,6 +122,7 @@
             this.txtResidentID.Name = "txtResidentID";
             this.txtResidentID.Size = new System.Drawing.Size(100, 26);
             this.txtResidentID.TabIndex = 20;
+            this.txtResidentID.TextChanged += new System.EventHandler(this.txtResidentID_TextChanged);
             // 
             // btnSearch
             // 

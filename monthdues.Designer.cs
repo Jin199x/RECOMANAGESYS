@@ -37,6 +37,7 @@
             this.txtSearch = new System.Windows.Forms.TextBox();
             this.panel2 = new System.Windows.Forms.Panel();
             this.addPayment = new FontAwesome.Sharp.IconButton();
+            this.cmbResidentFilter = new System.Windows.Forms.ComboBox();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
             this.SuspendLayout();
@@ -45,6 +46,7 @@
             // 
             this.panel1.BackColor = System.Drawing.Color.White;
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel1.Controls.Add(this.cmbResidentFilter);
             this.panel1.Controls.Add(this.lvResidents);
             this.panel1.Controls.Add(this.lvMonths);
             this.panel1.Controls.Add(this.updatePayment);
@@ -56,7 +58,6 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(1193, 727);
             this.panel1.TabIndex = 1;
-            this.panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.panel1_Paint);
             // 
             // lvResidents
             // 
@@ -119,21 +120,21 @@
             this.searchbtn.IconColor = System.Drawing.Color.Black;
             this.searchbtn.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.searchbtn.IconSize = 28;
-            this.searchbtn.Location = new System.Drawing.Point(1108, 26);
+            this.searchbtn.Location = new System.Drawing.Point(1108, 12);
             this.searchbtn.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.searchbtn.Name = "searchbtn";
-            this.searchbtn.Size = new System.Drawing.Size(57, 48);
+            this.searchbtn.Size = new System.Drawing.Size(57, 39);
             this.searchbtn.TabIndex = 3;
             this.searchbtn.UseVisualStyleBackColor = true;
             // 
             // txtSearch
             // 
             this.txtSearch.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.txtSearch.Location = new System.Drawing.Point(768, 26);
+            this.txtSearch.Location = new System.Drawing.Point(768, 12);
             this.txtSearch.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.txtSearch.Multiline = true;
             this.txtSearch.Name = "txtSearch";
-            this.txtSearch.Size = new System.Drawing.Size(397, 47);
+            this.txtSearch.Size = new System.Drawing.Size(397, 39);
             this.txtSearch.TabIndex = 2;
             this.txtSearch.TextChanged += new System.EventHandler(this.txtSearch_TextChanged);
             // 
@@ -169,6 +170,17 @@
             this.addPayment.UseVisualStyleBackColor = false;
             this.addPayment.Click += new System.EventHandler(this.addvisitor_Click);
             // 
+            // cmbResidentFilter
+            // 
+            this.cmbResidentFilter.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cmbResidentFilter.FormattingEnabled = true;
+            this.cmbResidentFilter.Location = new System.Drawing.Point(768, 65);
+            this.cmbResidentFilter.Name = "cmbResidentFilter";
+            this.cmbResidentFilter.Size = new System.Drawing.Size(283, 30);
+            this.cmbResidentFilter.TabIndex = 9;
+            this.cmbResidentFilter.Text = "Resident Filter";
+            this.cmbResidentFilter.SelectedIndexChanged += new System.EventHandler(this.cmbResidentFilter_SelectedIndexChanged);
+            // 
             // monthdues
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -197,5 +209,6 @@
         private System.Windows.Forms.Button updatePayment;
         private System.Windows.Forms.ListView lvMonths;
         private System.Windows.Forms.ListView lvResidents;
+        private System.Windows.Forms.ComboBox cmbResidentFilter;
     }
 }
