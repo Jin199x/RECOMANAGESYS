@@ -53,11 +53,12 @@ namespace RECOMANAGESYS
 
             currentResidentId = residentId;
 
-            // Fetch resident info
+            // Fetch resident info including IsActive
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             using (SqlCommand cmd = new SqlCommand(
-                @"SELECT FirstName, MiddleName, LastName, HomeAddress FROM Residents
-                  WHERE HomeownerID = @residentId", conn))
+                @"SELECT FirstName, MiddleName, LastName, HomeAddress, IsActive 
+          FROM Residents 
+          WHERE HomeownerID = @residentId", conn))
             {
                 cmd.Parameters.AddWithValue("@residentId", residentId);
                 conn.Open();
@@ -66,6 +67,14 @@ namespace RECOMANAGESYS
                     if (!reader.Read())
                     {
                         MessageBox.Show("Resident not found.");
+                        return;
+                    }
+
+                    bool isActive = Convert.ToBoolean(reader["IsActive"]);
+                    if (!isActive)
+                    {
+                        MessageBox.Show("This resident is inactive.", "Inactive Resident", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        this.Close(); // Close the form if inactive
                         return;
                     }
 
@@ -80,9 +89,9 @@ namespace RECOMANAGESYS
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             using (SqlCommand cmd = new SqlCommand(
                 @"SELECT u.UnitID, u.UnitNumber, u.IsOccupied
-                  FROM HomeownerUnits hu
-                  INNER JOIN TBL_Units u ON hu.UnitID = u.UnitID
-                  WHERE hu.HomeownerID = @residentId", conn))
+          FROM HomeownerUnits hu
+          INNER JOIN TBL_Units u ON hu.UnitID = u.UnitID
+          WHERE hu.HomeownerID = @residentId", conn))
             {
                 cmd.Parameters.AddWithValue("@residentId", residentId);
                 conn.Open();
@@ -108,7 +117,7 @@ namespace RECOMANAGESYS
                 lblUnitStatus.Text = selectedUnit.Item3 ? "Active" : "Inactive";
                 lblUnitStatus.ForeColor = selectedUnit.Item3 ? Color.Green : Color.Red;
                 lblResidentAddress.Text = GetUnitAddress(selectedUnit.Item1, lblResidentAddress.Text);
-                lblDueRate.Text = BaseDueRate.ToString(); // fixed due rate
+                lblDueRate.Text = BaseDueRate.ToString();
             }
             else if (residentUnits.Count > 1)
             {
@@ -122,6 +131,8 @@ namespace RECOMANAGESYS
 
             UpdateAmountPaidLabel();
         }
+
+
 
         private void cmbUnits_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -268,6 +279,11 @@ namespace RECOMANAGESYS
         private void btnCancel_Click(object sender, EventArgs e)
         {
             this.Close();
+        }
+
+        private void txtResidentID_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

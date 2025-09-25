@@ -544,7 +544,8 @@ CREATE TABLE Residents (
     EmergencyContactPerson NVARCHAR(100),
     EmergencyContactNumber NVARCHAR(15),
     ResidencyType NVARCHAR(50),
-    IsActive BIT DEFAULT 1
+    IsActive BIT DEFAULT 1,
+    InactiveDate DATE NULL
 );
 
 --UNITS
