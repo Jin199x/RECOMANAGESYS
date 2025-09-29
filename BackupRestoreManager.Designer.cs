@@ -40,6 +40,7 @@
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.lblRestoreHint = new System.Windows.Forms.Label();
+            this.lblBackUpHint = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // clbTables
@@ -152,6 +153,18 @@
             this.lblRestoreHint.Text = "  Select a folder using \r\n\'Select Path\' to restore.";
             this.lblRestoreHint.Visible = false;
             // 
+            // lblBackUpHint
+            // 
+            this.lblBackUpHint.AutoSize = true;
+            this.lblBackUpHint.BackColor = System.Drawing.Color.Transparent;
+            this.lblBackUpHint.ForeColor = System.Drawing.Color.Red;
+            this.lblBackUpHint.Location = new System.Drawing.Point(265, 556);
+            this.lblBackUpHint.Name = "lblBackUpHint";
+            this.lblBackUpHint.Size = new System.Drawing.Size(253, 40);
+            this.lblBackUpHint.TabIndex = 11;
+            this.lblBackUpHint.Text = " Select a folder using \'Select Path\' \r\n           to save the back-up.";
+            this.lblBackUpHint.Visible = false;
+            // 
             // BackupRestoreManager
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -159,6 +172,7 @@
             this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(978, 841);
+            this.Controls.Add(this.lblBackUpHint);
             this.Controls.Add(this.lblRestoreHint);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
@@ -192,5 +206,6 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label lblRestoreHint;
+        private System.Windows.Forms.Label lblBackUpHint;
     }
 }

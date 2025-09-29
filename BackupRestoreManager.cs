@@ -30,6 +30,8 @@ namespace RECOMANAGESYS
             LoadPersistentLog();
             btnRestore.MouseEnter += btnRestore_MouseEnter;
             btnRestore.MouseLeave += btnRestore_MouseLeave;
+            btnBackup.MouseEnter += btnBackup_MouseEnter;
+            btnBackup.MouseLeave += btnBackup_MouseLeave;
         }
 
         private void RefreshAllData()
@@ -81,7 +83,7 @@ namespace RECOMANAGESYS
             if (File.Exists(logFilePath))
             {
                 rtbLog.Text = File.ReadAllText(logFilePath);
-                rtbLog.SelectionStart = rtbLog.Text.Length; // scroll to bottom
+                rtbLog.SelectionStart = rtbLog.Text.Length; 
                 rtbLog.ScrollToCaret();
             }
         }
@@ -358,16 +360,23 @@ namespace RECOMANAGESYS
                 progressBar.Value = 0;
             }
         }
-            // Show the hint when mouse enters the Restore button
         private void btnRestore_MouseEnter(object sender, EventArgs e)
         {
             lblRestoreHint.Visible = true;
         }
 
-        // Hide the hint when mouse leaves the Restore button
         private void btnRestore_MouseLeave(object sender, EventArgs e)
         {
             lblRestoreHint.Visible = false;
+        }
+        private void btnBackup_MouseEnter(object sender, EventArgs e)
+        {
+            lblBackUpHint.Visible = true;
+        }
+
+        private void btnBackup_MouseLeave(object sender, EventArgs e)
+        {
+            lblBackUpHint.Visible = false;
         }
     }
 
