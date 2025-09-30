@@ -27,7 +27,7 @@ namespace RECOMANAGESYS
         public dashboard()
         {
             InitializeComponent();
-
+            this.AutoScaleMode = AutoScaleMode.Dpi;
 
         }
         private void ShowControl(UserControl control)

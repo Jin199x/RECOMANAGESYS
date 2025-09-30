@@ -15,6 +15,7 @@ namespace RECOMANAGESYS
         public scheduling()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
         }
 
         private void button1_Click(object sender, EventArgs e)

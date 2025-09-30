@@ -25,6 +25,7 @@ namespace RECOMANAGESYS
         public BackupRestoreManager(docurepo parent)
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             parentDocuRepo = parent;
             LoadTableList();
             LoadPersistentLog();

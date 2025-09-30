@@ -17,6 +17,7 @@ namespace RECOMANAGESYS
         public forgotpassfrm()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
         }
 
         private void forgotpassfrm_Load(object sender, EventArgs e)

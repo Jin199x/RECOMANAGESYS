@@ -19,6 +19,7 @@ namespace RECOMANAGESYS
         public monthdues()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
 
             // Configure ListViews
             lvResidents.View = View.Details;

@@ -21,6 +21,7 @@ namespace RECOMANAGESYS
         public loginform()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
         }
 
         private void hide_Click(object sender, EventArgs e)

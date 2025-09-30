@@ -17,6 +17,7 @@ namespace RECOMANAGESYS
         public visitorlog()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             VisitorLog();
         }
         private void VisitorLog()

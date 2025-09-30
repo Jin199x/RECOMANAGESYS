@@ -21,6 +21,7 @@ namespace RECOMANAGESYS
         public PostAnnouncement(Announcement parent)
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             parentControl = parent;
 
             try

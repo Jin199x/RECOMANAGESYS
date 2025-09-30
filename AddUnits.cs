@@ -13,6 +13,7 @@ namespace RECOMANAGESYS
         public AddUnits(int homeownerId, string residencyType)
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             _homeownerId = homeownerId;
             _residencyType = residencyType;
             this.Text = "Add New Unit";

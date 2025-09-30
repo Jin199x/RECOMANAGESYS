@@ -15,6 +15,7 @@ namespace RECOMANAGESYS
         public frmPayment()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             residentUnits = new List<Tuple<int, string, bool>>();
             this.dtpPaymentDate.ValueChanged += new EventHandler(this.dtpPaymentDate_ValueChanged);
             this.dtpEndMonth.ValueChanged += new EventHandler(this.dtpEndMonth_ValueChanged);

@@ -13,6 +13,7 @@ namespace RECOMANAGESYS
         public Homeowners()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             LoadHomeowners();
         }
 

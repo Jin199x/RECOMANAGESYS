@@ -21,6 +21,7 @@ namespace RECOMANAGESYS
         public addvisitor()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             VisitorDTP.Value = DateTime.Now;
             VisitorDTP.Value = DateTime.Now;
 

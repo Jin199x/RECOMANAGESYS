@@ -17,6 +17,7 @@ namespace RECOMANAGESYS
         public UpdateMonthlyDues()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             btnSearch.Click += btnSearch_Click;
             cmbUnits.SelectedIndexChanged += cmbUnits_SelectedIndexChanged;
             clbMissedMonths.ItemCheck += clbMissedMonths_ItemCheck;

@@ -25,6 +25,7 @@ namespace RECOMANAGESYS
         public registerform()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             InitializeNewControls();
         }
 

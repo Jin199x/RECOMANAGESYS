@@ -12,6 +12,7 @@ namespace RECOMANAGESYS
         public docurepo()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             panelDesktop.AutoScroll = true;
 
             // Back button

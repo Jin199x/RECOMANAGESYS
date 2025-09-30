@@ -18,6 +18,7 @@ namespace RECOMANAGESYS
         public OfficerInfo()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             SetupDataGridView();
             LoadOfficers();
         }

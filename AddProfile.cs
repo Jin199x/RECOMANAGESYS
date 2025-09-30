@@ -15,6 +15,7 @@ namespace RECOMANAGESYS
         public ResidencyRegisterfrm()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             if (ResidentIDtxt != null && residentlbl != null)
             {
                 ResidentIDtxt.Visible = true;
