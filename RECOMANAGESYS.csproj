@@ -35,7 +35,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-
   <PropertyGroup>
     <StartupObject />
   </PropertyGroup>
@@ -43,7 +42,6 @@
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
-
   <ItemGroup>
     <Reference Include="Avalonia, Version=11.3.4.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b, processorArchitecture=MSIL">
       <HintPath>packages\Avalonia.11.3.4\lib\netstandard2.0\Avalonia.dll</HintPath>
@@ -334,9 +332,6 @@
     <EmbeddedResource Include="visitorlog.resx">
       <DependentUpon>visitorlog.cs</DependentUpon>
     </EmbeddedResource>
-
-    <None Include="app.manifest" />
-
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -389,6 +384,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\folderIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\download.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="packages\Avalonia.BuildServices.0.0.31\build\Avalonia.BuildServices.targets" Condition="Exists('packages\Avalonia.BuildServices.0.0.31\build\Avalonia.BuildServices.targets')" />
