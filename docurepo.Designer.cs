@@ -30,14 +30,20 @@
         {
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel2 = new System.Windows.Forms.Panel();
-            this.buttonBack = new System.Windows.Forms.Button();
+            this.panel3 = new System.Windows.Forms.Panel();
+            this.btnDate = new System.Windows.Forms.Button();
+            this.btnModified = new System.Windows.Forms.Button();
+            this.btnType = new System.Windows.Forms.Button();
             this.panelDesktop = new System.Windows.Forms.Panel();
             this.searchbtn = new FontAwesome.Sharp.IconButton();
             this.searchDocu = new System.Windows.Forms.TextBox();
             this.buttonAddFolder = new System.Windows.Forms.Button();
             this.buttonAddFile = new System.Windows.Forms.Button();
             this.btnSafeguard = new System.Windows.Forms.Button();
+            this.flowBreadcrumb = new System.Windows.Forms.FlowLayoutPanel();
+            this.lblResetFilter = new System.Windows.Forms.Label();
             this.panel2.SuspendLayout();
+            this.panel3.SuspendLayout();
             this.SuspendLayout();
             // 
             // panel1
@@ -54,7 +60,9 @@
             // 
             this.panel2.BackColor = System.Drawing.Color.White;
             this.panel2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panel2.Controls.Add(this.buttonBack);
+            this.panel2.Controls.Add(this.lblResetFilter);
+            this.panel2.Controls.Add(this.flowBreadcrumb);
+            this.panel2.Controls.Add(this.panel3);
             this.panel2.Controls.Add(this.panelDesktop);
             this.panel2.Controls.Add(this.searchbtn);
             this.panel2.Controls.Add(this.searchDocu);
@@ -68,15 +76,43 @@
             this.panel2.TabIndex = 1;
             this.panel2.Paint += new System.Windows.Forms.PaintEventHandler(this.panel2_Paint);
             // 
-            // buttonBack
+            // panel3
             // 
-            this.buttonBack.BackColor = System.Drawing.Color.LightSkyBlue;
-            this.buttonBack.Location = new System.Drawing.Point(211, 109);
-            this.buttonBack.Name = "buttonBack";
-            this.buttonBack.Size = new System.Drawing.Size(91, 35);
-            this.buttonBack.TabIndex = 13;
-            this.buttonBack.Text = "Back";
-            this.buttonBack.UseVisualStyleBackColor = false;
+            this.panel3.BackColor = System.Drawing.Color.Transparent;
+            this.panel3.Controls.Add(this.btnDate);
+            this.panel3.Controls.Add(this.btnModified);
+            this.panel3.Controls.Add(this.btnType);
+            this.panel3.Location = new System.Drawing.Point(36, 131);
+            this.panel3.Name = "panel3";
+            this.panel3.Size = new System.Drawing.Size(390, 35);
+            this.panel3.TabIndex = 14;
+            // 
+            // btnDate
+            // 
+            this.btnDate.Location = new System.Drawing.Point(244, 3);
+            this.btnDate.Name = "btnDate";
+            this.btnDate.Size = new System.Drawing.Size(143, 28);
+            this.btnDate.TabIndex = 17;
+            this.btnDate.Text = "Date Added";
+            this.btnDate.UseVisualStyleBackColor = true;
+            // 
+            // btnModified
+            // 
+            this.btnModified.Location = new System.Drawing.Point(92, 3);
+            this.btnModified.Name = "btnModified";
+            this.btnModified.Size = new System.Drawing.Size(146, 28);
+            this.btnModified.TabIndex = 16;
+            this.btnModified.Text = "Last Modified";
+            this.btnModified.UseVisualStyleBackColor = true;
+            // 
+            // btnType
+            // 
+            this.btnType.Location = new System.Drawing.Point(3, 3);
+            this.btnType.Name = "btnType";
+            this.btnType.Size = new System.Drawing.Size(83, 28);
+            this.btnType.TabIndex = 15;
+            this.btnType.Text = "Type";
+            this.btnType.UseVisualStyleBackColor = true;
             // 
             // panelDesktop
             // 
@@ -119,7 +155,7 @@
             this.buttonAddFolder.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonAddFolder.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.buttonAddFolder.ForeColor = System.Drawing.Color.White;
-            this.buttonAddFolder.Location = new System.Drawing.Point(36, 92);
+            this.buttonAddFolder.Location = new System.Drawing.Point(211, 32);
             this.buttonAddFolder.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.buttonAddFolder.Name = "buttonAddFolder";
             this.buttonAddFolder.Size = new System.Drawing.Size(169, 48);
@@ -136,7 +172,7 @@
             this.buttonAddFile.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonAddFile.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.buttonAddFile.ForeColor = System.Drawing.Color.White;
-            this.buttonAddFile.Location = new System.Drawing.Point(36, 34);
+            this.buttonAddFile.Location = new System.Drawing.Point(36, 32);
             this.buttonAddFile.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.buttonAddFile.Name = "buttonAddFile";
             this.buttonAddFile.Size = new System.Drawing.Size(169, 48);
@@ -161,6 +197,25 @@
             this.btnSafeguard.UseVisualStyleBackColor = false;
             this.btnSafeguard.Click += new System.EventHandler(this.btnSafeguard_Click);
             // 
+            // flowBreadcrumb
+            // 
+            this.flowBreadcrumb.BackColor = System.Drawing.Color.Transparent;
+            this.flowBreadcrumb.Location = new System.Drawing.Point(36, 100);
+            this.flowBreadcrumb.Name = "flowBreadcrumb";
+            this.flowBreadcrumb.Size = new System.Drawing.Size(523, 28);
+            this.flowBreadcrumb.TabIndex = 15;
+            // 
+            // lblResetFilter
+            // 
+            this.lblResetFilter.AutoSize = true;
+            this.lblResetFilter.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblResetFilter.ForeColor = System.Drawing.SystemColors.WindowFrame;
+            this.lblResetFilter.Location = new System.Drawing.Point(432, 142);
+            this.lblResetFilter.Name = "lblResetFilter";
+            this.lblResetFilter.Size = new System.Drawing.Size(91, 20);
+            this.lblResetFilter.TabIndex = 16;
+            this.lblResetFilter.Text = "Reset Filter";
+            // 
             // docurepo
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -173,6 +228,7 @@
             this.Size = new System.Drawing.Size(1249, 920);
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
+            this.panel3.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -187,6 +243,11 @@
         private System.Windows.Forms.TextBox searchDocu;
         private FontAwesome.Sharp.IconButton searchbtn;
         private System.Windows.Forms.Panel panelDesktop;
-        private System.Windows.Forms.Button buttonBack;
+        private System.Windows.Forms.Button btnDate;
+        private System.Windows.Forms.Button btnModified;
+        private System.Windows.Forms.Button btnType;
+        private System.Windows.Forms.Panel panel3;
+        private System.Windows.Forms.FlowLayoutPanel flowBreadcrumb;
+        private System.Windows.Forms.Label lblResetFilter;
     }
 }
