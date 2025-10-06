@@ -133,14 +133,23 @@ namespace RECOMANAGESYS
 
         private void btnPost_Click(object sender, EventArgs e)
         {
-            // 🔹 Validation before saving
+            //Title validation
             if (string.IsNullOrWhiteSpace(txtTitle.Text))
             {
                 MessageBox.Show("A title is required.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtTitle.Focus();
                 return;
             }
 
-            // 🔹 Expiration validation
+            //Body/content validation
+            if (string.IsNullOrWhiteSpace(txtMessage.Text))
+            {
+                MessageBox.Show("The announcement body cannot be empty.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtMessage.Focus();
+                return;
+            }
+
+            //Expiration validation
             if (chkNoExpire != null && !chkNoExpire.Checked)
             {
                 if (dtpExpire == null || !dtpExpire.Checked) // ✅ must pick a date
@@ -153,16 +162,17 @@ namespace RECOMANAGESYS
                 if (dtpExpire.Value.Date < DateTime.Today)
                 {
                     MessageBox.Show("Expiration date cannot be in the past.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    dtpExpire.Focus();
                     return;
                 }
             }
 
+            //Save to database
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
                 conn.Open();
                 SqlCommand cmd;
 
-                // Determine expiration date (nullable)
                 DateTime? expireDate = null;
                 try
                 {
@@ -208,6 +218,7 @@ namespace RECOMANAGESYS
             txtMessage.Clear();
             this.Close();
         }
+
 
         private void btnCancel_Click(object sender, EventArgs e)
         {

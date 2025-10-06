@@ -18,10 +18,10 @@ namespace RECOMANAGESYS
 
             flowBreadcrumb.WrapContents = false;
             flowBreadcrumb.AutoSize = false;
-            flowBreadcrumb.Height = 25; // fixed height
+            flowBreadcrumb.Height = 25; 
             flowBreadcrumb.AutoScroll = false;
 
-            LoadDesktopItems(); // load items from DB on start
+            LoadDesktopItems(); 
         }
         private ToolStripMenuItem activeTypeMenuItem = null; //for Type
         private ToolStripMenuItem activeDateMenuItem = null;//for date added
