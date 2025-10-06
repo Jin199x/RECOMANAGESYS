@@ -578,7 +578,8 @@ CREATE TABLE DesktopItems (
     ParentId INT NULL,
     IconType NVARCHAR(50) NULL,
     FilePath NVARCHAR(500) NULL,
-    CreatedAt DATETIME DEFAULT GETDATE(),
+    CreatedAt DATETIME DEFAULT GETDATE(),   
+    ModifiedAt DATETIME DEFAULT GETDATE(),    
     FOREIGN KEY (ParentId) REFERENCES DesktopItems(ItemId)
 );
 */
