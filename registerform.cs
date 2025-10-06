@@ -582,9 +582,6 @@ CREATE TABLE DesktopItems (
     FOREIGN KEY (ParentId) REFERENCES DesktopItems(ItemId)
 );
 
-
-
-
 CREATE TABLE Events (
     EventId INT IDENTITY(1,1) PRIMARY KEY,
     EventName NVARCHAR(255) NOT NULL,

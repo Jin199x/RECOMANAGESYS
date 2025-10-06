@@ -6,7 +6,7 @@ public static class DatabaseHelper
 {
     // ✅ Put your connection string here only once
     private static string connectionString =
-               "Data Source=LAPTOP-FT905FTC\\SQLEXPRESS;Initial Catalog=RecordManagement;Integrated Security=True;";
+               "Data Source=REDFLAG;Initial Catalog=oldRecom;Integrated Security=True;Encrypt=True;TrustServerCertificate=True";
 
     public static string ConnectionString { get; internal set; }
 
