@@ -34,51 +34,56 @@
             this.AddResidentsbtn = new System.Windows.Forms.Button();
             this.refreshbtn = new System.Windows.Forms.Button();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.ViewUnitbtn = new System.Windows.Forms.Button();
             this.Deletebtn = new System.Windows.Forms.Button();
             this.AddUnitbtn = new System.Windows.Forms.Button();
             this.searchbtn = new FontAwesome.Sharp.IconButton();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.DGVResidents = new System.Windows.Forms.DataGridView();
-            this.ViewUnitbtn = new System.Windows.Forms.Button();
             this.panel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.DGVResidents)).BeginInit();
             this.SuspendLayout();
             // 
             // button4
             // 
+            this.button4.BackColor = System.Drawing.SystemColors.ActiveCaption;
             this.button4.Location = new System.Drawing.Point(749, 23);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(290, 28);
             this.button4.TabIndex = 5;
             this.button4.Text = "View Officer ";
-            this.button4.UseVisualStyleBackColor = true;
+            this.button4.UseVisualStyleBackColor = false;
             this.button4.Click += new System.EventHandler(this.button4_Click);
             // 
             // Edit
             // 
-            this.Edit.Location = new System.Drawing.Point(151, 76);
+            this.Edit.BackColor = System.Drawing.SystemColors.HotTrack;
+            this.Edit.ForeColor = System.Drawing.SystemColors.ButtonFace;
+            this.Edit.Location = new System.Drawing.Point(18, 82);
             this.Edit.Name = "Edit";
-            this.Edit.Size = new System.Drawing.Size(136, 44);
+            this.Edit.Size = new System.Drawing.Size(157, 34);
             this.Edit.TabIndex = 3;
             this.Edit.Text = "Edit Residents";
-            this.Edit.UseVisualStyleBackColor = true;
+            this.Edit.UseVisualStyleBackColor = false;
             this.Edit.Click += new System.EventHandler(this.Edit_Click);
             // 
             // AddResidentsbtn
             // 
-            this.AddResidentsbtn.Location = new System.Drawing.Point(304, 76);
+            this.AddResidentsbtn.BackColor = System.Drawing.SystemColors.HotTrack;
+            this.AddResidentsbtn.ForeColor = System.Drawing.SystemColors.ButtonFace;
+            this.AddResidentsbtn.Location = new System.Drawing.Point(201, 82);
             this.AddResidentsbtn.Name = "AddResidentsbtn";
-            this.AddResidentsbtn.Size = new System.Drawing.Size(140, 44);
+            this.AddResidentsbtn.Size = new System.Drawing.Size(148, 34);
             this.AddResidentsbtn.TabIndex = 2;
             this.AddResidentsbtn.Text = "Add residents";
-            this.AddResidentsbtn.UseVisualStyleBackColor = true;
+            this.AddResidentsbtn.UseVisualStyleBackColor = false;
             this.AddResidentsbtn.Click += new System.EventHandler(this.AddResidentsbtn_Click);
             // 
             // refreshbtn
             // 
-            this.refreshbtn.Location = new System.Drawing.Point(20, 76);
+            this.refreshbtn.Location = new System.Drawing.Point(18, 15);
             this.refreshbtn.Name = "refreshbtn";
-            this.refreshbtn.Size = new System.Drawing.Size(107, 44);
+            this.refreshbtn.Size = new System.Drawing.Size(101, 36);
             this.refreshbtn.TabIndex = 1;
             this.refreshbtn.Text = "Refresh";
             this.refreshbtn.UseVisualStyleBackColor = true;
@@ -104,9 +109,20 @@
             this.panel2.TabIndex = 6;
             this.panel2.Paint += new System.Windows.Forms.PaintEventHandler(this.panel2_Paint);
             // 
+            // ViewUnitbtn
+            // 
+            this.ViewUnitbtn.BackColor = System.Drawing.SystemColors.ActiveCaption;
+            this.ViewUnitbtn.Location = new System.Drawing.Point(749, 63);
+            this.ViewUnitbtn.Name = "ViewUnitbtn";
+            this.ViewUnitbtn.Size = new System.Drawing.Size(290, 32);
+            this.ViewUnitbtn.TabIndex = 14;
+            this.ViewUnitbtn.Text = "View Unit";
+            this.ViewUnitbtn.UseVisualStyleBackColor = false;
+            this.ViewUnitbtn.Click += new System.EventHandler(this.ViewUnitbtn_Click);
+            // 
             // Deletebtn
             // 
-            this.Deletebtn.Location = new System.Drawing.Point(585, 93);
+            this.Deletebtn.Location = new System.Drawing.Point(523, 118);
             this.Deletebtn.Name = "Deletebtn";
             this.Deletebtn.Size = new System.Drawing.Size(75, 23);
             this.Deletebtn.TabIndex = 13;
@@ -116,12 +132,14 @@
             // 
             // AddUnitbtn
             // 
-            this.AddUnitbtn.Location = new System.Drawing.Point(462, 43);
+            this.AddUnitbtn.BackColor = System.Drawing.SystemColors.HotTrack;
+            this.AddUnitbtn.ForeColor = System.Drawing.SystemColors.ButtonFace;
+            this.AddUnitbtn.Location = new System.Drawing.Point(365, 82);
             this.AddUnitbtn.Name = "AddUnitbtn";
-            this.AddUnitbtn.Size = new System.Drawing.Size(107, 44);
+            this.AddUnitbtn.Size = new System.Drawing.Size(120, 34);
             this.AddUnitbtn.TabIndex = 12;
             this.AddUnitbtn.Text = "Add Unit";
-            this.AddUnitbtn.UseVisualStyleBackColor = true;
+            this.AddUnitbtn.UseVisualStyleBackColor = false;
             this.AddUnitbtn.Click += new System.EventHandler(this.AddUnitbtn_Click);
             // 
             // searchbtn
@@ -131,19 +149,20 @@
             this.searchbtn.IconColor = System.Drawing.Color.Black;
             this.searchbtn.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.searchbtn.IconSize = 28;
-            this.searchbtn.Location = new System.Drawing.Point(980, 78);
+            this.searchbtn.Location = new System.Drawing.Point(985, 110);
             this.searchbtn.Name = "searchbtn";
-            this.searchbtn.Size = new System.Drawing.Size(50, 38);
+            this.searchbtn.Size = new System.Drawing.Size(54, 31);
             this.searchbtn.TabIndex = 11;
             this.searchbtn.UseVisualStyleBackColor = true;
+            this.searchbtn.Click += new System.EventHandler(this.searchbtn_Click);
             // 
             // textBox1
             // 
             this.textBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.textBox1.Location = new System.Drawing.Point(677, 78);
+            this.textBox1.Location = new System.Drawing.Point(749, 110);
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(353, 38);
+            this.textBox1.Size = new System.Drawing.Size(290, 31);
             this.textBox1.TabIndex = 10;
             // 
             // DGVResidents
@@ -157,16 +176,6 @@
             this.DGVResidents.Size = new System.Drawing.Size(1021, 447);
             this.DGVResidents.TabIndex = 8;
             this.DGVResidents.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
-            // 
-            // ViewUnitbtn
-            // 
-            this.ViewUnitbtn.Location = new System.Drawing.Point(462, 107);
-            this.ViewUnitbtn.Name = "ViewUnitbtn";
-            this.ViewUnitbtn.Size = new System.Drawing.Size(107, 34);
-            this.ViewUnitbtn.TabIndex = 14;
-            this.ViewUnitbtn.Text = "View Unit";
-            this.ViewUnitbtn.UseVisualStyleBackColor = true;
-            this.ViewUnitbtn.Click += new System.EventHandler(this.ViewUnitbtn_Click);
             // 
             // Homeowners
             // 

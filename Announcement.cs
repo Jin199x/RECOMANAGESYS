@@ -10,6 +10,7 @@ namespace RECOMANAGESYS
         public Announcement()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
         }
 
         private void button3_Click(object sender, EventArgs e) //btnPostAnnouncement

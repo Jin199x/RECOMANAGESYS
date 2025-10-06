@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -9,10 +10,11 @@ namespace RECOMANAGESYS
 {
     public partial class Homeowners : UserControl
     {
-
+        public monthdues MonthDuesControl { get; set; }
         public Homeowners()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             LoadHomeowners();
         }
 
@@ -186,10 +188,32 @@ namespace RECOMANAGESYS
                         DGVResidents.Columns["UnitsAcquired"].Width = 80;
                     }
 
-                    DGVResidents.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
+
+
+                    DGVResidents.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells;
+
+                    DGVResidents.ScrollBars = ScrollBars.Both;
+
                     DGVResidents.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
                     DGVResidents.ReadOnly = true;
                     DGVResidents.AllowUserToAddRows = false;
+
+                    DGVResidents.MultiSelect = false;
+
+                    DGVResidents.EnableHeadersVisualStyles = false;
+                    DGVResidents.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(70, 130, 180);
+                    DGVResidents.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+                    DGVResidents.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+                    DGVResidents.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
+                    DGVResidents.DefaultCellStyle.SelectionBackColor = Color.FromArgb(100, 149, 237);
+                    DGVResidents.DefaultCellStyle.SelectionForeColor = Color.White;
+                    DGVResidents.ColumnHeadersHeight = 35;
+                    DGVResidents.RowTemplate.Height = 40;
+                    DGVResidents.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+
+
+                    DGVResidents.Dock = DockStyle.None;
+                    DGVResidents.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
                 }
             }
             catch (Exception ex)
@@ -279,9 +303,9 @@ namespace RECOMANAGESYS
             }
 
             if (MessageBox.Show(
-                    "WARNING: This will permanently delete this homeowner and their unit links.\n\n" +
+                    "This will mark the homeowner as deleted and release their units.\n\n" +
                     "Are you sure you want to proceed?",
-                    "CONFIRM PERMANENT DELETE",
+                    "CONFIRM DELETE",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning) != DialogResult.Yes)
             {
@@ -301,15 +325,9 @@ namespace RECOMANAGESYS
                     {
                         try
                         {
-
+                            // 1. Get units owned by resident
                             List<int> unitIds = new List<int>();
-                            Dictionary<int, string> unitTypes = new Dictionary<int, string>();
-
-                            string getUnitsQuery = @"
-                        SELECT hu.UnitID, u.UnitType
-                        FROM HomeownerUnits hu
-                        INNER JOIN TBL_Units u ON hu.UnitID = u.UnitID
-                        WHERE hu.HomeownerID = @id";
+                            string getUnitsQuery = @"SELECT UnitID FROM HomeownerUnits WHERE HomeownerID = @id";
 
                             using (SqlCommand getUnitsCmd = new SqlCommand(getUnitsQuery, conn, transaction))
                             {
@@ -318,45 +336,45 @@ namespace RECOMANAGESYS
                                 {
                                     while (reader.Read())
                                     {
-                                        int unitId = reader.GetInt32(0);
-                                        string unitType = reader.GetString(1);
-                                        unitIds.Add(unitId);
-                                        unitTypes[unitId] = unitType;
+                                        unitIds.Add(reader.GetInt32(0));
                                     }
                                 }
                             }
-                            using (SqlCommand deleteHomeownerUnitsCmd =
-                                   new SqlCommand("DELETE FROM HomeownerUnits WHERE HomeownerID = @id", conn, transaction))
-                            {
-                                deleteHomeownerUnitsCmd.Parameters.AddWithValue("@id", homeownerId);
-                                deleteHomeownerUnitsCmd.ExecuteNonQuery();
-                            }
+
+                            // 2. Mark units as available
                             foreach (int unitId in unitIds)
                             {
-                                if (unitTypes[unitId] != "Apartment")
+                                using (SqlCommand updateUnitsCmd =
+                                       new SqlCommand("UPDATE TBL_Units SET IsOccupied = 0 WHERE UnitID = @unitId", conn, transaction))
                                 {
-                                    using (SqlCommand updateUnitsCmd =
-                                           new SqlCommand("UPDATE TBL_Units SET IsOccupied = 0 WHERE UnitID = @unitId", conn, transaction))
-                                    {
-                                        updateUnitsCmd.Parameters.AddWithValue("@unitId", unitId);
-                                        updateUnitsCmd.ExecuteNonQuery();
-                                    }
+                                    updateUnitsCmd.Parameters.AddWithValue("@unitId", unitId);
+                                    updateUnitsCmd.ExecuteNonQuery();
                                 }
                             }
 
-                            using (SqlCommand deleteResidentCmd =
-                                   new SqlCommand("DELETE FROM Residents WHERE HomeownerID = @id", conn, transaction))
+                            // 3. Mark resident as inactive and record InactiveDate
+                            using (SqlCommand markInactiveCmd =
+                                   new SqlCommand("UPDATE Residents SET IsActive = 0, InactiveDate = @inactiveDate WHERE HomeownerID = @id", conn, transaction))
                             {
-                                deleteResidentCmd.Parameters.AddWithValue("@id", homeownerId);
-                                deleteResidentCmd.ExecuteNonQuery();
+                                markInactiveCmd.Parameters.AddWithValue("@id", homeownerId);
+                                markInactiveCmd.Parameters.AddWithValue("@inactiveDate", DateTime.Now.Date);
+                                markInactiveCmd.ExecuteNonQuery();
                             }
 
+                            // **DO NOT DELETE HomeownerUnits link from DB**
+                            // Leave HomeownerUnits entries so monthdues can still reference them
+                            // This ensures old dues will still show in monthdues
+
                             transaction.Commit();
+                            if (MonthDuesControl != null)
+                            {
+                                MonthDuesControl.ResidentFilterComboBox.SelectedIndex = 0; // reset to "All Residents"
+                                MonthDuesControl.LoadResidentsList();                 // refresh the list
+                            }
 
                             MessageBox.Show(
-                                $"PERMANENTLY DELETED:\n" +
-                                $"- Homeowner: {homeownerName} (ID: {homeownerId})\n" +
-                                $"- {unitIds.Count} unit link(s) removed\n",
+                                $"Homeowner marked as deleted:\n- {homeownerName}\n- {unitIds.Count} unit(s) released\n\n" +
+                                "Historical monthly dues will still display correctly.",
                                 "Deletion Complete",
                                 MessageBoxButtons.OK,
                                 MessageBoxIcon.Information);
@@ -378,6 +396,8 @@ namespace RECOMANAGESYS
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+
 
         private void AddUnitbtn_Click(object sender, EventArgs e)
         {
@@ -539,6 +559,11 @@ namespace RECOMANAGESYS
         private void ViewUnitbtn_Click(object sender, EventArgs e)
         {
             ShowAllUnits();
+        }
+
+        private void searchbtn_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

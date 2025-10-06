@@ -27,6 +27,8 @@ namespace RECOMANAGESYS
         public dashboard()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
+
         }
         private void ShowControl(UserControl control)
         {
@@ -83,7 +85,8 @@ namespace RECOMANAGESYS
           
            homeowners = new Homeowners();
             flowLayoutPanel1.Controls.Add(homeowners);
-           
+
+            homeowners.MonthDuesControl = dues;
 
             EnforcePermissions();
 

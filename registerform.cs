@@ -25,6 +25,7 @@ namespace RECOMANAGESYS
         public registerform()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             InitializeNewControls();
         }
 
@@ -544,7 +545,8 @@ CREATE TABLE Residents (
     EmergencyContactPerson NVARCHAR(100),
     EmergencyContactNumber NVARCHAR(15),
     ResidencyType NVARCHAR(50),
-    IsActive BIT DEFAULT 1
+    IsActive BIT DEFAULT 1,
+    InactiveDate DATE NULL
 );
 
 --UNITS
@@ -579,4 +581,29 @@ CREATE TABLE DesktopItems (
     CreatedAt DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (ParentId) REFERENCES DesktopItems(ItemId)
 );
+
+
+
+
+CREATE TABLE Events (
+    EventId INT IDENTITY(1,1) PRIMARY KEY,
+    EventName NVARCHAR(255) NOT NULL,
+    EventDate DATE NOT NULL,
+    Venue NVARCHAR(255) NOT NULL,
+    EventTime TIME NOT NULL,
+	StartDateTime DATETIME NULL,
+	EndDateTime DATETIME NULL,
+	ApprovedBy NVARCHAR(100) NULL;
+);
+
+CREATE TABLE GarbageCollectionSchedules (
+    ScheduleID INT PRIMARY KEY IDENTITY(1,1),
+    TruckCompany NVARCHAR(100) NOT NULL,
+    CollectionDay NVARCHAR(50) NOT NULL,
+    CollectionTime TIME NOT NULL,
+    Status BIT NOT NULL DEFAULT 1, 
+    CreatedDate DATETIME DEFAULT GETDATE(),
+    LastModified DATETIME DEFAULT GETDATE()
+);
+
 */

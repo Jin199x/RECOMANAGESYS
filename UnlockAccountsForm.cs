@@ -16,6 +16,7 @@ namespace RECOMANAGESYS
         public UnlockAccountsForm()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
 
             // Setup columns
             dgvLockedAccounts.Columns.Clear();

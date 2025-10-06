@@ -35,6 +35,16 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+<<<<<<< HEAD
+=======
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <PropertyGroup />
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+>>>>>>> Orange/main
   <ItemGroup>
     <Reference Include="Avalonia, Version=11.3.4.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b, processorArchitecture=MSIL">
       <HintPath>packages\Avalonia.11.3.4\lib\netstandard2.0\Avalonia.dll</HintPath>
@@ -325,6 +335,10 @@
     <EmbeddedResource Include="visitorlog.resx">
       <DependentUpon>visitorlog.cs</DependentUpon>
     </EmbeddedResource>
+<<<<<<< HEAD
+=======
+    <None Include="app.manifest" />
+>>>>>>> Orange/main
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

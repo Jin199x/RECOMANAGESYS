@@ -100,7 +100,7 @@
             // 
             this.lblResidentName.AutoSize = true;
             this.lblResidentName.BackColor = System.Drawing.Color.Transparent;
-            this.lblResidentName.Location = new System.Drawing.Point(238, 181);
+            this.lblResidentName.Location = new System.Drawing.Point(235, 178);
             this.lblResidentName.Name = "lblResidentName";
             this.lblResidentName.Size = new System.Drawing.Size(133, 20);
             this.lblResidentName.TabIndex = 18;
@@ -110,7 +110,7 @@
             // 
             this.lblResidentAddress.AutoSize = true;
             this.lblResidentAddress.BackColor = System.Drawing.Color.Transparent;
-            this.lblResidentAddress.Location = new System.Drawing.Point(238, 220);
+            this.lblResidentAddress.Location = new System.Drawing.Point(255, 221);
             this.lblResidentAddress.Name = "lblResidentAddress";
             this.lblResidentAddress.Size = new System.Drawing.Size(126, 20);
             this.lblResidentAddress.TabIndex = 19;
@@ -120,8 +120,9 @@
             // 
             this.txtResidentID.Location = new System.Drawing.Point(215, 135);
             this.txtResidentID.Name = "txtResidentID";
-            this.txtResidentID.Size = new System.Drawing.Size(100, 26);
+            this.txtResidentID.Size = new System.Drawing.Size(121, 26);
             this.txtResidentID.TabIndex = 20;
+            this.txtResidentID.TextChanged += new System.EventHandler(this.txtResidentID_TextChanged);
             // 
             // btnSearch
             // 
@@ -136,7 +137,7 @@
             // cmbUnits
             // 
             this.cmbUnits.FormattingEnabled = true;
-            this.cmbUnits.Location = new System.Drawing.Point(242, 297);
+            this.cmbUnits.Location = new System.Drawing.Point(215, 295);
             this.cmbUnits.Name = "cmbUnits";
             this.cmbUnits.Size = new System.Drawing.Size(121, 28);
             this.cmbUnits.TabIndex = 22;
@@ -146,7 +147,7 @@
             // 
             this.lblUnits.AutoSize = true;
             this.lblUnits.BackColor = System.Drawing.Color.Transparent;
-            this.lblUnits.Location = new System.Drawing.Point(132, 297);
+            this.lblUnits.Location = new System.Drawing.Point(113, 303);
             this.lblUnits.Name = "lblUnits";
             this.lblUnits.Size = new System.Drawing.Size(50, 20);
             this.lblUnits.TabIndex = 23;
@@ -156,7 +157,7 @@
             // 
             this.label2.AutoSize = true;
             this.label2.BackColor = System.Drawing.Color.Transparent;
-            this.label2.Location = new System.Drawing.Point(116, 264);
+            this.label2.Location = new System.Drawing.Point(113, 264);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(93, 20);
             this.label2.TabIndex = 24;
@@ -166,7 +167,7 @@
             // 
             this.lblUnitStatus.AutoSize = true;
             this.lblUnitStatus.BackColor = System.Drawing.Color.Transparent;
-            this.lblUnitStatus.Location = new System.Drawing.Point(238, 264);
+            this.lblUnitStatus.Location = new System.Drawing.Point(235, 264);
             this.lblUnitStatus.Name = "lblUnitStatus";
             this.lblUnitStatus.Size = new System.Drawing.Size(64, 20);
             this.lblUnitStatus.TabIndex = 25;
@@ -176,7 +177,7 @@
             // 
             this.label3.AutoSize = true;
             this.label3.BackColor = System.Drawing.Color.Transparent;
-            this.label3.Location = new System.Drawing.Point(116, 181);
+            this.label3.Location = new System.Drawing.Point(113, 178);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(123, 20);
             this.label3.TabIndex = 26;
@@ -186,7 +187,7 @@
             // 
             this.label4.AutoSize = true;
             this.label4.BackColor = System.Drawing.Color.Transparent;
-            this.label4.Location = new System.Drawing.Point(96, 220);
+            this.label4.Location = new System.Drawing.Point(113, 221);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(140, 20);
             this.label4.TabIndex = 27;
@@ -194,7 +195,7 @@
             // 
             // dtpPaymentDate
             // 
-            this.dtpPaymentDate.Location = new System.Drawing.Point(242, 345);
+            this.dtpPaymentDate.Location = new System.Drawing.Point(257, 345);
             this.dtpPaymentDate.Name = "dtpPaymentDate";
             this.dtpPaymentDate.Size = new System.Drawing.Size(200, 26);
             this.dtpPaymentDate.TabIndex = 28;
@@ -204,7 +205,7 @@
             // 
             this.label5.AutoSize = true;
             this.label5.BackColor = System.Drawing.Color.Transparent;
-            this.label5.Location = new System.Drawing.Point(96, 345);
+            this.label5.Location = new System.Drawing.Point(111, 345);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(111, 20);
             this.label5.TabIndex = 29;
@@ -214,7 +215,7 @@
             // 
             this.label6.AutoSize = true;
             this.label6.BackColor = System.Drawing.Color.Transparent;
-            this.label6.Location = new System.Drawing.Point(476, 244);
+            this.label6.Location = new System.Drawing.Point(583, 276);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(104, 20);
             this.label6.TabIndex = 30;
@@ -224,7 +225,7 @@
             // 
             this.label7.AutoSize = true;
             this.label7.BackColor = System.Drawing.Color.Transparent;
-            this.label7.Location = new System.Drawing.Point(498, 297);
+            this.label7.Location = new System.Drawing.Point(583, 327);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(82, 20);
             this.label7.TabIndex = 31;
@@ -234,7 +235,7 @@
             // 
             this.label8.AutoSize = true;
             this.label8.BackColor = System.Drawing.Color.Transparent;
-            this.label8.Location = new System.Drawing.Point(489, 345);
+            this.label8.Location = new System.Drawing.Point(583, 380);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(121, 20);
             this.label8.TabIndex = 32;
@@ -244,7 +245,7 @@
             // 
             this.lblDueRate.AutoSize = true;
             this.lblDueRate.BackColor = System.Drawing.Color.Transparent;
-            this.lblDueRate.Location = new System.Drawing.Point(600, 297);
+            this.lblDueRate.Location = new System.Drawing.Point(685, 327);
             this.lblDueRate.Name = "lblDueRate";
             this.lblDueRate.Size = new System.Drawing.Size(128, 20);
             this.lblDueRate.TabIndex = 34;
@@ -254,7 +255,7 @@
             // 
             this.lblMonthCovered.AutoSize = true;
             this.lblMonthCovered.BackColor = System.Drawing.Color.Transparent;
-            this.lblMonthCovered.Location = new System.Drawing.Point(616, 345);
+            this.lblMonthCovered.Location = new System.Drawing.Point(710, 380);
             this.lblMonthCovered.Name = "lblMonthCovered";
             this.lblMonthCovered.Size = new System.Drawing.Size(161, 20);
             this.lblMonthCovered.TabIndex = 35;
@@ -264,7 +265,7 @@
             // 
             this.label9.AutoSize = true;
             this.label9.BackColor = System.Drawing.Color.Transparent;
-            this.label9.Location = new System.Drawing.Point(96, 380);
+            this.label9.Location = new System.Drawing.Point(111, 380);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(87, 20);
             this.label9.TabIndex = 36;
@@ -272,7 +273,7 @@
             // 
             // dtpEndMonth
             // 
-            this.dtpEndMonth.Location = new System.Drawing.Point(242, 380);
+            this.dtpEndMonth.Location = new System.Drawing.Point(257, 380);
             this.dtpEndMonth.Name = "dtpEndMonth";
             this.dtpEndMonth.Size = new System.Drawing.Size(200, 26);
             this.dtpEndMonth.TabIndex = 37;
@@ -281,7 +282,7 @@
             // 
             this.lblAmountPaid.AutoSize = true;
             this.lblAmountPaid.BackColor = System.Drawing.Color.Transparent;
-            this.lblAmountPaid.Location = new System.Drawing.Point(600, 244);
+            this.lblAmountPaid.Location = new System.Drawing.Point(707, 276);
             this.lblAmountPaid.Name = "lblAmountPaid";
             this.lblAmountPaid.Size = new System.Drawing.Size(140, 20);
             this.lblAmountPaid.TabIndex = 38;
