@@ -12,16 +12,22 @@ namespace RECOMANAGESYS
         public docurepo()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             panelDesktop.AutoScroll = true;
+            SetupFilterButtons();
 
-            // Back button
-            buttonBack.Text = "Back";
-            buttonBack.Click += buttonBack_Click;
+            flowBreadcrumb.WrapContents = false;
+            flowBreadcrumb.AutoSize = false;
+            flowBreadcrumb.Height = 25; // fixed height
+            flowBreadcrumb.AutoScroll = false;
 
             LoadDesktopItems(); // load items from DB on start
         }
+        private ToolStripMenuItem activeTypeMenuItem = null; //for Type
+        private ToolStripMenuItem activeDateMenuItem = null;//for date added
+        private ToolStripMenuItem activeModifiedMenuItem = null;//for modified
 
-        // --- UPDATED: RefreshAllData fetches directly from DB ---
+        // RefreshAllData fetches directly from DB
         public void RefreshAllData()
         {
             // Clear and reload desktopItems from DB without changing layout
@@ -40,13 +46,14 @@ namespace RECOMANAGESYS
                         Name = (string)reader["Name"],
                         IsFolder = (bool)reader["IsFolder"],
                         FilePath = reader["FilePath"] == DBNull.Value ? null : (string)reader["FilePath"],
-                        ParentId = reader["ParentId"] == DBNull.Value ? null : (int?)reader["ParentId"]
+                        ParentId = reader["ParentId"] == DBNull.Value ? null : (int?)reader["ParentId"],
+                        CreatedAt = (DateTime)reader["CreatedAt"],
+                        ModifiedAt = (DateTime)reader["ModifiedAt"]
                     };
                     desktopItems.Add(item);
                 }
             }
 
-            // Rebuild parent-child relationships
             foreach (var item in desktopItems)
             {
                 if (item.ParentId.HasValue)
@@ -64,6 +71,189 @@ namespace RECOMANAGESYS
             DisplayItems(currentFolder == null
                 ? desktopItems.Where(d => d.Parent == null).ToList()
                 : currentFolder.Children);
+        }
+        private void SetupFilterButtons()
+        {
+            //TYPE FILTER BUTTON
+            ContextMenuStrip typeMenu = new ContextMenuStrip();
+            var typeMappings = new Dictionary<string, string[]>
+    {
+        { "All Types", null },
+        { "Folders", null },
+        { "Images", new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" } },
+        { "Word Documents", new[] { ".doc", ".docx" } },
+        { "Excel Sheets", new[] { ".xls", ".xlsx" } },
+        { "PowerPoint", new[] { ".ppt", ".pptx" } },
+        { "PDF", new[] { ".pdf" } },
+        { "Text Files", new[] { ".txt" } },
+        { "Music", new[] { ".mp3", ".wav", ".flac", ".aac", ".ogg" } },
+        { "Videos", new[] { ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv" } },
+        { "Other Files", new string[] { } }
+    };
+
+            foreach (var kvp in typeMappings)
+            {
+                typeMenu.Items.Add(CreateTypeMenuItem(kvp.Key, kvp.Value, typeMappings));
+            }
+
+            btnType.Click += (s, e) => typeMenu.Show(btnType, 0, btnType.Height);
+
+            // LAST ADDED FILTER BUTTON
+            ContextMenuStrip addedMenu = new ContextMenuStrip();
+            string[] dateFilters = { "Today", "Last 7 Days", "Last 30 Days", "This Year", "Last Year", "Older" };
+            foreach (var filter in dateFilters)
+            {
+                var menuItem = new ToolStripMenuItem(filter);
+                menuItem.Click += (s, e) =>
+                {
+                    FilterByDate(filter);
+                    SetActiveMenuItem(menuItem, ref activeDateMenuItem);
+                };
+                addedMenu.Items.Add(menuItem);
+            }
+            btnDate.Click += (s, e) => addedMenu.Show(btnDate, 0, btnDate.Height);
+
+            // LAST MODIFIED FILTER BUTTON 
+            ContextMenuStrip modifiedMenu = new ContextMenuStrip();
+            foreach (var filter in dateFilters)
+            {
+                var menuItem = new ToolStripMenuItem(filter);
+                menuItem.Click += (s, e) =>
+                {
+                    FilterByModifiedDate(filter); 
+                    SetActiveMenuItem(menuItem, ref activeModifiedMenuItem);
+                };
+                modifiedMenu.Items.Add(menuItem);
+            }
+            btnModified.Click += (s, e) => modifiedMenu.Show(btnModified, 0, btnModified.Height);
+
+            // RESET FILTER
+            lblResetFilter.Visible = false;
+            lblResetFilter.Text = "Reset Filter";
+            lblResetFilter.Click += (s, e) =>
+            {
+                DisplayItems(currentFolder == null ? desktopItems.Where(d => d.Parent == null).ToList() : currentFolder.Children);
+                lblResetFilter.Visible = false;
+
+                btnType.BackColor = SystemColors.Control;
+                btnDate.BackColor = SystemColors.Control;
+                btnModified.BackColor = SystemColors.Control;
+
+                if (activeTypeMenuItem != null) ResetMenuItem(activeTypeMenuItem);
+                if (activeDateMenuItem != null) ResetMenuItem(activeDateMenuItem);
+                if (activeModifiedMenuItem != null) ResetMenuItem(activeModifiedMenuItem);
+
+                activeTypeMenuItem = null;
+                activeDateMenuItem = null;
+                activeModifiedMenuItem = null;
+            };
+        }
+
+        // HELPER FUNCTIONS
+        private ToolStripMenuItem CreateTypeMenuItem(string displayName, string[] extensions, Dictionary<string, string[]> typeMappings)
+        {
+            var item = new ToolStripMenuItem(displayName);
+            item.Click += (s, e) =>
+            {
+                FilterByType(displayName, extensions, typeMappings);
+                SetActiveMenuItem(item, ref activeTypeMenuItem);
+            };
+            return item;
+        }
+
+        private void SetActiveMenuItem(ToolStripMenuItem clicked, ref ToolStripMenuItem activeItem)
+        {
+            if (activeItem != null) ResetMenuItem(activeItem);
+
+            activeItem = clicked;
+            activeItem.BackColor = Color.DodgerBlue;
+            activeItem.ForeColor = Color.White;
+
+            lblResetFilter.Visible = true;
+        }
+
+        private void ResetMenuItem(ToolStripMenuItem item)
+        {
+            item.BackColor = SystemColors.Control;
+            item.ForeColor = Color.Black;
+        }
+
+        //FILTER BY TYPE
+        private void FilterByType(string displayName, string[] extensions, Dictionary<string, string[]> typeMappings)
+        {
+            List<DesktopItem> itemsToShow = currentFolder == null
+                ? desktopItems.Where(d => d.Parent == null).ToList()
+                : currentFolder.Children;
+
+            if (displayName == "All Types") { }
+            else if (displayName == "Folders") itemsToShow = itemsToShow.Where(d => d.IsFolder).ToList();
+            else if (extensions != null && extensions.Length > 0)
+                itemsToShow = itemsToShow.Where(d => !d.IsFolder && d.FilePath != null && extensions.Contains(System.IO.Path.GetExtension(d.FilePath).ToLower())).ToList();
+            else // Other files
+                itemsToShow = itemsToShow.Where(d => !d.IsFolder && (d.FilePath == null || !typeMappings.Values.Where(v => v != null).Any(exts => exts.Contains(System.IO.Path.GetExtension(d.FilePath).ToLower())))).ToList();
+
+            lblResetFilter.Visible = true;
+            DisplayItems(itemsToShow);
+        }
+
+        // FILTER BY DATE
+        private void FilterByDate(string option)
+        {
+            List<DesktopItem> itemsToShow = currentFolder == null
+                ? desktopItems.Where(d => d.Parent == null).ToList()
+                : currentFolder.Children;
+
+            DateTime now = DateTime.Now;
+
+            switch (option)
+            {
+                case "Today": itemsToShow = itemsToShow.Where(d => d.CreatedAt.Date == now.Date).ToList(); break;
+                case "Last 7 Days": itemsToShow = itemsToShow.Where(d => d.CreatedAt >= now.AddDays(-7)).ToList(); break;
+                case "Last 30 Days": itemsToShow = itemsToShow.Where(d => d.CreatedAt >= now.AddDays(-30)).ToList(); break;
+                case "This Year": itemsToShow = itemsToShow.Where(d => d.CreatedAt.Year == now.Year).ToList(); break;
+                case "Last Year":
+                    DateTime startOfLastYear = new DateTime(now.Year - 1, 1, 1);
+                    DateTime endOfLastYear = new DateTime(now.Year - 1, 12, 31, 23, 59, 59);
+                    itemsToShow = itemsToShow.Where(d => d.CreatedAt >= startOfLastYear && d.CreatedAt <= endOfLastYear).ToList();
+                    break;
+                case "Older":
+                    DateTime startOfThisYear = new DateTime(now.Year, 1, 1);
+                    itemsToShow = itemsToShow.Where(d => d.CreatedAt < startOfThisYear).ToList();
+                    break;
+            }
+
+            lblResetFilter.Visible = true;
+            DisplayItems(itemsToShow);
+        }
+
+        //FILTER BY MODIFIED DATE 
+        private void FilterByModifiedDate(string option)
+        {
+            List<DesktopItem> itemsToShow = currentFolder == null
+                ? desktopItems.Where(d => d.Parent == null).ToList()
+                : currentFolder.Children;
+
+            DateTime now = DateTime.Now;
+
+            switch (option)
+            {
+                case "Today": itemsToShow = itemsToShow.Where(d => d.ModifiedAt.Date == now.Date).ToList(); break;
+                case "Last 7 Days": itemsToShow = itemsToShow.Where(d => d.ModifiedAt >= now.AddDays(-7)).ToList(); break;
+                case "Last 30 Days": itemsToShow = itemsToShow.Where(d => d.ModifiedAt >= now.AddDays(-30)).ToList(); break;
+                case "This Year": itemsToShow = itemsToShow.Where(d => d.ModifiedAt.Year == now.Year).ToList(); break;
+                case "Last Year":
+                    DateTime startOfLastYear = new DateTime(now.Year - 1, 1, 1);
+                    DateTime endOfLastYear = new DateTime(now.Year - 1, 12, 31, 23, 59, 59);
+                    itemsToShow = itemsToShow.Where(d => d.ModifiedAt >= startOfLastYear && d.ModifiedAt <= endOfLastYear).ToList();
+                    break;
+                case "Older":
+                    DateTime startOfThisYear = new DateTime(now.Year, 1, 1);
+                    itemsToShow = itemsToShow.Where(d => d.ModifiedAt < startOfThisYear).ToList();
+                    break;
+            }
+
+            lblResetFilter.Visible = true;
+            DisplayItems(itemsToShow);
         }
 
         private void button2_Click(object sender, EventArgs e) { }
@@ -93,13 +283,30 @@ namespace RECOMANAGESYS
             public List<DesktopItem> Children { get; set; } = new List<DesktopItem>();
             public DesktopItem Parent { get; set; } = null;
             public int? ParentId { get; set; } = null;
+            public DateTime CreatedAt { get; set; }
+            public DateTime ModifiedAt { get; set; }
         }
 
         // Add Folder button
         private void buttonAddFolder_Click(object sender, EventArgs e)
         {
-            AddItemToDatabase("Folder1", true, null);
+            string baseName = "Folder";
+            string newName = baseName;
+            int counter = 1;
+
+            // Get existing folder names in current folder
+            List<string> existingNames = (currentFolder == null
+                ? desktopItems.Where(d => d.Parent == null && d.IsFolder).Select(d => d.Name).ToList()
+                : currentFolder.Children.Where(d => d.IsFolder).Select(d => d.Name).ToList());
+
+            while (existingNames.Contains(newName))
+            {
+                counter++;
+                newName = $"{baseName} {counter}";
+            }
+            AddItemToDatabase(newName, true, null);
         }
+
 
         // Add File button
         private void buttonAddFile_Click(object sender, EventArgs e)
@@ -126,14 +333,16 @@ namespace RECOMANAGESYS
             {
                 conn.Open();
                 SqlCommand cmd = new SqlCommand(
-                    "INSERT INTO DesktopItems (Name, IsFolder, ParentId, IconType, FilePath) OUTPUT INSERTED.ItemId VALUES (@name, @isFolder, @parentId, @icon, @filePath)",
-                    conn
-                );
+                "INSERT INTO DesktopItems (Name, IsFolder, ParentId, IconType, FilePath, CreatedAt, ModifiedAt) OUTPUT INSERTED.ItemId VALUES (@name, @isFolder, @parentId, @icon, @filePath, @created, @modified)",
+                conn);
+
                 cmd.Parameters.AddWithValue("@name", name);
                 cmd.Parameters.AddWithValue("@isFolder", isFolder);
                 cmd.Parameters.AddWithValue("@parentId", parentId.HasValue ? (object)parentId.Value : DBNull.Value);
                 cmd.Parameters.AddWithValue("@icon", isFolder ? "folder" : "file");
                 cmd.Parameters.AddWithValue("@filePath", string.IsNullOrEmpty(filePath) ? DBNull.Value : (object)filePath);
+                cmd.Parameters.AddWithValue("@created", DateTime.Now);
+                cmd.Parameters.AddWithValue("@modified", DateTime.Now);
 
                 int newId = (int)cmd.ExecuteScalar();
 
@@ -173,7 +382,9 @@ namespace RECOMANAGESYS
                         Name = (string)reader["Name"],
                         IsFolder = (bool)reader["IsFolder"],
                         FilePath = reader["FilePath"] == DBNull.Value ? null : (string)reader["FilePath"],
-                        ParentId = reader["ParentId"] == DBNull.Value ? null : (int?)reader["ParentId"]
+                        ParentId = reader["ParentId"] == DBNull.Value ? null : (int?)reader["ParentId"],
+                        CreatedAt = (DateTime)reader["CreatedAt"],
+                        ModifiedAt = (DateTime)reader["ModifiedAt"]
                     };
                     desktopItems.Add(item);
                 }
@@ -203,14 +414,28 @@ namespace RECOMANAGESYS
             nextX = 10;
             nextY = 10;
 
+            if (items.Count == 0)
+            {
+                // Show the No Results picture
+                PictureBox noResults = new PictureBox();
+                noResults.Image = Properties.Resources.noResult; 
+                noResults.SizeMode = PictureBoxSizeMode.Zoom; 
+                noResults.Size = new Size(200, 200); 
+                noResults.Anchor = AnchorStyles.None; 
+                panelDesktop.Controls.Add(noResults);
+                noResults.Left = (panelDesktop.Width - noResults.Width) / 2;
+                noResults.Top = (panelDesktop.Height - noResults.Height) / 2;
+                return; 
+            }
+
+            // Add each item panel
             foreach (var item in items)
             {
                 AddItemPanel(item);
             }
 
-            buttonBack.Enabled = currentFolder != null;
+            UpdateBreadcrumb();
         }
-
         // Create panel for a single DesktopItem
         private void AddItemPanel(DesktopItem item)
         {
@@ -323,6 +548,7 @@ namespace RECOMANAGESYS
                 {
                     currentFolder = item;
                     DisplayItems(item.Children);
+                    UpdateBreadcrumb();
                 }
                 else if (!string.IsNullOrEmpty(item.FilePath))
                 {
@@ -342,6 +568,7 @@ namespace RECOMANAGESYS
                     contextMenu.Items.Clear();
                     contextMenu.Items.Add("Rename");
                     contextMenu.Items.Add("Delete");
+                    contextMenu.Items.Add("Details");
                     contextMenu.ItemClicked -= ContextMenu_ItemClicked;
                     contextMenu.ItemClicked += ContextMenu_ItemClicked;
                     contextMenu.Show(panel, e.Location);
@@ -365,22 +592,91 @@ namespace RECOMANAGESYS
 
                     if (!string.IsNullOrWhiteSpace(newName))
                     {
+                        // Check if name already exists in the same folder (folders and files)
+                        if (IsNameExistsInCurrentFolder(newName, item))
+                        {
+                            MessageBox.Show("An item with this name already exists in this folder.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            return;
+                        }
+
                         RenameItem(item, newName);
+
                         Label lbl = panel.Controls.OfType<Label>().FirstOrDefault();
                         if (lbl != null) lbl.Text = newName;
                     }
                 }
+                else if (e.ClickedItem.Text == "Details")
+                {
+                    contextMenu.Close();
+
+                    DesktopItem detailsItem = (contextMenu.Tag as Panel)?.Tag as DesktopItem;
+                    if (detailsItem == null) return;
+
+                    string typeText;
+                    if (detailsItem.IsFolder)
+                    {
+                        typeText = "Folder";
+                    }
+                    else if (!string.IsNullOrEmpty(detailsItem.FilePath))
+                    {
+                        typeText = System.IO.Path.GetExtension(detailsItem.FilePath).TrimStart('.').ToUpper(); 
+                    }
+                    else
+                    {
+                        typeText = "File";
+                    }
+
+                    string fileSizeText = "N/A";
+                    if (!detailsItem.IsFolder && !string.IsNullOrEmpty(detailsItem.FilePath) && System.IO.File.Exists(detailsItem.FilePath))
+                    {
+                        long bytes = new System.IO.FileInfo(detailsItem.FilePath).Length;
+                        double size = bytes;
+                        string[] units = { "B", "KB", "MB", "GB", "TB" };
+                        int unitIndex = 0;
+                        while (size >= 1024 && unitIndex < units.Length - 1)
+                        {
+                            size /= 1024;
+                            unitIndex++;
+                        }
+                        fileSizeText = $"{size:0.##} {units[unitIndex]}";
+                    }
+
+                    string details = $"Name: {detailsItem.Name}\n" +
+                                     $"Type: {typeText}\n" +
+                                     $"Full Path: {(detailsItem.FilePath ?? "N/A")}\n" +
+                                     $"File Size: {fileSizeText}\n" +
+                                     $"Created At: {detailsItem.CreatedAt}\n" +
+                                     $"Modified At: {detailsItem.ModifiedAt}";
+
+                    MessageBox.Show(details, "Item Details", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+
             }
         }
+    
+        // Helper to check if the name already exists in the same folder
+        private bool IsNameExistsInCurrentFolder(string name, DesktopItem currentItem)
+        {
+            var siblings = currentItem.Parent == null
+                ? desktopItems.Where(d => d.Parent == null)
+                : currentItem.Parent.Children;
+
+            return siblings.Any(d => d.ItemId != currentItem.ItemId && d.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        }
+
 
         private void RenameItem(DesktopItem item, string newName)
         {
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
                 conn.Open();
-                SqlCommand cmd = new SqlCommand("UPDATE DesktopItems SET Name = @name WHERE ItemId = @id", conn);
+                SqlCommand cmd = new SqlCommand(
+                    "UPDATE DesktopItems SET Name = @name, ModifiedAt = @modified WHERE ItemId = @id",
+                    conn
+                );
                 cmd.Parameters.AddWithValue("@name", newName);
                 cmd.Parameters.AddWithValue("@id", item.ItemId);
+                cmd.Parameters.AddWithValue("@modified", DateTime.Now);
                 cmd.ExecuteNonQuery();
             }
 
@@ -392,26 +688,30 @@ namespace RECOMANAGESYS
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
                 conn.Open();
-                SqlCommand cmd = new SqlCommand("DELETE FROM DesktopItems WHERE ItemId = @id OR ParentId = @id", conn);
+
+                string query = @"
+            WITH RecursiveCTE AS (
+                SELECT ItemId
+                FROM DesktopItems
+                WHERE ItemId = @id
+                UNION ALL
+                SELECT d.ItemId
+                FROM DesktopItems d
+                INNER JOIN RecursiveCTE r ON d.ParentId = r.ItemId
+            )
+            DELETE FROM DesktopItems
+            WHERE ItemId IN (SELECT ItemId FROM RecursiveCTE);";
+
+                SqlCommand cmd = new SqlCommand(query, conn);
                 cmd.Parameters.AddWithValue("@id", item.ItemId);
                 cmd.ExecuteNonQuery();
             }
 
+            // Update UI
             if (item.Parent == null)
                 desktopItems.Remove(item);
             else
                 item.Parent.Children.Remove(item);
-        }
-
-        private void buttonBack_Click(object sender, EventArgs e)
-        {
-            if (currentFolder != null)
-            {
-                currentFolder = currentFolder.Parent;
-                DisplayItems(currentFolder == null
-                    ? desktopItems.Where(d => d.Parent == null).ToList()
-                    : currentFolder.Children);
-            }
         }
 
         private void searchbtn_Click(object sender, EventArgs e)
@@ -487,6 +787,71 @@ namespace RECOMANAGESYS
         {
             BackupRestoreManager backupRestoreManager = new BackupRestoreManager(this);
             backupRestoreManager.Show();
+        }
+        private void UpdateBreadcrumb()
+        {
+            flowBreadcrumb.Controls.Clear();
+
+            // Build full path stack
+            List<DesktopItem> path = new List<DesktopItem>();
+            DesktopItem folder = currentFolder;
+            while (folder != null)
+            {
+                path.Insert(0, folder);
+                folder = folder.Parent;
+            }
+
+            // Always show Root first
+            LinkLabel rootLink = new LinkLabel();
+            rootLink.Text = "Root";
+            rootLink.AutoSize = true;
+            rootLink.LinkClicked += (s, e) =>
+            {
+                currentFolder = null;
+                DisplayItems(desktopItems.Where(d => d.Parent == null).ToList());
+                UpdateBreadcrumb();
+            };
+            flowBreadcrumb.Controls.Add(rootLink);
+
+            // If too many levels, compress
+            int maxVisible = 3; // show last 3 folders max
+            if (path.Count > maxVisible)
+            {
+                AddSeparator();
+
+                Label ellipsis = new Label();
+                ellipsis.Text = "...";
+                ellipsis.AutoSize = true;
+                flowBreadcrumb.Controls.Add(ellipsis);
+
+                // Only take last N
+                path = path.Skip(path.Count - maxVisible).ToList();
+            }
+
+            // Render remaining path
+            foreach (var f in path)
+            {
+                AddSeparator();
+
+                LinkLabel link = new LinkLabel();
+                link.Text = f.Name;
+                link.AutoSize = true;
+                link.LinkClicked += (s, e) =>
+                {
+                    currentFolder = f;
+                    DisplayItems(f.Children);
+                    UpdateBreadcrumb();
+                };
+                flowBreadcrumb.Controls.Add(link);
+            }
+        }
+
+        private void AddSeparator()
+        {
+            Label sep = new Label();
+            sep.Text = " > ";
+            sep.AutoSize = true;
+            flowBreadcrumb.Controls.Add(sep);
         }
     }
 }
