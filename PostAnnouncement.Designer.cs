@@ -85,10 +85,10 @@
             // txtTitle
             // 
             this.txtTitle.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtTitle.Location = new System.Drawing.Point(234, 141);
+            this.txtTitle.Location = new System.Drawing.Point(193, 141);
             this.txtTitle.Multiline = true;
             this.txtTitle.Name = "txtTitle";
-            this.txtTitle.Size = new System.Drawing.Size(576, 39);
+            this.txtTitle.Size = new System.Drawing.Size(681, 39);
             this.txtTitle.TabIndex = 22;
             // 
             // lblTitle
@@ -105,9 +105,9 @@
             // 
             // dtpExpire
             // 
-            this.dtpExpire.Location = new System.Drawing.Point(329, 513);
+            this.dtpExpire.Location = new System.Drawing.Point(326, 513);
             this.dtpExpire.Name = "dtpExpire";
-            this.dtpExpire.Size = new System.Drawing.Size(200, 26);
+            this.dtpExpire.Size = new System.Drawing.Size(203, 26);
             this.dtpExpire.TabIndex = 24;
             // 
             // chkNoExpire
