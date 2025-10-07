@@ -21,7 +21,8 @@ namespace RECOMANAGESYS
             flowBreadcrumb.Height = 25; 
             flowBreadcrumb.AutoScroll = false;
 
-            LoadDesktopItems(); 
+            LoadDesktopItems();
+            searchDocu.KeyDown += searchDocu_KeyDown;
         }
         private ToolStripMenuItem activeTypeMenuItem = null; //for Type
         private ToolStripMenuItem activeDateMenuItem = null;//for date added
@@ -226,7 +227,7 @@ namespace RECOMANAGESYS
             DisplayItems(itemsToShow);
         }
 
-        //FILTER BY MODIFIED DATE 
+        //FILTER BY MODIFIED DATE
         private void FilterByModifiedDate(string option)
         {
             List<DesktopItem> itemsToShow = currentFolder == null
@@ -270,8 +271,7 @@ namespace RECOMANAGESYS
         List<DesktopItem> desktopItems = new List<DesktopItem>();
         DesktopItem currentFolder = null; // null = root
 
-        // Context menu for right-click
-        ContextMenuStrip contextMenu = new ContextMenuStrip();
+        ContextMenuStrip contextMenu = new ContextMenuStrip(); // Context menu for right-click
 
         // DesktopItem class
         class DesktopItem
@@ -279,7 +279,7 @@ namespace RECOMANAGESYS
             public int ItemId { get; set; }
             public string Name { get; set; }
             public bool IsFolder { get; set; }
-            public string FilePath { get; set; } = null; // for real files
+            public string FilePath { get; set; } = null;
             public List<DesktopItem> Children { get; set; } = new List<DesktopItem>();
             public DesktopItem Parent { get; set; } = null;
             public int? ParentId { get; set; } = null;
@@ -414,18 +414,26 @@ namespace RECOMANAGESYS
             nextX = 10;
             nextY = 10;
 
-            if (items.Count == 0)
+            if (items.Count == 0) //empty/noresult signs
             {
-                // Show the No Results picture
-                PictureBox noResults = new PictureBox();
-                noResults.Image = Properties.Resources.noResult; 
-                noResults.SizeMode = PictureBoxSizeMode.Zoom; 
-                noResults.Size = new Size(200, 200); 
-                noResults.Anchor = AnchorStyles.None; 
-                panelDesktop.Controls.Add(noResults);
-                noResults.Left = (panelDesktop.Width - noResults.Width) / 2;
-                noResults.Top = (panelDesktop.Height - noResults.Height) / 2;
-                return; 
+                PictureBox placeholder = new PictureBox();
+                placeholder.SizeMode = PictureBoxSizeMode.Zoom;
+                placeholder.Size = new Size(200, 200);
+                placeholder.Anchor = AnchorStyles.None;
+
+                if (currentFolder == null)
+                {
+                    placeholder.Image = Properties.Resources.noResult;
+                }
+                else
+                {
+                    placeholder.Image = Properties.Resources.emptyFolder;
+                }
+
+                panelDesktop.Controls.Add(placeholder);
+                placeholder.Left = (panelDesktop.Width - placeholder.Width) / 2;
+                placeholder.Top = (panelDesktop.Height - placeholder.Height) / 2;
+                return;
             }
 
             // Add each item panel
@@ -583,7 +591,7 @@ namespace RECOMANAGESYS
                 if (e.ClickedItem.Text == "Delete")
                 {
                     DeleteItem(item);
-                    panelDesktop.Controls.Remove(panel);
+                    RemoveItemPanel(panel);
                 }
                 else if (e.ClickedItem.Text == "Rename")
                 {
@@ -690,29 +698,51 @@ namespace RECOMANAGESYS
                 conn.Open();
 
                 string query = @"
-            WITH RecursiveCTE AS (
-                SELECT ItemId
-                FROM DesktopItems
-                WHERE ItemId = @id
-                UNION ALL
-                SELECT d.ItemId
-                FROM DesktopItems d
-                INNER JOIN RecursiveCTE r ON d.ParentId = r.ItemId
-            )
-            DELETE FROM DesktopItems
-            WHERE ItemId IN (SELECT ItemId FROM RecursiveCTE);";
+                 WITH RecursiveCTE AS (SELECT ItemId FROM DesktopItems WHERE ItemId = @id
+                 UNION ALL
+                 SELECT d.ItemId FROM DesktopItems d INNER JOIN RecursiveCTE r ON d.ParentId = r.ItemId)
+                 DELETE FROM DesktopItems
+                 WHERE ItemId IN (SELECT ItemId FROM RecursiveCTE);";
 
                 SqlCommand cmd = new SqlCommand(query, conn);
                 cmd.Parameters.AddWithValue("@id", item.ItemId);
                 cmd.ExecuteNonQuery();
             }
 
-            // Update UI
+            // Update in-memory data
             if (item.Parent == null)
                 desktopItems.Remove(item);
             else
                 item.Parent.Children.Remove(item);
+
+            // Smooth UI reflow
+            Panel panelToRemove = panelDesktop.Controls
+                                   .OfType<Panel>()
+                                   .FirstOrDefault(p => p.Tag == item);
+            if (panelToRemove != null)
+                RemoveItemPanel(panelToRemove); // uses the smooth reflow function
         }
+        private void RemoveItemPanel(Panel itemPanel)
+        {
+            panelDesktop.Controls.Remove(itemPanel);
+
+            nextX = 10;
+            nextY = 10;
+
+            foreach (Control ctrl in panelDesktop.Controls)
+            {
+                ctrl.Left = nextX;
+                ctrl.Top = nextY;
+
+                nextX += itemWidth + padding;
+                if (nextX + itemWidth > panelDesktop.Width)
+                {
+                    nextX = 10;
+                    nextY += itemHeight + padding;
+                }
+            }
+        }
+
 
         private void searchbtn_Click(object sender, EventArgs e)
         {
@@ -782,6 +812,25 @@ namespace RECOMANAGESYS
                     : currentFolder.Children);
             }
         }
+        private void searchDocu_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                e.SuppressKeyPress = true; // prevents multiline
+
+                string query = searchDocu.Text.Trim();
+                if (string.IsNullOrEmpty(query))
+                {
+                    DisplayItems(currentFolder == null
+                        ? desktopItems.Where(d => d.Parent == null).ToList()
+                        : currentFolder.Children);
+                }
+                else
+                {
+                    searchbtn.PerformClick();
+                }
+            }
+        }
 
         private void btnSafeguard_Click(object sender, EventArgs e)
         {
@@ -803,7 +852,7 @@ namespace RECOMANAGESYS
 
             // Always show Root first
             LinkLabel rootLink = new LinkLabel();
-            rootLink.Text = "Root";
+            rootLink.Text = "Repository";
             rootLink.AutoSize = true;
             rootLink.LinkClicked += (s, e) =>
             {

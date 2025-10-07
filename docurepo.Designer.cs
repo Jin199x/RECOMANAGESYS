@@ -30,6 +30,8 @@
         {
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.lblResetFilter = new System.Windows.Forms.Label();
+            this.flowBreadcrumb = new System.Windows.Forms.FlowLayoutPanel();
             this.panel3 = new System.Windows.Forms.Panel();
             this.btnDate = new System.Windows.Forms.Button();
             this.btnModified = new System.Windows.Forms.Button();
@@ -40,8 +42,6 @@
             this.buttonAddFolder = new System.Windows.Forms.Button();
             this.buttonAddFile = new System.Windows.Forms.Button();
             this.btnSafeguard = new System.Windows.Forms.Button();
-            this.flowBreadcrumb = new System.Windows.Forms.FlowLayoutPanel();
-            this.lblResetFilter = new System.Windows.Forms.Label();
             this.panel2.SuspendLayout();
             this.panel3.SuspendLayout();
             this.SuspendLayout();
@@ -75,6 +75,25 @@
             this.panel2.Size = new System.Drawing.Size(1192, 751);
             this.panel2.TabIndex = 1;
             this.panel2.Paint += new System.Windows.Forms.PaintEventHandler(this.panel2_Paint);
+            // 
+            // lblResetFilter
+            // 
+            this.lblResetFilter.AutoSize = true;
+            this.lblResetFilter.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblResetFilter.ForeColor = System.Drawing.SystemColors.WindowFrame;
+            this.lblResetFilter.Location = new System.Drawing.Point(432, 142);
+            this.lblResetFilter.Name = "lblResetFilter";
+            this.lblResetFilter.Size = new System.Drawing.Size(91, 20);
+            this.lblResetFilter.TabIndex = 16;
+            this.lblResetFilter.Text = "Reset Filter";
+            // 
+            // flowBreadcrumb
+            // 
+            this.flowBreadcrumb.BackColor = System.Drawing.Color.Transparent;
+            this.flowBreadcrumb.Location = new System.Drawing.Point(36, 100);
+            this.flowBreadcrumb.Name = "flowBreadcrumb";
+            this.flowBreadcrumb.Size = new System.Drawing.Size(523, 28);
+            this.flowBreadcrumb.TabIndex = 15;
             // 
             // panel3
             // 
@@ -139,6 +158,7 @@
             // searchDocu
             // 
             this.searchDocu.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.searchDocu.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.searchDocu.Location = new System.Drawing.Point(762, 34);
             this.searchDocu.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.searchDocu.Multiline = true;
@@ -196,25 +216,6 @@
             this.btnSafeguard.Text = "Backup Restore Manager";
             this.btnSafeguard.UseVisualStyleBackColor = false;
             this.btnSafeguard.Click += new System.EventHandler(this.btnSafeguard_Click);
-            // 
-            // flowBreadcrumb
-            // 
-            this.flowBreadcrumb.BackColor = System.Drawing.Color.Transparent;
-            this.flowBreadcrumb.Location = new System.Drawing.Point(36, 100);
-            this.flowBreadcrumb.Name = "flowBreadcrumb";
-            this.flowBreadcrumb.Size = new System.Drawing.Size(523, 28);
-            this.flowBreadcrumb.TabIndex = 15;
-            // 
-            // lblResetFilter
-            // 
-            this.lblResetFilter.AutoSize = true;
-            this.lblResetFilter.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblResetFilter.ForeColor = System.Drawing.SystemColors.WindowFrame;
-            this.lblResetFilter.Location = new System.Drawing.Point(432, 142);
-            this.lblResetFilter.Name = "lblResetFilter";
-            this.lblResetFilter.Size = new System.Drawing.Size(91, 20);
-            this.lblResetFilter.TabIndex = 16;
-            this.lblResetFilter.Text = "Reset Filter";
             // 
             // docurepo
             // 

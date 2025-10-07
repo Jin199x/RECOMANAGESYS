@@ -103,7 +103,7 @@ namespace RECOMANAGESYS
                     lblMessage.Text = reader["Message"].ToString();
                     lblMessage.Font = new Font("Arial", 9, FontStyle.Regular);
                     lblMessage.AutoSize = true;
-                    lblMessage.MaximumSize = new Size(panel.Width - 150, 0);
+                    lblMessage.MaximumSize = new Size(panel.Width - 180, 0);
                     lblMessage.BackColor = Color.Transparent;
                     container.Controls.Add(lblMessage);
 
@@ -118,15 +118,17 @@ namespace RECOMANAGESYS
                     btnEdit.Text = "Edit";
                     btnEdit.Tag = announcementId;
                     btnEdit.Width = 60;
-                    btnEdit.Location = new Point(panel.Width - 140, 10);
+                    btnEdit.Height = 28;
+                    btnEdit.Location = new Point(panel.Width - 160, 10);
                     btnEdit.Click += (s, e) => EditAnnouncement((int)btnEdit.Tag);
 
                     // Delete Button
                     Button btnDelete = new Button();
                     btnDelete.Text = "Delete";
                     btnDelete.Tag = announcementId;
-                    btnDelete.Width = 60;
-                    btnDelete.Location = new Point(panel.Width - 70, 10);
+                    btnDelete.Width = 80;
+                    btnDelete.Height = 28;
+                    btnDelete.Location = new Point(panel.Width - 90, 10);
                     btnDelete.Click += (s, e) => DeleteAnnouncement((int)btnDelete.Tag);
 
                     panel.Controls.Add(btnEdit);

@@ -121,6 +121,9 @@
   <data name="4e6ed6cc-4ae1-4591-8649-0704acde5ed2" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\4e6ed6cc-4ae1-4591-8649-0704acde5ed2.jpg;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="emptyFolder" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\emptyFolder.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="excelIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\excelIcon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
