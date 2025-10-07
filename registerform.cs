@@ -534,42 +534,7 @@ CREATE TABLE TBL_VisitorsLog(
     TimeOut DATETIME NULL
 );
 
---RESIDENTS(restored per original)
-CREATE TABLE Residents (
-    HomeownerID INT PRIMARY KEY,
-    FirstName NVARCHAR(50),
-    MiddleName NVARCHAR(50),
-    LastName NVARCHAR(50),
-    HomeAddress NVARCHAR(255),
-    ContactNumber NVARCHAR(15),
-    EmailAddress NVARCHAR(100),
-    EmergencyContactPerson NVARCHAR(100),
-    EmergencyContactNumber NVARCHAR(15),
-    ResidencyType NVARCHAR(50),
-    IsActive BIT DEFAULT 1,
-    InactiveDate DATE NULL
-);
 
---UNITS
-CREATE TABLE TBL_Units (
-    UnitID INT IDENTITY(1,1) PRIMARY KEY,
-    UnitNumber NVARCHAR(20),
-    UnitType NVARCHAR(50),
-    Block NVARCHAR(10),
-    IsOccupied BIT NOT NULL DEFAULT 0
-);
-
---HOMEOWNER - UNITS(links Residents, Units, and Users)
-CREATE TABLE HomeownerUnits (
-    HomeownerID INT NOT NULL,
-    UnitID INT NOT NULL,
-    DateOfOwnership DATETIME,
-    ApprovedByUserID INT NULL,
-    PRIMARY KEY (HomeownerID, UnitID),
-    FOREIGN KEY (HomeownerID) REFERENCES Residents(HomeownerID),
-    FOREIGN KEY (UnitID) REFERENCES TBL_Units(UnitID),
-    FOREIGN KEY (ApprovedByUserID) REFERENCES Users(UserID)
-);
 
 -- Docu repo SQL storage
 CREATE TABLE DesktopItems (
@@ -604,4 +569,49 @@ CREATE TABLE GarbageCollectionSchedules (
     CreatedDate DATETIME DEFAULT GETDATE(),
     LastModified DATETIME DEFAULT GETDATE()
 );
+
+CREATE TABLE Residents (
+    HomeownerID INT PRIMARY KEY, 
+    FirstName NVARCHAR(50),
+    MiddleName NVARCHAR(50),
+    LastName NVARCHAR(50),
+    HomeAddress NVARCHAR(255),
+    ContactNumber NVARCHAR(15),
+    EmailAddress NVARCHAR(100),
+    EmergencyContactPerson NVARCHAR(100),
+    EmergencyContactNumber NVARCHAR(15),
+    ResidencyType NVARCHAR(50),
+    IsActive BIT DEFAULT 1,
+    InactiveDate DATE NULL,
+    DateRegistered DATETIME DEFAULT GETDATE()
+);
+
+
+CREATE TABLE TBL_Units (
+    UnitID INT IDENTITY(1,1) PRIMARY KEY,
+    UnitNumber NVARCHAR(20),
+    UnitType NVARCHAR(50),
+    Block NVARCHAR(10),
+    TotalRooms INT NULL,
+    AvailableRooms INT NULL,
+    IsOccupied BIT NOT NULL DEFAULT 0,
+    CONSTRAINT UQ_UnitNumber_Block UNIQUE (UnitNumber, Block),
+    CONSTRAINT CK_Rooms CHECK (AvailableRooms <= TotalRooms)
+);
+
+
+CREATE TABLE HomeownerUnits (
+    HomeownerUnitID INT IDENTITY(1,1) PRIMARY KEY,
+    HomeownerID INT NOT NULL,
+    UnitID INT NOT NULL,
+    DateOfOwnership DATETIME,
+    DateOfOwnershipEnd DATETIME NULL,
+    ApprovedByUserID INT NULL,
+    IsCurrent BIT DEFAULT 1,
+
+    CONSTRAINT FK_HomeownerUnits_Resident FOREIGN KEY (HomeownerID) REFERENCES Residents(HomeownerID),
+    CONSTRAINT FK_HomeownerUnits_Unit FOREIGN KEY (UnitID) REFERENCES TBL_Units(UnitID),
+    CONSTRAINT FK_HomeownerUnits_User FOREIGN KEY (ApprovedByUserID) REFERENCES Users(UserID)
+);
+
 */
