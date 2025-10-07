@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Windows.Forms;
 
 namespace RECOMANAGESYS
@@ -31,27 +32,31 @@ namespace RECOMANAGESYS
             {
                 using (SqlConnection conn = DatabaseHelper.GetConnection())
                 {
-                    conn.Open();
                     string query = @"
-                        SELECT
-                            r.HomeownerID,
-                            ISNULL(r.FirstName, '') AS FirstName,
-                            ISNULL(r.MiddleName, '') AS MiddleName,
-                            ISNULL(r.LastName, '') AS LastName,
-                            ISNULL(r.HomeAddress, '') AS HomeAddress,
-                            ISNULL(r.ContactNumber, '') AS ContactNumber,
-                            ISNULL(r.EmailAddress, '') AS EmailAddress,
-                            ISNULL(r.EmergencyContactPerson, '') AS EmergencyContactPerson,
-                            ISNULL(r.EmergencyContactNumber, '') AS EmergencyContactNumber,
-                            ISNULL(r.ResidencyType, '') AS ResidencyType,
-                            -- Grab an ApprovedByUserID if present (top 1); otherwise 0
-                            (SELECT TOP 1 ISNULL(hu.ApprovedByUserID, 0) FROM HomeownerUnits hu WHERE hu.HomeownerID = r.HomeownerID) AS ApprovedByUserID,
-                            -- Count units per homeowner
-                            (SELECT COUNT(*) FROM HomeownerUnits hu WHERE hu.HomeownerID = r.HomeownerID) AS UnitsAcquired
-                        FROM Residents r
-                        WHERE r.IsActive = 1
-                        ORDER BY r.HomeownerID;
-                    ";
+                            SELECT
+                                r.HomeownerID,
+                                ISNULL(r.FirstName, '') AS FirstName,
+                                ISNULL(r.MiddleName, '') AS MiddleName,
+                                ISNULL(r.LastName, '') AS LastName,
+                                ISNULL(r.HomeAddress, '') AS HomeAddress,
+                                ISNULL(r.ContactNumber, '') AS ContactNumber,
+                                ISNULL(r.EmailAddress, '') AS EmailAddress,
+                                ISNULL(r.EmergencyContactPerson, '') AS EmergencyContactPerson,
+                                ISNULL(r.EmergencyContactNumber, '') AS EmergencyContactNumber,
+                                ISNULL(r.ResidencyType, '') AS ResidencyType,
+                              
+                                (SELECT TOP 1 ISNULL(hu.ApprovedByUserID, 0) 
+                                 FROM HomeownerUnits hu 
+                                 WHERE hu.HomeownerID = r.HomeownerID 
+                                 ORDER BY hu.DateOfOwnership DESC) AS ApprovedByUserID,
+                             
+                                (SELECT COUNT(*) 
+                                 FROM HomeownerUnits hu 
+                                 WHERE hu.HomeownerID = r.HomeownerID 
+                                   AND hu.IsCurrent = 1) AS UnitsAcquired
+                            FROM Residents r
+                            WHERE r.IsActive = 1
+                            ORDER BY r.HomeownerID;";
 
                     SqlDataAdapter adapter = new SqlDataAdapter(query, conn);
                     DataTable dt = new DataTable();
@@ -297,103 +302,123 @@ namespace RECOMANAGESYS
         {
             if (DGVResidents.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Please select a homeowner to delete.", "No Selection",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please select a homeowner first.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            if (MessageBox.Show(
-                    "This will mark the homeowner as deleted and release their units.\n\n" +
-                    "Are you sure you want to proceed?",
-                    "CONFIRM DELETE",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Warning) != DialogResult.Yes)
+            int homeownerId = Convert.ToInt32(DGVResidents.SelectedRows[0].Cells["HomeownerID"].Value);
+
+            using (var unitsForm = new UnitsForm(homeownerId))
             {
-                return;
-            }
+                if (unitsForm.ShowDialog() == DialogResult.OK)
+                {
+                    foreach (int unitId in unitsForm.SelectedUnitIds)
+                    {
+                        UnregisterUnit(homeownerId, unitId);
+                    }
 
+                    MessageBox.Show("Selected unit(s) successfully unregistered.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadHomeowners(); 
+                }
+            }
+        }
+        private void UnregisterUnit(int homeownerId, int unitId)
+        {
             try
             {
-                int homeownerId = Convert.ToInt32(DGVResidents.SelectedRows[0].Cells["HomeownerID"].Value);
-                string homeownerName = $"{DGVResidents.SelectedRows[0].Cells["FirstName"].Value} {DGVResidents.SelectedRows[0].Cells["LastName"].Value}";
-
                 using (SqlConnection conn = DatabaseHelper.GetConnection())
                 {
                     conn.Open();
-
-                    using (SqlTransaction transaction = conn.BeginTransaction())
+                    using (SqlTransaction tran = conn.BeginTransaction())
                     {
                         try
                         {
-                            // 1. Get units owned by resident
-                            List<int> unitIds = new List<int>();
-                            string getUnitsQuery = @"SELECT UnitID FROM HomeownerUnits WHERE HomeownerID = @id";
-
-                            using (SqlCommand getUnitsCmd = new SqlCommand(getUnitsQuery, conn, transaction))
+                            string unitType;
+                            using (SqlCommand cmd = new SqlCommand("SELECT UnitType FROM TBL_Units WHERE UnitID = @unitId", conn, tran))
                             {
-                                getUnitsCmd.Parameters.AddWithValue("@id", homeownerId);
-                                using (SqlDataReader reader = getUnitsCmd.ExecuteReader())
+                                cmd.Parameters.AddWithValue("@unitId", unitId);
+                                object o = cmd.ExecuteScalar();
+                                unitType = o == DBNull.Value || o == null ? "" : o.ToString();
+                            }
+
+                            string residencyType;
+                            using (SqlCommand cmd = new SqlCommand("SELECT ResidencyType FROM Residents WHERE HomeownerID = @homeownerId", conn, tran))
+                            {
+                                cmd.Parameters.AddWithValue("@homeownerId", homeownerId);
+                                object o = cmd.ExecuteScalar();
+                                residencyType = o == DBNull.Value || o == null ? "" : o.ToString();
+                            }
+
+                            using (SqlCommand cmd = new SqlCommand(
+                                @"UPDATE HomeownerUnits
+                          SET IsCurrent = 0, DateOfOwnershipEnd = ISNULL(DateOfOwnershipEnd, GETDATE())
+                          WHERE HomeownerID = @homeownerId AND UnitID = @unitId AND IsCurrent = 1", conn, tran))
+                            {
+                                cmd.Parameters.AddWithValue("@homeownerId", homeownerId);
+                                cmd.Parameters.AddWithValue("@unitId", unitId);
+                                cmd.ExecuteNonQuery();
+                            }
+
+                            if (string.Equals(unitType, "Apartment", StringComparison.OrdinalIgnoreCase) &&
+                                string.Equals(residencyType, "Tenant", StringComparison.OrdinalIgnoreCase))
+                            {
+                                using (SqlCommand cmd = new SqlCommand(
+                                    "UPDATE TBL_Units SET AvailableRooms = ISNULL(AvailableRooms,0) + 1 WHERE UnitID = @unitId", conn, tran))
                                 {
-                                    while (reader.Read())
+                                    cmd.Parameters.AddWithValue("@unitId", unitId);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+
+                            if (!string.Equals(unitType, "Apartment", StringComparison.OrdinalIgnoreCase))
+                            {
+                                using (SqlCommand cmd = new SqlCommand(
+                                    "SELECT COUNT(*) FROM HomeownerUnits WHERE UnitID = @unitId AND IsCurrent = 1", conn, tran))
+                                {
+                                    cmd.Parameters.AddWithValue("@unitId", unitId);
+                                    int remaining = Convert.ToInt32(cmd.ExecuteScalar());
+                                    if (remaining == 0)
                                     {
-                                        unitIds.Add(reader.GetInt32(0));
+                                        using (SqlCommand upd = new SqlCommand(
+                                            "UPDATE TBL_Units SET IsOccupied = 0 WHERE UnitID = @unitId", conn, tran))
+                                        {
+                                            upd.Parameters.AddWithValue("@unitId", unitId);
+                                            upd.ExecuteNonQuery();
+                                        }
                                     }
                                 }
                             }
 
-                            // 2. Mark units as available
-                            foreach (int unitId in unitIds)
+                            using (SqlCommand checkCmd = new SqlCommand(
+                                "SELECT COUNT(*) FROM HomeownerUnits WHERE HomeownerID = @homeownerId AND IsCurrent = 1", conn, tran))
                             {
-                                using (SqlCommand updateUnitsCmd =
-                                       new SqlCommand("UPDATE TBL_Units SET IsOccupied = 0 WHERE UnitID = @unitId", conn, transaction))
+                                checkCmd.Parameters.AddWithValue("@homeownerId", homeownerId);
+                                int activeLinks = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+                                if (activeLinks == 0)
                                 {
-                                    updateUnitsCmd.Parameters.AddWithValue("@unitId", unitId);
-                                    updateUnitsCmd.ExecuteNonQuery();
+                                    using (SqlCommand deactivate = new SqlCommand(
+                                        "UPDATE Residents SET IsActive = 0, InactiveDate = GETDATE() WHERE HomeownerID = @homeownerId", conn, tran))
+                                    {
+                                        deactivate.Parameters.AddWithValue("@homeownerId", homeownerId);
+                                        deactivate.ExecuteNonQuery();
+                                    }
                                 }
                             }
 
-                            // 3. Mark resident as inactive and record InactiveDate
-                            using (SqlCommand markInactiveCmd =
-                                   new SqlCommand("UPDATE Residents SET IsActive = 0, InactiveDate = @inactiveDate WHERE HomeownerID = @id", conn, transaction))
-                            {
-                                markInactiveCmd.Parameters.AddWithValue("@id", homeownerId);
-                                markInactiveCmd.Parameters.AddWithValue("@inactiveDate", DateTime.Now.Date);
-                                markInactiveCmd.ExecuteNonQuery();
-                            }
-
-                            // **DO NOT DELETE HomeownerUnits link from DB**
-                            // Leave HomeownerUnits entries so monthdues can still reference them
-                            // This ensures old dues will still show in monthdues
-
-                            transaction.Commit();
-                            if (MonthDuesControl != null)
-                            {
-                                MonthDuesControl.ResidentFilterComboBox.SelectedIndex = 0; // reset to "All Residents"
-                                MonthDuesControl.LoadResidentsList();                 // refresh the list
-                            }
-
-                            MessageBox.Show(
-                                $"Homeowner marked as deleted:\n- {homeownerName}\n- {unitIds.Count} unit(s) released\n\n" +
-                                "Historical monthly dues will still display correctly.",
-                                "Deletion Complete",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Information);
-
-                            LoadHomeowners();
+                            tran.Commit();
                         }
-                        catch (Exception ex2)
+                        catch
                         {
-                            transaction.Rollback();
-                            MessageBox.Show($"Error during deletion: {ex2.Message}", "Error",
-                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            tran.Rollback();
+                            throw;
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error in delete process: {ex.Message}", "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error unregistering unit: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -408,8 +433,24 @@ namespace RECOMANAGESYS
                     int homeownerId = Convert.ToInt32(DGVResidents.SelectedRows[0].Cells["HomeownerID"].Value);
                     string residencyType = DGVResidents.SelectedRows[0].Cells["ResidencyType"].Value.ToString();
 
-                    AddUnits addUnitsForm = new AddUnits(homeownerId, residencyType);
+                    if (residencyType.Equals("Tenant", StringComparison.OrdinalIgnoreCase) ||
+                        residencyType.Equals("Caretaker", StringComparison.OrdinalIgnoreCase))
+                    {
+                        using (SqlConnection conn = DatabaseHelper.GetConnection())
+                        {
+                            conn.Open();
+                            string q = "SELECT COUNT(*) FROM TBL_Units WHERE UnitType = 'Apartment' AND AvailableRooms > 0";
+                            int available = Convert.ToInt32(new SqlCommand(q, conn).ExecuteScalar());
+                            if (available == 0)
+                            {
+                                MessageBox.Show("No available apartment rooms for this residency type.",
+                                    "No Rooms Available", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                return;
+                            }
+                        }
+                    }
 
+                    AddUnits addUnitsForm = new AddUnits(homeownerId, residencyType);
                     if (addUnitsForm.ShowDialog() == DialogResult.OK)
                     {
                         LoadHomeowners();
@@ -429,7 +470,6 @@ namespace RECOMANAGESYS
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
-
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
 
@@ -521,9 +561,20 @@ namespace RECOMANAGESYS
                     UnitID,
                     UnitNumber,
                     Block,
-                    UnitType,                    
-                    CASE WHEN IsOccupied = 1 THEN 'Occupied' ELSE 'Available' END AS Status
-               FROM TBL_Units
+                    UnitType,
+                    TotalRooms,
+                    AvailableRooms,
+                    CASE 
+                        WHEN UnitType = 'Apartment' AND AvailableRooms > 0 AND AvailableRooms < TotalRooms 
+                            THEN 'Partially Occupied (' + CAST(AvailableRooms AS NVARCHAR(10)) + ' Available)'
+                        WHEN UnitType = 'Apartment' AND AvailableRooms = 0 
+                            THEN 'Fully Occupied'
+                        WHEN UnitType = 'Apartment' AND AvailableRooms = TotalRooms 
+                            THEN 'Available'
+                        WHEN IsOccupied = 1 THEN 'Occupied'
+                        ELSE 'Available'
+                    END AS Status
+                FROM TBL_Units
                 ORDER BY 
                     TRY_CAST(UnitNumber AS INT),  
                     UnitNumber;";
@@ -533,19 +584,27 @@ namespace RECOMANAGESYS
                     DataTable dt = new DataTable();
                     adapter.Fill(dt);
 
-
-                    Form unitsForm = new Form();
-                    unitsForm.Text = "All Units Information";
-                    unitsForm.Width = 900;
-                    unitsForm.Height = 500;
+                    Form unitsForm = new Form
+                    {
+                        Text = "All Units Information",
+                        Width = 1000,
+                        Height = 550,
+                        StartPosition = FormStartPosition.CenterScreen
+                    };
 
                     DataGridView dgv = new DataGridView
                     {
                         Dock = DockStyle.Fill,
                         DataSource = dt,
                         ReadOnly = true,
-                        AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+                        AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                        SelectionMode = DataGridViewSelectionMode.FullRowSelect
                     };
+
+                    dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(70, 130, 180);
+                    dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+                    dgv.EnableHeadersVisualStyles = false;
+                    dgv.RowTemplate.Height = 35;
 
                     unitsForm.Controls.Add(dgv);
                     unitsForm.ShowDialog();

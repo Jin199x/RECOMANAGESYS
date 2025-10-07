@@ -244,6 +244,12 @@
     <Compile Include="scheduling.Designer.cs">
       <DependentUpon>scheduling.cs</DependentUpon>
     </Compile>
+    <Compile Include="UnitsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UnitsForm.Designer.cs">
+      <DependentUpon>UnitsForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="UnlockAccountsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -322,6 +328,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="scheduling.resx">
       <DependentUpon>scheduling.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UnitsForm.resx">
+      <DependentUpon>UnitsForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UnlockAccountsForm.resx">
       <DependentUpon>UnlockAccountsForm.cs</DependentUpon>

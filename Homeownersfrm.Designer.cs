@@ -122,11 +122,11 @@
             // 
             // Deletebtn
             // 
-            this.Deletebtn.Location = new System.Drawing.Point(523, 118);
+            this.Deletebtn.Location = new System.Drawing.Point(523, 110);
             this.Deletebtn.Name = "Deletebtn";
-            this.Deletebtn.Size = new System.Drawing.Size(75, 23);
+            this.Deletebtn.Size = new System.Drawing.Size(161, 31);
             this.Deletebtn.TabIndex = 13;
-            this.Deletebtn.Text = "Delete";
+            this.Deletebtn.Text = "Unregister";
             this.Deletebtn.UseVisualStyleBackColor = true;
             this.Deletebtn.Click += new System.EventHandler(this.Deletebtn_Click);
             // 

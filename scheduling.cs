@@ -127,7 +127,7 @@ namespace RECOMANAGESYS
                     DGVEvents.Columns["ScheduleDisplay"].HeaderText = "Schedule";
                     DGVEvents.Columns["ScheduleDisplay"].Width = 400;
                     DGVEvents.Columns["ScheduleDisplay"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
-                    DGVEvents.Columns["ScheduleDisplay"].DefaultCellStyle.WrapMode = DataGridViewTriState.True; 
+                    DGVEvents.Columns["ScheduleDisplay"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
                 }
 
                 if (DGVEvents.Columns["ApprovedBy"] != null)
@@ -498,6 +498,7 @@ namespace RECOMANAGESYS
                     CreatedDate
                 FROM GarbageCollectionSchedules
                 ORDER BY 
+                    CASE WHEN Status = 1 THEN 1 ELSE 2 END,  -- Active first (1), then Inactive (2)
                     CASE CollectionDay
                         WHEN 'Monday' THEN 1
                         WHEN 'Tuesday' THEN 2
@@ -508,7 +509,7 @@ namespace RECOMANAGESYS
                         WHEN 'Sunday' THEN 7
                         ELSE 8
                     END,
-                    Status DESC,
+                    CollectionTime,
                     CreatedDate DESC";
 
                     SqlDataAdapter adapter = new SqlDataAdapter(query, conn);
@@ -542,8 +543,8 @@ namespace RECOMANAGESYS
             }
 
             dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells;
-
-            dgv.ScrollBars = ScrollBars.Both;  
+            dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgv.ScrollBars = ScrollBars.Both;
 
             dgv.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgv.ReadOnly = true;
@@ -565,8 +566,8 @@ namespace RECOMANAGESYS
 
             dgv.Dock = DockStyle.None;
             dgv.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-
         }
+        
         private void DGVGarbageSched_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
@@ -585,7 +586,7 @@ namespace RECOMANAGESYS
 
         private void Tab2GarbageSched_Click(object sender, EventArgs e)
         {
-              LoadGarbageSchedules();
+            LoadGarbageSchedules();
             ClearGarbageForm();
         }
 
@@ -604,7 +605,17 @@ namespace RECOMANAGESYS
             }
 
             if (!ValidateGarbageInputs()) return;
-
+            if (cmbStatus.SelectedItem?.ToString() == "Active")
+            {
+                if (IsActiveScheduleExistsForDay(cmbDay.SelectedItem?.ToString()))
+                {
+                    MessageBox.Show($"There is already an active garbage collection schedule for {cmbDay.SelectedItem}. " +
+                                  "You cannot have multiple active schedules for the same day.",
+                                  "Schedule Conflict",
+                                  MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+            }
             try
             {
                 using (SqlConnection conn = DatabaseHelper.GetConnection())
@@ -688,6 +699,17 @@ namespace RECOMANAGESYS
         private void button1_Click(object sender, EventArgs e)
         {
             if (!ValidateGarbageInputs()) return;
+            if (currentScheduleID == 0) // Only check for new records, not updates
+            {
+                if (IsActiveScheduleExistsForDay(cmbDay.SelectedItem?.ToString()))
+                {
+                    MessageBox.Show($"There is already an active garbage collection schedule for {cmbDay.SelectedItem}. " +
+                                  "Please set the existing schedule to Inactive before creating a new one for this day.",
+                                  "Schedule Conflict",
+                                  MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+            }
 
             try
             {
@@ -733,8 +755,8 @@ namespace RECOMANAGESYS
 
                 MessageBox.Show(
                     currentScheduleID == 0
-                        ? "Garbage schedule added successfully!"
-                        : "Garbage schedule updated successfully!",
+                        ? "Garbage schedule added successfully"
+                        : "Garbage schedule updated successfully",
                     "Success",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
@@ -746,6 +768,37 @@ namespace RECOMANAGESYS
             {
                 MessageBox.Show("Error saving schedule: " + ex.Message, "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        private bool IsActiveScheduleExistsForDay(string collectionDay, int excludeScheduleId = 0)
+        {
+            try
+            {
+                using (SqlConnection conn = DatabaseHelper.GetConnection())
+                {
+                    conn.Open();
+                    string query = @"
+                SELECT COUNT(*) 
+                FROM GarbageCollectionSchedules 
+                WHERE CollectionDay = @CollectionDay 
+                AND Status = 1 
+                AND ScheduleID != @ExcludeScheduleID";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@CollectionDay", collectionDay);
+                        cmd.Parameters.AddWithValue("@ExcludeScheduleID", excludeScheduleId);
+
+                        int count = Convert.ToInt32(cmd.ExecuteScalar());
+                        return count > 0;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error checking schedule conflicts: " + ex.Message, "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return true; // Return true to prevent potential data issues
             }
         }
     }
