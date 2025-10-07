@@ -37,6 +37,7 @@
             this.lblDateTime = new System.Windows.Forms.Label();
             this.btnNotif = new FontAwesome.Sharp.IconButton();
             this.lblAnnounce = new System.Windows.Forms.Label();
+            this.panel1 = new System.Windows.Forms.Panel();
             this.SuspendLayout();
             // 
             // panelQuickAnnouncements
@@ -100,19 +101,21 @@
             this.btnNotif.BackColor = System.Drawing.Color.Transparent;
             this.btnNotif.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnNotif.BackgroundImage")));
             this.btnNotif.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnNotif.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnNotif.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnNotif.IconChar = FontAwesome.Sharp.IconChar.None;
             this.btnNotif.IconColor = System.Drawing.Color.Black;
             this.btnNotif.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.btnNotif.Location = new System.Drawing.Point(1085, 150);
+            this.btnNotif.Location = new System.Drawing.Point(1103, 60);
             this.btnNotif.Name = "btnNotif";
-            this.btnNotif.Size = new System.Drawing.Size(66, 50);
+            this.btnNotif.Size = new System.Drawing.Size(48, 45);
             this.btnNotif.TabIndex = 7;
             this.btnNotif.UseVisualStyleBackColor = false;
             // 
             // lblAnnounce
             // 
             this.lblAnnounce.AutoSize = true;
-            this.lblAnnounce.BackColor = System.Drawing.Color.Transparent;
+            this.lblAnnounce.BackColor = System.Drawing.SystemColors.ControlLight;
             this.lblAnnounce.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblAnnounce.Location = new System.Drawing.Point(98, 187);
             this.lblAnnounce.Name = "lblAnnounce";
@@ -120,6 +123,15 @@
             this.lblAnnounce.TabIndex = 8;
             this.lblAnnounce.Text = "Quick Announcements";
             this.lblAnnounce.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            // 
+            // panel1
+            // 
+            this.panel1.AutoScroll = true;
+            this.panel1.BackColor = System.Drawing.SystemColors.ControlLight;
+            this.panel1.Location = new System.Drawing.Point(64, 179);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(1125, 664);
+            this.panel1.TabIndex = 9;
             // 
             // dashboardControl
             // 
@@ -135,6 +147,7 @@
             this.Controls.Add(this.flowLayoutPanel2);
             this.Controls.Add(this.flowLayoutPanel1);
             this.Controls.Add(this.panelQuickAnnouncements);
+            this.Controls.Add(this.panel1);
             this.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.Name = "dashboardControl";
             this.Size = new System.Drawing.Size(1249, 920);
@@ -154,5 +167,6 @@
         private System.Windows.Forms.Label lblDateTime;
         private FontAwesome.Sharp.IconButton btnNotif;
         private System.Windows.Forms.Label lblAnnounce;
+        private System.Windows.Forms.Panel panel1;
     }
 }
