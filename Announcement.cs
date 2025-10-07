@@ -12,7 +12,7 @@ namespace RECOMANAGESYS
             InitializeComponent();
             this.AutoScaleMode = AutoScaleMode.Dpi;
         }
-
+        private ToolTip toolTip = new ToolTip(); //mouse hover
         private void button3_Click(object sender, EventArgs e) //btnPostAnnouncement
         {
             PostAnnouncement postForm = new PostAnnouncement(this); // open form
@@ -43,10 +43,10 @@ namespace RECOMANAGESYS
                 SqlCommand cleanupCmd = new SqlCommand(cleanupQuery, conn);
                 cleanupCmd.ExecuteNonQuery();
 
-                string query = @"SELECT Id, Title, Message, DatePosted, ExpirationDate 
-                         FROM Announcements 
-                         WHERE ExpirationDate IS NULL OR ExpirationDate >= GETDATE()
-                         ORDER BY DatePosted DESC";
+                string query = @"SELECT Id, Title, Message, DatePosted, ExpirationDate, IsImportant
+                 FROM Announcements 
+                 WHERE ExpirationDate IS NULL OR ExpirationDate >= GETDATE()
+                 ORDER BY DatePosted DESC";
                 SqlCommand cmd = new SqlCommand(query, conn);
                 SqlDataReader reader = cmd.ExecuteReader();
 
@@ -71,13 +71,27 @@ namespace RECOMANAGESYS
                     container.Location = new Point(10, 10);
                     container.BackColor = Color.Transparent;
 
-                    // Title 
+                    bool isImportant = false;
+                    if (reader["IsImportant"] != DBNull.Value)
+                        isImportant = Convert.ToBoolean(reader["IsImportant"]);
+
+                    // Title Label
                     Label lblTitle = new Label();
-                    lblTitle.Text = reader["Title"].ToString();
+                    lblTitle.Text = (isImportant ? "⚠️ " : "") + reader["Title"].ToString();
                     lblTitle.Font = new Font("Arial", 12, FontStyle.Bold);
                     lblTitle.AutoSize = true;
                     lblTitle.BackColor = Color.Transparent;
+
+                    if (isImportant)
+                    {
+                        lblTitle.ForeColor = Color.Red;
+                        toolTip.SetToolTip(lblTitle, "Important Announcement!");
+                    }
+
                     container.Controls.Add(lblTitle);
+
+                    if (isImportant)
+                        panel.BackColor = Color.FromArgb(255, 255, 230);
 
                     // Posted date
                     Label lblDate = new Label();
@@ -107,11 +121,30 @@ namespace RECOMANAGESYS
                     lblMessage.BackColor = Color.Transparent;
                     container.Controls.Add(lblMessage);
 
+
                     // Add container to panel
                     panel.Controls.Add(container);
 
-                    // Auto-resize panel height based on content
-                    panel.Height = container.Height + 20;
+                    // Action to open the AnnouncementViewForm
+                    Action openAnnouncement = () =>
+                    {
+                        AnnouncementViewForm viewForm = new AnnouncementViewForm(
+                            lblTitle.Text,
+                            lblMessage.Text, 
+                            isImportant
+                        );
+                        viewForm.StartPosition = FormStartPosition.CenterScreen;
+                        viewForm.ShowDialog();
+                    };
+
+                    panel.Cursor = Cursors.Hand;
+                    panel.Click += (s, e) => openAnnouncement();
+
+                    foreach (Control ctrl in panel.Controls)
+                    {
+                        ctrl.Cursor = Cursors.Hand;
+                        ctrl.Click += (s, e) => openAnnouncement();
+                    }
 
                     // Edit Button
                     Button btnEdit = new Button();
@@ -133,13 +166,12 @@ namespace RECOMANAGESYS
 
                     panel.Controls.Add(btnEdit);
                     panel.Controls.Add(btnDelete);
-
                     panelAnnouncement.Controls.Add(panel);
+
                     y += panel.Height + 10;
                 }
             }
         }
-
 
         private void EditAnnouncement(int id)
         {
@@ -183,7 +215,7 @@ namespace RECOMANAGESYS
                     cmd.ExecuteNonQuery();
                 }
 
-                LoadAnnouncement(); // refresh
+                LoadAnnouncement();
             }
         }
     }

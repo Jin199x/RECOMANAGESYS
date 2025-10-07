@@ -22,6 +22,8 @@ namespace RECOMANAGESYS
         {
             InitializeComponent();
             this.AutoScaleMode = AutoScaleMode.Dpi;
+            txtusername.KeyDown += TextBox_EnterKeyPress;
+            txtpassword.KeyDown += TextBox_EnterKeyPress;
         }
 
         private void hide_Click(object sender, EventArgs e)
@@ -275,5 +277,14 @@ namespace RECOMANAGESYS
             forgotpassfrm forgotpass = new forgotpassfrm();
             forgotpass.Show();
         }
+        private void TextBox_EnterKeyPress(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                e.SuppressKeyPress = true; // Prevents new line in multiline TextBox
+                btnlogin.PerformClick();   // Triggers the login button click
+            }
+        }
+
     }
 }

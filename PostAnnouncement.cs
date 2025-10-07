@@ -159,13 +159,17 @@ namespace RECOMANAGESYS
                     return;
                 }
 
-                if (dtpExpire.Value.Date < DateTime.Today)
+                // Prevent today or past dates
+                if (dtpExpire.Value.Date <= DateTime.Today)
                 {
-                    MessageBox.Show("Expiration date cannot be in the past.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Expiration date cannot be today or in the past.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     dtpExpire.Focus();
                     return;
                 }
             }
+
+            // Get the "Important" value
+            bool isImportant = cbImportant.Checked;
 
             //Save to database
             using (SqlConnection conn = DatabaseHelper.GetConnection())
@@ -183,11 +187,13 @@ namespace RECOMANAGESYS
 
                 if (editId == -1)
                 {
-                    string query = "INSERT INTO Announcements (Title, Message, DatePosted, ExpirationDate) VALUES (@title, @msg, @date, @expire)";
+                    string query = "INSERT INTO Announcements (Title, Message, DatePosted, ExpirationDate, IsImportant) " +
+                                   "VALUES (@title, @msg, @date, @expire, @important)";
                     cmd = new SqlCommand(query, conn);
                     cmd.Parameters.AddWithValue("@title", txtTitle.Text.Trim());
                     cmd.Parameters.AddWithValue("@msg", txtMessage.Text.Trim());
                     cmd.Parameters.AddWithValue("@date", DateTime.Now);
+                    cmd.Parameters.AddWithValue("@important", isImportant ? 1 : 0);
                     if (expireDate.HasValue)
                         cmd.Parameters.AddWithValue("@expire", expireDate.Value);
                     else
@@ -195,11 +201,12 @@ namespace RECOMANAGESYS
                 }
                 else
                 {
-                    string query = "UPDATE Announcements SET Title=@title, Message=@msg, ExpirationDate=@expire WHERE Id=@id";
+                    string query = "UPDATE Announcements SET Title=@title, Message=@msg, ExpirationDate=@expire, IsImportant=@important WHERE Id=@id";
                     cmd = new SqlCommand(query, conn);
                     cmd.Parameters.AddWithValue("@title", txtTitle.Text.Trim());
                     cmd.Parameters.AddWithValue("@msg", txtMessage.Text.Trim());
                     cmd.Parameters.AddWithValue("@id", editId);
+                    cmd.Parameters.AddWithValue("@important", isImportant ? 1 : 0);
                     if (expireDate.HasValue)
                         cmd.Parameters.AddWithValue("@expire", expireDate.Value);
                     else
@@ -214,10 +221,13 @@ namespace RECOMANAGESYS
 
             MessageBox.Show(editId == -1 ? "Announcement posted successfully!" : "Announcement updated successfully!");
 
+            // Reset form
             txtTitle.Clear();
             txtMessage.Clear();
+            cbImportant.Checked = false; // reset checkbox
             this.Close();
         }
+
 
 
         private void btnCancel_Click(object sender, EventArgs e)

@@ -102,7 +102,7 @@
             this.updatePayment.Location = new System.Drawing.Point(24, 24);
             this.updatePayment.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.updatePayment.Name = "updatePayment";
-            this.updatePayment.Size = new System.Drawing.Size(169, 48);
+            this.updatePayment.Size = new System.Drawing.Size(174, 48);
             this.updatePayment.TabIndex = 5;
             this.updatePayment.Text = "Update ";
             this.updatePayment.UseVisualStyleBackColor = false;
@@ -118,7 +118,7 @@
             this.btnGenerate.Location = new System.Drawing.Point(204, 24);
             this.btnGenerate.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.btnGenerate.Name = "btnGenerate";
-            this.btnGenerate.Size = new System.Drawing.Size(169, 48);
+            this.btnGenerate.Size = new System.Drawing.Size(225, 48);
             this.btnGenerate.TabIndex = 4;
             this.btnGenerate.Text = "Generate Report";
             this.btnGenerate.UseVisualStyleBackColor = false;

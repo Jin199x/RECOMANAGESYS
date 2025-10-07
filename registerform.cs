@@ -510,7 +510,8 @@ CREATE TABLE Announcements (
     Title NVARCHAR(200) NOT NULL,
     Message NVARCHAR(MAX) NOT NULL,
     DatePosted DATETIME DEFAULT GETDATE(),
-    ExpirationDate DATETIME NULL
+    ExpirationDate DATETIME NULL,
+    IsImportant BIT DEFAULT 0
 );
 
 -- Stored procedure to delete expired announcements

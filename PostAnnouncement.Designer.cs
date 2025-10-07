@@ -37,6 +37,7 @@
             this.dtpExpire = new System.Windows.Forms.DateTimePicker();
             this.chkNoExpire = new System.Windows.Forms.CheckBox();
             this.label2 = new System.Windows.Forms.Label();
+            this.cbImportant = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // txtMessage
@@ -88,7 +89,7 @@
             this.txtTitle.Location = new System.Drawing.Point(203, 141);
             this.txtTitle.Multiline = true;
             this.txtTitle.Name = "txtTitle";
-            this.txtTitle.Size = new System.Drawing.Size(681, 39);
+            this.txtTitle.Size = new System.Drawing.Size(575, 39);
             this.txtTitle.TabIndex = 22;
             // 
             // lblTitle
@@ -133,6 +134,18 @@
             this.label2.TabIndex = 27;
             this.label2.Text = "Expiry Anouncement Date:";
             // 
+            // cbImportant
+            // 
+            this.cbImportant.AutoSize = true;
+            this.cbImportant.BackColor = System.Drawing.Color.Transparent;
+            this.cbImportant.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cbImportant.Location = new System.Drawing.Point(801, 156);
+            this.cbImportant.Name = "cbImportant";
+            this.cbImportant.Size = new System.Drawing.Size(135, 24);
+            this.cbImportant.TabIndex = 28;
+            this.cbImportant.Text = "Important 📌";
+            this.cbImportant.UseVisualStyleBackColor = false;
+            // 
             // PostAnnouncement
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -140,6 +153,7 @@
             this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(1045, 646);
+            this.Controls.Add(this.cbImportant);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.chkNoExpire);
             this.Controls.Add(this.dtpExpire);
@@ -167,5 +181,6 @@
         private System.Windows.Forms.DateTimePicker dtpExpire;
         private System.Windows.Forms.CheckBox chkNoExpire;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.CheckBox cbImportant;
     }
 }
