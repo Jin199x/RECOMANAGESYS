@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Drawing;
 using System.Windows.Forms;
@@ -171,6 +172,39 @@ namespace RECOMANAGESYS
                     y += panel.Height + 10;
                 }
             }
+        }
+        public List<(string Title, string Message, bool IsImportant, DateTime? Expiry)> GetRecentAnnouncements(int limit = 6)
+        {
+            var announcements = new List<(string Title, string Message, bool IsImportant, DateTime? Expiry)>();
+
+            using (SqlConnection conn = DatabaseHelper.GetConnection())
+            {
+                conn.Open();
+                string query = @"
+            SELECT TOP (@limit) Title, Message, IsImportant, ExpirationDate
+            FROM Announcements
+            WHERE ExpirationDate IS NULL OR ExpirationDate >= GETDATE()
+            ORDER BY 
+                CASE WHEN IsImportant = 1 THEN 0 ELSE 1 END,  -- Important first
+                DatePosted DESC";  // Newest next
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@limit", limit);
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        announcements.Add((
+                            reader["Title"].ToString(),
+                            reader["Message"].ToString(),
+                            reader["IsImportant"] != DBNull.Value && Convert.ToBoolean(reader["IsImportant"]),
+                            reader["ExpirationDate"] != DBNull.Value ? Convert.ToDateTime(reader["ExpirationDate"]) : (DateTime?)null
+                        ));
+                    }
+                }
+            }
+
+            return announcements;
         }
 
         private void EditAnnouncement(int id)
