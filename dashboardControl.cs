@@ -471,8 +471,8 @@ namespace RECOMANAGESYS
                     }
                     else
                     {
-                        lblNextDay1.Text = "No collection";
-                        lblNextTime1.Text = "";
+                        lblNextDay1.Text = "No upcoming";
+                        lblNextTime1.Text = "collection";
                     }
 
                     if (sorted.Count > 1)
@@ -482,8 +482,8 @@ namespace RECOMANAGESYS
                     }
                     else
                     {
-                        lblNextDay2.Text = "No collection";
-                        lblNextTime2.Text = "";
+                        lblNextDay2.Text = "No following";
+                        lblNextTime2.Text = "collection";
                     }
                 }
             }
