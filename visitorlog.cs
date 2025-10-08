@@ -25,18 +25,18 @@ namespace RECOMANAGESYS
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
                 string query = @"SELECT 
-                                VisitorID,
-                                VisitorName,
-                                ContactNumber,
-                                FORMAT(Date, 'MMM dd, yyyy') AS Date,                           
-                                VisitPurpose,
-                                FORMAT(TimeIn, 'hh :mm tt') AS TimeIn,
-                                CASE
-                                    WHEN TimeOut IS NULL THEN 'Active'
-                                    ELSE FORMAT(TimeOut, 'hh :mm tt')
-                                END AS TimeOut                                                          
-                                FROM TBL_VisitorsLog
-                                ORDER BY Date DESC, TimeIn DESC";
+                        VisitorID,
+                        VisitorName,
+                        ContactNumber,
+                        FORMAT(Date, 'MMM dd, yyyy') AS Date,                           
+                        VisitPurpose,
+                        FORMAT(TimeIn, 'hh :mm tt') AS TimeIn,
+                        CASE
+                            WHEN TimeOut IS NULL THEN 'Active'
+                            ELSE FORMAT(TimeOut, 'hh :mm tt')
+                        END AS TimeOut                                                          
+                        FROM TBL_VisitorsLog
+                        ORDER BY VisitorID DESC";
 
                 SqlDataAdapter da = new SqlDataAdapter(query, conn);
                 DataTable dt = new DataTable();
@@ -46,6 +46,7 @@ namespace RECOMANAGESYS
                 DGVFormat();
             }
         }
+
         private void DGVFormat()
         {
             try

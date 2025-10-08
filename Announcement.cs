@@ -8,6 +8,7 @@ namespace RECOMANAGESYS
 {
     public partial class Announcement : UserControl
     {
+        public event EventHandler AnnouncementChanged;
         public Announcement()
         {
             InitializeComponent();
@@ -16,8 +17,19 @@ namespace RECOMANAGESYS
         private ToolTip toolTip = new ToolTip(); //mouse hover
         private void button3_Click(object sender, EventArgs e) //btnPostAnnouncement
         {
-            PostAnnouncement postForm = new PostAnnouncement(this); // open form
-            postForm.Show();
+            PostAnnouncement postForm = new PostAnnouncement(this);
+
+            // When PostAnnouncement changes something
+            postForm.AnnouncementChanged += (s, args) =>
+            {
+                // 1️⃣ Reload the current Announcement panel
+                this.LoadAnnouncement();
+
+                // 2️⃣ Notify any parent (dashboard) that an announcement changed
+                AnnouncementChanged?.Invoke(this, EventArgs.Empty);
+            };
+
+            postForm.ShowDialog();
         }
 
         private void PanelAnnouncement_Paint(object sender, PaintEventArgs e)
@@ -231,6 +243,7 @@ namespace RECOMANAGESYS
 
             // Open PostAnnouncement form in edit mode
             PostAnnouncement editForm = new PostAnnouncement(this, id, currentTitle, currentMessage, currentExpire);
+            editForm.AnnouncementChanged += (s, e) => AnnouncementChanged?.Invoke(this, EventArgs.Empty);
             editForm.ShowDialog();
         }
         private void DeleteAnnouncement(int id)
@@ -250,6 +263,7 @@ namespace RECOMANAGESYS
                 }
 
                 LoadAnnouncement();
+                AnnouncementChanged?.Invoke(this, EventArgs.Empty);
             }
         }
     }

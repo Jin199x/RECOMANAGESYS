@@ -35,10 +35,10 @@
             this.label6 = new System.Windows.Forms.Label();
             this.VisitorNametxt = new System.Windows.Forms.TextBox();
             this.ContactNumtxt = new System.Windows.Forms.TextBox();
-            this.Purposetxt = new System.Windows.Forms.TextBox();
             this.VisitorDTP = new System.Windows.Forms.DateTimePicker();
             this.savevisitorbtn = new System.Windows.Forms.Button();
             this.cancelvisitorbtn = new System.Windows.Forms.Button();
+            this.Purposetxt = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // label1
@@ -91,7 +91,7 @@
             // 
             // VisitorNametxt
             // 
-            this.VisitorNametxt.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.VisitorNametxt.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.VisitorNametxt.Location = new System.Drawing.Point(108, 219);
             this.VisitorNametxt.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.VisitorNametxt.Multiline = true;
@@ -101,7 +101,7 @@
             // 
             // ContactNumtxt
             // 
-            this.ContactNumtxt.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.ContactNumtxt.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ContactNumtxt.Location = new System.Drawing.Point(554, 340);
             this.ContactNumtxt.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.ContactNumtxt.Multiline = true;
@@ -109,24 +109,14 @@
             this.ContactNumtxt.Size = new System.Drawing.Size(362, 46);
             this.ContactNumtxt.TabIndex = 7;
             // 
-            // Purposetxt
-            // 
-            this.Purposetxt.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Purposetxt.Location = new System.Drawing.Point(554, 219);
-            this.Purposetxt.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.Purposetxt.Multiline = true;
-            this.Purposetxt.Name = "Purposetxt";
-            this.Purposetxt.Size = new System.Drawing.Size(362, 46);
-            this.Purposetxt.TabIndex = 9;
-            // 
             // VisitorDTP
             // 
             this.VisitorDTP.CalendarFont = new System.Drawing.Font("Microsoft Sans Serif", 10.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.VisitorDTP.Font = new System.Drawing.Font("Microsoft YaHei", 10.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.VisitorDTP.Font = new System.Drawing.Font("Microsoft YaHei", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.VisitorDTP.Location = new System.Drawing.Point(108, 340);
             this.VisitorDTP.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.VisitorDTP.Name = "VisitorDTP";
-            this.VisitorDTP.Size = new System.Drawing.Size(362, 36);
+            this.VisitorDTP.Size = new System.Drawing.Size(362, 50);
             this.VisitorDTP.TabIndex = 10;
             // 
             // savevisitorbtn
@@ -160,6 +150,15 @@
             this.cancelvisitorbtn.Text = "Cancel";
             this.cancelvisitorbtn.UseVisualStyleBackColor = true;
             // 
+            // Purposetxt
+            // 
+            this.Purposetxt.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Purposetxt.FormattingEnabled = true;
+            this.Purposetxt.Location = new System.Drawing.Point(554, 220);
+            this.Purposetxt.Name = "Purposetxt";
+            this.Purposetxt.Size = new System.Drawing.Size(362, 45);
+            this.Purposetxt.TabIndex = 13;
+            // 
             // addvisitor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -167,10 +166,10 @@
             this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(1022, 601);
+            this.Controls.Add(this.Purposetxt);
             this.Controls.Add(this.cancelvisitorbtn);
             this.Controls.Add(this.savevisitorbtn);
             this.Controls.Add(this.VisitorDTP);
-            this.Controls.Add(this.Purposetxt);
             this.Controls.Add(this.ContactNumtxt);
             this.Controls.Add(this.VisitorNametxt);
             this.Controls.Add(this.label6);
@@ -195,9 +194,9 @@
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.TextBox VisitorNametxt;
         private System.Windows.Forms.TextBox ContactNumtxt;
-        private System.Windows.Forms.TextBox Purposetxt;
         private System.Windows.Forms.DateTimePicker VisitorDTP;
         private System.Windows.Forms.Button savevisitorbtn;
         private System.Windows.Forms.Button cancelvisitorbtn;
+        private System.Windows.Forms.ComboBox Purposetxt;
     }
 }

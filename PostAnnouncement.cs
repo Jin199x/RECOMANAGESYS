@@ -16,8 +16,8 @@ namespace RECOMANAGESYS
     {
         private Announcement parentControl;
         private int editId = -1;
+        public event EventHandler AnnouncementChanged; //auto refresh in dahsboard
 
-        // Original constructor (kept)
         public PostAnnouncement(Announcement parent)
         {
             InitializeComponent();
@@ -71,7 +71,6 @@ namespace RECOMANAGESYS
             catch { }
         }
 
-        // Optional overload: constructor with expiration
         public PostAnnouncement(Announcement parent, int id, string title, string message, DateTime? expireDate)
         {
             InitializeComponent();
@@ -118,7 +117,7 @@ namespace RECOMANAGESYS
 
         private void label1_Click(object sender, EventArgs e)
         {
-            // kept as you had it
+
         }
 
         private void chkNoExpire_CheckedChanged(object sender, EventArgs e)
@@ -219,6 +218,7 @@ namespace RECOMANAGESYS
             if (parentControl != null)
                 parentControl.LoadAnnouncement();
 
+            AnnouncementChanged?.Invoke(this, EventArgs.Empty);
             MessageBox.Show(editId == -1 ? "Announcement posted successfully!" : "Announcement updated successfully!");
 
             // Reset form
@@ -233,6 +233,11 @@ namespace RECOMANAGESYS
         private void btnCancel_Click(object sender, EventArgs e)
         {
             this.Close();
+        }
+
+        private void PostAnnouncement_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

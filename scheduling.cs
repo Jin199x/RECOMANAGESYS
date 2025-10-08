@@ -15,12 +15,14 @@ namespace RECOMANAGESYS
     public partial class scheduling : UserControl
     {
         private int currentEventId = 0;
+        public event EventHandler EventsChanged;
+        public event EventHandler GarbageSchedulesChanged;
+
         public scheduling()
         {
             InitializeComponent();
             this.AutoScaleMode = AutoScaleMode.Dpi;
             this.Load += scheduling_Load;
-
         }
         private void scheduling_Load(object sender, EventArgs e)
         {
@@ -252,12 +254,12 @@ namespace RECOMANAGESYS
                         cmd.ExecuteNonQuery();
                     }
                 }
-
                 MessageBox.Show(currentEventId == 0 ? "Event created successfully!" : "Event updated successfully!",
                                 "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 ClearEventForm();
                 LoadEventsData();
+                EventsChanged?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
@@ -369,6 +371,7 @@ namespace RECOMANAGESYS
 
                     ClearEventForm();
                     LoadEventsData();
+                    EventsChanged?.Invoke(this, EventArgs.Empty);
                 }
                 catch (Exception ex)
                 {
@@ -653,6 +656,7 @@ namespace RECOMANAGESYS
                 LoadGarbageSchedules();
                 ClearGarbageForm();
                 currentScheduleID = 0;
+                GarbageSchedulesChanged?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
@@ -763,6 +767,7 @@ namespace RECOMANAGESYS
 
                 ClearGarbageForm();
                 LoadGarbageSchedules();
+                GarbageSchedulesChanged?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
@@ -801,6 +806,11 @@ namespace RECOMANAGESYS
                 return true; // Return true to prevent potential data issues
             }
         }
+
     }
+
 }
+
+
+
 

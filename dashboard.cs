@@ -28,7 +28,6 @@ namespace RECOMANAGESYS
         {
             InitializeComponent();
             this.AutoScaleMode = AutoScaleMode.Dpi;
-
         }
         private void ShowControl(UserControl control)
         {
@@ -71,10 +70,24 @@ namespace RECOMANAGESYS
             flowLayoutPanel1.Controls.Add(dues);
 
             announce = new Announcement();
+
+            announce.AnnouncementChanged += (_, __) =>
+            {
+                dash.RefreshAnnouncements();
+            };
+
             flowLayoutPanel1.Controls.Add(announce);
 
             sched = new scheduling();
             flowLayoutPanel1.Controls.Add(sched);
+            sched.EventsChanged += (s, ev) =>
+            {
+                dash.RefreshScheduledEvents();
+            };
+            sched.GarbageSchedulesChanged += (s, ev) =>
+            {
+                dash.RefreshGarbageSchedule();
+            };
 
             log = new visitorlog();
             flowLayoutPanel1.Controls.Add(log);
@@ -163,17 +176,17 @@ namespace RECOMANAGESYS
             ShowControl(dues);
         }
 
-        private void btnAnnouncement_Click(object sender, EventArgs e)
+        public void btnAnnouncement_Click(object sender, EventArgs e)
         {
             ShowControl(announce);
         }
 
-        private void btnScheduling_Click(object sender, EventArgs e)
+        public void btnScheduling_Click(object sender, EventArgs e)
         {
             ShowControl(sched);
         }
 
-        private void btnVisitorlog_Click(object sender, EventArgs e)
+        public void btnVisitorlog_Click(object sender, EventArgs e)
         {
             ShowControl(log);
         }
@@ -197,5 +210,6 @@ namespace RECOMANAGESYS
         {
 
         }
+
     }
 }

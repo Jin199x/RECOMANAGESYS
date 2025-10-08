@@ -224,6 +224,7 @@
     <Compile Include="monthdues.Designer.cs">
       <DependentUpon>monthdues.cs</DependentUpon>
     </Compile>
+    <Compile Include="NotificationManager.cs" />
     <Compile Include="OfficerInfo.cs">
       <SubType>Form</SubType>
     </Compile>
