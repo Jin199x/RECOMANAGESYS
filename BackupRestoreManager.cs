@@ -13,8 +13,6 @@ namespace RECOMANAGESYS
     {
         private docurepo parentDocuRepo;
 
-        private string logFilePath = Path.Combine(Application.StartupPath, "BackupRestoreLog.txt");
-
         private Dictionary<string, List<string>> tableDependencies = new Dictionary<string, List<string>>
         {
             { "MonthlyDues", new List<string> { "Residents", "Units", "Homeowners" } },
@@ -28,11 +26,6 @@ namespace RECOMANAGESYS
             this.AutoScaleMode = AutoScaleMode.Dpi;
             parentDocuRepo = parent;
             LoadTableList();
-            LoadPersistentLog();
-            btnRestore.MouseEnter += btnRestore_MouseEnter;
-            btnRestore.MouseLeave += btnRestore_MouseLeave;
-            btnBackup.MouseEnter += btnBackup_MouseEnter;
-            btnBackup.MouseLeave += btnBackup_MouseLeave;
         }
 
         private void RefreshAllData()
@@ -53,78 +46,58 @@ namespace RECOMANAGESYS
 
             var tables = new List<TableItem>
             {
-                new TableItem { DisplayName = "Documents Repository", TableName = "DesktopItems" },
-                new TableItem { DisplayName = "Monthly Dues", TableName = "MonthlyDues" },
-                new TableItem { DisplayName = "Homeowners", TableName = "Homeowners" },
-                new TableItem { DisplayName = "Residents", TableName = "Residents" },
+
                 new TableItem { DisplayName = "Units", TableName = "TBL_Units" },
-                new TableItem { DisplayName = "Homeowner Units", TableName = "HomeownerUnits" },
+                new TableItem { DisplayName = "Events", TableName = "Events" },
+                new TableItem { DisplayName = "Residents", TableName = "Residents" },
+                new TableItem { DisplayName = "Homeowners", TableName = "Homeowners" },
+                new TableItem { DisplayName = "Visitors Log", TableName = "TBL_VisitorsLog" },
+                new TableItem { DisplayName = "Monthly Dues", TableName = "MonthlyDues" },
                 new TableItem { DisplayName = "Announcements", TableName = "Announcements" },
-                new TableItem { DisplayName = "Visitors Log", TableName = "TBL_VisitorsLog" }
+                new TableItem { DisplayName = "Homeowner Units", TableName = "HomeownerUnits" },
+                new TableItem { DisplayName = "Documents Repository", TableName = "DesktopItems" },
+                new TableItem { DisplayName = "Garbage Collection Schedules", TableName = "GarbageCollectionSchedules" }
             };
 
             foreach (var table in tables)
                 clbTables.Items.Add(table, table.TableName == "DesktopItems");
         }
 
-        private void btnSelectPath_Click(object sender, EventArgs e)
+        // folder picker
+        private string ChooseFolder(string title)
         {
             using (var fbd = new FolderBrowserDialog())
             {
+                fbd.Description = title;
+                fbd.ShowNewFolderButton = true;
+
                 if (fbd.ShowDialog() == DialogResult.OK)
-                {
-                    txtBackupPath.Text = fbd.SelectedPath;
-                }
+                    return fbd.SelectedPath;
             }
+            return null;
         }
 
-        // Logs
-        private void LoadPersistentLog()
-        {
-            if (File.Exists(logFilePath))
-            {
-                rtbLog.Text = File.ReadAllText(logFilePath);
-                rtbLog.SelectionStart = rtbLog.Text.Length; 
-                rtbLog.ScrollToCaret();
-            }
-        }
-
-        private void AppendLog(string text)
-        {
-            string logLine = $"[{DateTime.Now:HH:mm:ss}] {text}\n";
-            rtbLog.AppendText(logLine);
-            rtbLog.SelectionStart = rtbLog.Text.Length;
-            rtbLog.ScrollToCaret();
-
-            File.AppendAllText(logFilePath, logLine);
-        }
-
-
-        // Backup 
+        // backup button
         private async void btnBackup_Click_1(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtBackupPath.Text))
-            {
-                MessageBox.Show("Please select a folder to save the backup first.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return; // Stop the backup if no path is selected
-            }
+            string folder = ChooseFolder("Select folder to save backup");
+            if (string.IsNullOrEmpty(folder)) return;
 
-            string backupRoot = Path.Combine(txtBackupPath.Text, $"Backup_{DateTime.Now:yyyyMMdd_HHmmss}");
+            string backupRoot = Path.Combine(folder, $"Backup_{DateTime.Now:yyyyMMdd_HHmmss}");
             Directory.CreateDirectory(backupRoot);
 
+            var tables = clbTables.CheckedItems.Cast<TableItem>().Select(t => t.TableName).ToList();
+            if (!tables.Any())
+            {
+                MessageBox.Show("No tables selected for backup.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            progressBar.Value = 0;
+            progressBar.Maximum = tables.Count;
 
             try
             {
-                var tables = clbTables.CheckedItems.Cast<TableItem>().Select(t => t.TableName).ToList();
-                if (!tables.Any())
-                {
-                    MessageBox.Show("No tables selected for backup.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-
-                progressBar.Value = 0;
-                progressBar.Maximum = tables.Count;
-
                 using (SqlConnection conn = DatabaseHelper.GetConnection())
                 {
                     conn.Open();
@@ -150,9 +123,7 @@ namespace RECOMANAGESYS
                                     if (val != DBNull.Value)
                                     {
                                         if (reader.GetFieldType(i) == typeof(byte[]))
-                                        {
                                             row[colName] = Convert.ToBase64String((byte[])val);
-                                        }
                                         else if (table == "DesktopItems" && colName == "FilePath")
                                         {
                                             string originalPath = val.ToString();
@@ -169,33 +140,24 @@ namespace RECOMANAGESYS
                                                 row["FileBackupPath"] = null;
                                             }
                                         }
-                                        else
-                                        {
-                                            row[colName] = val;
-                                        }
+                                        else row[colName] = val;
                                     }
-                                    else
-                                    {
-                                        row[colName] = null;
-                                    }
+                                    else row[colName] = null;
                                 }
                                 rows.Add(row);
                             }
                         }
 
                         File.WriteAllText(Path.Combine(tableFolder, "metadata.json"), JsonConvert.SerializeObject(rows, Formatting.Indented));
-                        AppendLog($"Backup collected for {table} ({rows.Count} rows)");
                         progressBar.Value++;
                         await Task.Delay(50);
                     }
                 }
 
-                AppendLog($"Backup completed at {backupRoot}");
                 MessageBox.Show("Backup completed successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                AppendLog($"Backup failed: {ex.Message}");
                 MessageBox.Show($"Backup failed!\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -204,58 +166,39 @@ namespace RECOMANAGESYS
             }
         }
 
-        // Confirm restore validation
-        private bool ConfirmRestore(string table)
+        // restore buttn
+        private readonly HashSet<string> identityTables = new HashSet<string>
         {
-            var result = MessageBox.Show(
-                $"You are about to restore '{table}'. This may overwrite existing records.\nDo you want to continue?",
-                "Confirm Restore",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
+            "DesktopItems",
+            "MonthlyDues",
+            "Homeowners",
+            "Residents",
+            "TBL_Units",
+            "HomeownerUnits",
+            "Announcements",
+            "TBL_VisitorsLog"
+        };
 
-            return result == DialogResult.Yes;
-        }
-
-        // Dependency validation
-        private bool CheckDependencies(List<string> tablesToRestore)
-        {
-            foreach (var table in tablesToRestore)
-            {
-                if (tableDependencies.ContainsKey(table))
-                {
-                    var missing = tableDependencies[table].Where(t => !tablesToRestore.Contains(t)).ToList();
-                    if (missing.Any())
-                    {
-                        string msg = $"It is recommended to restore [{string.Join(", ", missing)}] before restoring [{table}] due to dependencies.";
-                        var result = MessageBox.Show(msg + "\nDo you want to continue?", "Dependency Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                        if (result == DialogResult.No) return false;
-                    }
-                }
-            }
-            return true;
-        }
-
-        // Restore
         private async void btnRestore_Click(object sender, EventArgs e)
         {
-            if (!Directory.Exists(txtBackupPath.Text))
+            string folder = ChooseFolder("Select backup folder to restore");
+            if (string.IsNullOrEmpty(folder)) return;
+
+            if (MessageBox.Show(
+                "Restoring will overwrite all current data, make sure you back-up first. Do you want to continue?",
+                "Warning",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning) != DialogResult.Yes) return;
+
+            var tableFolders = Directory.GetDirectories(folder);
+            if (!tableFolders.Any())
             {
-                MessageBox.Show("Backup folder not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("No backup folders found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-
-            string backupRoot = txtBackupPath.Text;
-            var tablesToRestore = clbTables.CheckedItems.Cast<TableItem>().Select(t => t.TableName).ToList();
-            if (!tablesToRestore.Any())
-            {
-                MessageBox.Show("No tables selected for restore.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            if (!CheckDependencies(tablesToRestore)) return;
 
             progressBar.Value = 0;
-            progressBar.Maximum = tablesToRestore.Count;
+            progressBar.Maximum = tableFolders.Length;
 
             try
             {
@@ -263,24 +206,22 @@ namespace RECOMANAGESYS
                 {
                     conn.Open();
 
-                    foreach (var table in tablesToRestore)
+                    foreach (var tableFolder in tableFolders)
                     {
-                        string tableFolder = Path.Combine(backupRoot, table);
-                        if (!Directory.Exists(tableFolder)) tableFolder = backupRoot;
-
+                        string table = Path.GetFileName(tableFolder);
                         string metadataFile = Path.Combine(tableFolder, "metadata.json");
-                        if (!File.Exists(metadataFile)) throw new FileNotFoundException($"metadata.json not found for {table} backup.");
-
-                        if (!ConfirmRestore(table)) continue;
+                        if (!File.Exists(metadataFile)) continue;
 
                         var rows = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(File.ReadAllText(metadataFile));
-                        if (rows == null || !rows.Any()) throw new Exception("Backup data is invalid or empty.");
+                        if (rows == null || !rows.Any()) continue;
 
-                        Dictionary<int, int> idMapping = new Dictionary<int, int>();
-                        bool hasIdentity = table == "DesktopItems";
+                        bool hasIdentity = identityTables.Contains(table);
 
                         if (hasIdentity)
                             using (var cmd = new SqlCommand($"SET IDENTITY_INSERT {table} ON", conn)) cmd.ExecuteNonQuery();
+
+                        using (var cmdClear = new SqlCommand($"DELETE FROM {table}", conn))
+                            cmdClear.ExecuteNonQuery();
 
                         foreach (var row in rows)
                         {
@@ -303,24 +244,10 @@ namespace RECOMANAGESYS
                                 row.Remove("FileBackupPath");
                             }
 
-                            // Handle ParentId mapping
-                            int? oldParentId = null;
-                            if (row.ContainsKey("ParentId") && row["ParentId"] != null && row["ParentId"] != DBNull.Value)
-                                oldParentId = Convert.ToInt32(row["ParentId"]);
-
-                            row["ParentId"] = oldParentId.HasValue && idMapping.ContainsKey(oldParentId.Value)
-                                ? (object)idMapping[oldParentId.Value]
-                                : DBNull.Value;
-
-                            // Upsert logic (merge data)
                             string columns = string.Join(",", row.Keys);
                             string paramNames = string.Join(",", row.Keys.Select(k => "@" + k));
-                            string updateSet = string.Join(",", row.Keys.Where(k => k != "ItemId").Select(k => $"{k}=@{k}"));
 
-                            using (var cmd = new SqlCommand($@"
-                            IF EXISTS (SELECT 1 FROM {table} WHERE ItemId=@ItemId)
-                            UPDATE {table} SET {updateSet} WHERE ItemId=@ItemId ELSE
-                            INSERT INTO {table} ({columns}) VALUES ({paramNames}) ", conn))
+                            using (var cmd = new SqlCommand($"INSERT INTO {table} ({columns}) VALUES ({paramNames})", conn))
                             {
                                 foreach (var kv in row)
                                     cmd.Parameters.AddWithValue("@" + kv.Key, kv.Value ?? DBNull.Value);
@@ -328,57 +255,40 @@ namespace RECOMANAGESYS
                                 cmd.ExecuteNonQuery();
                             }
 
-                            if (table == "DesktopItems")
-                            {
-                                int oldId = Convert.ToInt32(row["ItemId"]);
-                                idMapping[oldId] = oldId;
-                            }
-
-                            AppendLog($"{table} row restored/merged successfully (ItemId={row["ItemId"]})");
                             await Task.Delay(20);
                         }
 
                         if (hasIdentity)
                             using (var cmd = new SqlCommand($"SET IDENTITY_INSERT {table} OFF", conn)) cmd.ExecuteNonQuery();
 
-                        AppendLog($"{table} restored successfully ({rows.Count} rows)");
                         progressBar.Value++;
                     }
                 }
 
-                AppendLog("Restore process completed.");
                 MessageBox.Show("Restore completed successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
                 RefreshAllData();
             }
             catch (Exception ex)
             {
-                AppendLog($"Restore failed: {ex.Message}");
-                MessageBox.Show("Restore failed!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Restore failed!\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
                 progressBar.Value = 0;
             }
         }
-        private void btnRestore_MouseEnter(object sender, EventArgs e)
-        {
-            lblRestoreHint.Visible = true;
-        }
 
-        private void btnRestore_MouseLeave(object sender, EventArgs e)
-        {
-            lblRestoreHint.Visible = false;
-        }
-        private void btnBackup_MouseEnter(object sender, EventArgs e)
-        {
-            lblBackUpHint.Visible = true;
-        }
+        private bool allSelected = false; // toggle 
 
-        private void btnBackup_MouseLeave(object sender, EventArgs e)
+        private void btnToggleSelect_Click(object sender, EventArgs e)
         {
-            lblBackUpHint.Visible = false;
+            for (int i = 0; i < clbTables.Items.Count; i++)
+            {
+                clbTables.SetItemChecked(i, !allSelected);
+            }
+            allSelected = !allSelected;
+
+            btnToggleSelect.Text = allSelected ? "Deselect All" : "Select All";
         }
     }
-
 }

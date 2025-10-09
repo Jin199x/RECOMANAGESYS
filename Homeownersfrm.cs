@@ -18,7 +18,10 @@ namespace RECOMANAGESYS
             this.AutoScaleMode = AutoScaleMode.Dpi;
             LoadHomeowners();
         }
-
+        public void RefreshData()
+        {
+            LoadHomeowners();
+        }
         private void Homeowners_Load(object sender, EventArgs e)
         {
             DGVResidents.CellDoubleClick += DGVResidents_CellDoubleClick;

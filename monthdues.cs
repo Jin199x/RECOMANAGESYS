@@ -45,7 +45,10 @@ namespace RECOMANAGESYS
             lvResidents.MouseClick += LvResidents_MouseClick;
         }
 
-
+        public void RefreshData()
+        {
+            LoadResidentsList();
+        }
 
         private void panel1_Paint(object sender, PaintEventArgs e)
         {

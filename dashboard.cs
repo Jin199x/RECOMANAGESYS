@@ -21,7 +21,7 @@ namespace RECOMANAGESYS
         private scheduling sched;
         private visitorlog log;
         private docurepo repo;
-       private Homeowners homeowners;
+        private Homeowners homeowners;
 
 
         public dashboard()
@@ -29,12 +29,12 @@ namespace RECOMANAGESYS
             InitializeComponent();
             this.AutoScaleMode = AutoScaleMode.Dpi;
         }
+
         private void ShowControl(UserControl control)
         {
             flowLayoutPanel1.Controls.Clear();
             flowLayoutPanel1.Controls.Add(control);
         }
-
 
         private void btnlogout_Click(object sender, EventArgs e)
         {
@@ -60,26 +60,26 @@ namespace RECOMANAGESYS
         {
             lblName.Text = loginform.CurrentUser.FullName;
             lblRole.Text = loginform.CurrentUser.Role;
+
+            // Initialize controls once
             dash = new dashboardControl();
+            dues = new monthdues();
+            announce = new Announcement();
+            sched = new scheduling();
+            log = new visitorlog();
+            repo = new docurepo();
+            homeowners = new Homeowners();
+
+            // Add to panel (optional, first load can show dash)
             flowLayoutPanel1.Controls.Add(dash);
 
-
             LoadUserProfilePicture();
-
-            dues = new monthdues();
-            flowLayoutPanel1.Controls.Add(dues);
-
-            announce = new Announcement();
 
             announce.AnnouncementChanged += (_, __) =>
             {
                 dash.RefreshAnnouncements();
             };
 
-            flowLayoutPanel1.Controls.Add(announce);
-
-            sched = new scheduling();
-            flowLayoutPanel1.Controls.Add(sched);
             sched.EventsChanged += (s, ev) =>
             {
                 dash.RefreshScheduledEvents();
@@ -89,35 +89,23 @@ namespace RECOMANAGESYS
                 dash.RefreshGarbageSchedule();
             };
 
-            log = new visitorlog();
-            flowLayoutPanel1.Controls.Add(log);
-
-            repo = new docurepo();
-            flowLayoutPanel1.Controls.Add(repo);
-
-          
-           homeowners = new Homeowners();
-            flowLayoutPanel1.Controls.Add(homeowners);
-
             homeowners.MonthDuesControl = dues;
 
             EnforcePermissions();
-
         }
+
         private void EnforcePermissions()
         {
-
-
             btnAnnouncement.Visible = loginform.CurrentUser.HasPermission("CanAccessAnnouncements");
             btnRepositories.Visible = loginform.CurrentUser.HasPermission("CanAccessDocuments");
             btnMonthlydues.Visible = loginform.CurrentUser.HasPermission("CanAccessMonthlyDues");
             // btnEditDues.Visible = loginform.CurrentUser.HasPermission("CanEditMonthlyDues");
             btnProfile.Visible = loginform.CurrentUser.HasPermission("CanAccessProfiles");
-            
+
             btnScheduling.Visible = loginform.CurrentUser.HasPermission("CanAccessScheduling");
             btnVisitorlog.Visible = loginform.CurrentUser.HasPermission("CanAccessVisitorLog");
-
         }
+
         private void LoadUserProfilePicture()
         {
             try
@@ -141,10 +129,6 @@ namespace RECOMANAGESYS
                                 ProfilePicDB.BorderStyle = BorderStyle.FixedSingle;
                             }
                         }
-                        else
-                        {
-                            
-                        }
                     }
                 }
             }
@@ -155,8 +139,7 @@ namespace RECOMANAGESYS
             }
         }
 
-
-            private void button1_Click(object sender, EventArgs e)
+        private void button1_Click(object sender, EventArgs e)
         {
             if (MessageBox.Show("Are you sure you want to logout?", "Message Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
@@ -166,39 +149,47 @@ namespace RECOMANAGESYS
             }
         }
 
+        // --- Updated button handlers with RefreshData ---
         private void btnDashboard_Click(object sender, EventArgs e)
         {
+            dash.RefreshData();    // refresh all relevant panels inside dashboardControl
             ShowControl(dash);
         }
 
         private void btnMonthlydues_Click(object sender, EventArgs e)
         {
+            dues.RefreshData();
             ShowControl(dues);
         }
 
         public void btnAnnouncement_Click(object sender, EventArgs e)
         {
+            announce.RefreshData();
             ShowControl(announce);
         }
 
         public void btnScheduling_Click(object sender, EventArgs e)
         {
+            sched.RefreshData();
             ShowControl(sched);
         }
 
         public void btnVisitorlog_Click(object sender, EventArgs e)
         {
+            log.RefreshData();
             ShowControl(log);
         }
 
         private void btnRepositories_Click(object sender, EventArgs e)
         {
+            repo.RefreshData();
             ShowControl(repo);
         }
 
         private void btnProfile_Click(object sender, EventArgs e)
         {
-           ShowControl(homeowners);
+            homeowners.RefreshData();
+            ShowControl(homeowners);
         }
 
         private void ProfilePicDB_Click(object sender, EventArgs e)

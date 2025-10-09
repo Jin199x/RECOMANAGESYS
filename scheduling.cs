@@ -24,6 +24,16 @@ namespace RECOMANAGESYS
             this.AutoScaleMode = AutoScaleMode.Dpi;
             this.Load += scheduling_Load;
         }
+        public void RefreshData()
+        {
+            LoadVenues();
+            LoadEventsData();
+            LoadApprovedBy();
+            ClearEventForm();
+
+            InitializeGarbageScheduling();
+        }
+
         private void scheduling_Load(object sender, EventArgs e)
         {
 

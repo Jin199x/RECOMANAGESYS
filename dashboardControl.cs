@@ -29,10 +29,19 @@ namespace RECOMANAGESYS
             lblNotifCount.AutoSize = false;
             lblNotifCount.Width = 18;
             lblNotifCount.Height = 18;
-            lblNotifCount.Visible = false; // hidden if no notifications
-
+            lblNotifCount.Visible = false;
         }
+
         private ToolTip lvToolTip = new ToolTip();
+        public void RefreshData()
+        {
+            LoadDashboardAnnouncements();
+            UpdateVisitorDashboard();
+            LoadScheduledEvents();
+            LoadNextGarbageSchedules();
+            NotificationManager.Reload();
+        }
+
         private void dashboardControl_Load(object sender, EventArgs e)
         {
             // Date and Time
@@ -222,7 +231,7 @@ namespace RECOMANAGESYS
                 string countQuery = "SELECT COUNT(*) FROM TBL_VisitorsLog WHERE CAST(Date AS DATE) = CAST(GETDATE() AS DATE)";
                 int todayCount = (int)new SqlCommand(countQuery, conn).ExecuteScalar();
 
-                lblTodayVisitors.Text = todayCount > 0 ? todayCount.ToString() : "No visitors today";
+                lblTodayVisitors.Text = todayCount > 0 ? todayCount.ToString() : "0";
                 lvVisitor.Items.Clear();
                 lvVisitor.Columns.Clear();
 

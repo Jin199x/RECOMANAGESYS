@@ -14,16 +14,20 @@ namespace RECOMANAGESYS
             InitializeComponent();
             this.AutoScaleMode = AutoScaleMode.Dpi;
             panelDesktop.AutoScroll = true;
-            SetupFilterButtons();
-
             flowBreadcrumb.WrapContents = false;
             flowBreadcrumb.AutoSize = false;
             flowBreadcrumb.Height = 25; 
             flowBreadcrumb.AutoScroll = false;
-
-            LoadDesktopItems();
             searchDocu.KeyDown += searchDocu_KeyDown;
+            SetupFilterButtons();
+            LoadDesktopItems();
         }
+        public void RefreshData()
+        {
+            SetupFilterButtons();
+            LoadDesktopItems();
+        }
+        private ToolTip itemToolTip = new ToolTip(); //mouseHover
         private ToolStripMenuItem activeTypeMenuItem = null; //for Type
         private ToolStripMenuItem activeDateMenuItem = null;//for date added
         private ToolStripMenuItem activeModifiedMenuItem = null;//for modified
@@ -360,8 +364,10 @@ namespace RECOMANAGESYS
                     desktopItems.Add(newItem);
                 else
                     currentFolder.Children.Add(newItem);
-
-                AddItemPanel(newItem);
+                // REDISPLAY CURRENT FOLDER TO UPDATE EMPTY ICON AUTOMATICALLY
+                DisplayItems(currentFolder == null
+                    ? desktopItems.Where(d => d.Parent == null).ToList()
+                    : currentFolder.Children);
             }
         }
 
@@ -452,6 +458,7 @@ namespace RECOMANAGESYS
             itemPanel.Height = itemHeight;
             itemPanel.Tag = item;
 
+            // Icon
             PictureBox icon = new PictureBox();
             icon.Image = GetItemIcon(item);
             icon.SizeMode = PictureBoxSizeMode.StretchImage;
@@ -460,11 +467,18 @@ namespace RECOMANAGESYS
             icon.Top = 0;
             icon.Left = (itemWidth - icon.Width) / 2;
 
+            // Label for name
             Label nameLabel = new Label();
-            nameLabel.Text = item.Name;
             nameLabel.Top = 65;
             nameLabel.Width = itemWidth;
-            nameLabel.TextAlign = ContentAlignment.MiddleCenter;
+            nameLabel.Height = 35; // allow up to 2 lines
+            nameLabel.TextAlign = ContentAlignment.TopCenter;
+
+            // Truncate text to 2 lines with ellipsis if too long
+            nameLabel.AutoEllipsis = true;
+            nameLabel.Text = item.Name;
+            nameLabel.MaximumSize = new Size(itemWidth, 35); // max 2 lines height
+            nameLabel.AutoSize = false;
 
             itemPanel.Controls.Add(icon);
             itemPanel.Controls.Add(nameLabel);
@@ -483,13 +497,22 @@ namespace RECOMANAGESYS
             // Attach events
             itemPanel.MouseDoubleClick += ItemPanel_MouseDoubleClick;
             itemPanel.MouseUp += ItemPanel_MouseUp;
-
-            // Forward events from icon/label
             icon.MouseDoubleClick += (s, e) => ItemPanel_MouseDoubleClick(itemPanel, null);
             nameLabel.MouseDoubleClick += (s, e) => ItemPanel_MouseDoubleClick(itemPanel, null);
             icon.MouseUp += (s, e) => ItemPanel_MouseUp(itemPanel, e);
             nameLabel.MouseUp += (s, e) => ItemPanel_MouseUp(itemPanel, e);
+
+            // --- Tooltip setup for instant show/hide ---
+            ToolTip itemToolTip = new ToolTip();
+            itemToolTip.ShowAlways = true;
+
+            icon.MouseEnter += (s, e) => itemToolTip.Show(item.Name, icon, icon.Width / 2, icon.Height);
+            icon.MouseLeave += (s, e) => itemToolTip.Hide(icon);
+
+            nameLabel.MouseEnter += (s, e) => itemToolTip.Show(item.Name, nameLabel, nameLabel.Width / 2, nameLabel.Height);
+            nameLabel.MouseLeave += (s, e) => itemToolTip.Hide(nameLabel);
         }
+
 
         private Image GetItemIcon(DesktopItem item)
         {

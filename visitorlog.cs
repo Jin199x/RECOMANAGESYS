@@ -20,6 +20,10 @@ namespace RECOMANAGESYS
             this.AutoScaleMode = AutoScaleMode.Dpi;
             VisitorLog();
         }
+        public void RefreshData()
+        {
+            VisitorLog();
+        }
         private void VisitorLog()
         {
             using (SqlConnection conn = DatabaseHelper.GetConnection())

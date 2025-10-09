@@ -15,6 +15,11 @@ namespace RECOMANAGESYS
             this.AutoScaleMode = AutoScaleMode.Dpi;
         }
         private ToolTip toolTip = new ToolTip(); //mouse hover
+        public void RefreshData()
+        {
+            LoadAnnouncement();
+        }
+
         private void button3_Click(object sender, EventArgs e) //btnPostAnnouncement
         {
             PostAnnouncement postForm = new PostAnnouncement(this);
