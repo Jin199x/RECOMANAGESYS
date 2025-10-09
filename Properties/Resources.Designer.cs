@@ -203,6 +203,16 @@ namespace RECOMANAGESYS.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap phase2f {
+            get {
+                object obj = ResourceManager.GetObject("phase2f", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap pptIcon {
             get {
                 object obj = ResourceManager.GetObject("pptIcon", resourceCulture);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Documents;
@@ -395,100 +396,135 @@ namespace RECOMANAGESYS
         {
             if (lvResidents.SelectedItems.Count == 0)
             {
-                System.Windows.Forms.MessageBox.Show("Please select a resident to generate the receipt.", "No Resident Selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                System.Windows.Forms.MessageBox.Show(
+                    "Please select a resident to generate the statement.",
+                    "No Resident Selected",
+                    System.Windows.Forms.MessageBoxButtons.OK,
+                    System.Windows.Forms.MessageBoxIcon.Warning
+                );
                 return;
             }
 
             int residentId = Convert.ToInt32(lvResidents.SelectedItems[0].SubItems[0].Text);
-
-            string fullName = "";
-            string address = "";
-            List<(string Month, decimal Amount, DateTime PaymentDate)> payments = new List<(string, decimal, DateTime)>();
+            string fullName = "", address = "";
+            List<(string Month, decimal AmountPaid, DateTime PaymentDate)> payments = new List<(string, decimal, DateTime)>();
 
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
                 conn.Open();
 
-                SqlCommand cmdResident = new SqlCommand(
-                    "SELECT FirstName, MiddleName, LastName, HomeAddress FROM Residents WHERE HomeownerID=@residentId", conn);
-                cmdResident.Parameters.AddWithValue("@residentId", residentId);
-
-                using (SqlDataReader reader = cmdResident.ExecuteReader())
+                // Get resident details
+                using (SqlCommand cmdResident = new SqlCommand(
+                    "SELECT FirstName, MiddleName, LastName, HomeAddress FROM Residents WHERE HomeownerID=@residentId", conn))
                 {
-                    if (reader.Read())
+                    cmdResident.Parameters.AddWithValue("@residentId", residentId);
+                    using (SqlDataReader reader = cmdResident.ExecuteReader())
                     {
-                        fullName = $"{reader["FirstName"]} {reader["MiddleName"]} {reader["LastName"]}";
+                        if (reader.Read())
+                            fullName = $"{reader["FirstName"]} {reader["MiddleName"]} {reader["LastName"]}";
+                        else
+                        {
+                            System.Windows.Forms.MessageBox.Show(
+                                "Resident not found.",
+                                "Error",
+                                System.Windows.Forms.MessageBoxButtons.OK,
+                                System.Windows.Forms.MessageBoxIcon.Error
+                            );
+                            return;
+                        }
                         address = reader["HomeAddress"].ToString();
-                    }
-                    else
-                    {
-                        System.Windows.Forms.MessageBox.Show("Resident not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
                     }
                 }
 
-                SqlCommand cmdPayments = new SqlCommand(
-                    "SELECT MonthCovered, AmountPaid, PaymentDate FROM MonthlyDues WHERE HomeownerId=@residentId ORDER BY MonthCovered", conn);
-                cmdPayments.Parameters.AddWithValue("@residentId", residentId);
-
-                using (SqlDataReader reader = cmdPayments.ExecuteReader())
+                // Get all payments
+                using (SqlCommand cmdPayments = new SqlCommand(
+                    "SELECT MonthCovered, AmountPaid, PaymentDate FROM MonthlyDues WHERE HomeownerId=@residentId ORDER BY MonthCovered", conn))
                 {
-                    while (reader.Read())
+                    cmdPayments.Parameters.AddWithValue("@residentId", residentId);
+                    using (SqlDataReader reader = cmdPayments.ExecuteReader())
                     {
-                        string month = reader["MonthCovered"].ToString();
-                        decimal amount = Convert.ToDecimal(reader["AmountPaid"]);
-                        DateTime date = Convert.ToDateTime(reader["PaymentDate"]);
-                        payments.Add((month, amount, date));
+                        while (reader.Read())
+                        {
+                            payments.Add((
+                                reader["MonthCovered"].ToString(),
+                                Convert.ToDecimal(reader["AmountPaid"]),
+                                Convert.ToDateTime(reader["PaymentDate"])
+                            ));
+                        }
                     }
                 }
             }
+
+            decimal monthlyDue = 100; // set your monthly rate
+            DateTime now = DateTime.Now;
+            int currentYear = now.Year;
+
+            // Determine all months from Jan to current month
+            List<string> allMonths = new List<string>();
+            for (int m = 1; m <= now.Month; m++)
+                allMonths.Add(new DateTime(currentYear, m, 1).ToString("MMMM yyyy"));
+
+            // Calculate previous balance from missed months
+            decimal runningBalance = 0;
+            Dictionary<string, decimal> monthPaidAmounts = payments.ToDictionary(p => p.Month, p => p.AmountPaid);
 
             StringBuilder html = new StringBuilder();
             html.Append(@"
 <html>
 <head>
-    <title>Phase 2F Mabuhay Homes</title>
+    <title>Statement of Account</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 30px; }
-        h2 { text-align: center; font-weight: bold; margin-bottom: 20px; }
-        p { font-size: 14px; }
+        h2 { text-align: center; margin-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #333; padding: 8px; text-align: left; font-size: 13px; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
         th { background-color: #f0f0f0; }
         tr:nth-child(even) { background-color: #f9f9f9; }
+        .missed { background-color: #ffd6d6; }
+        .paid { background-color: #d6ffd6; }
         .total-row td { font-weight: bold; background-color: #e0e0e0; }
     </style>
 </head>
 <body>");
-
-            html.Append($"<h2>Payment Receipt</h2>");
+            html.Append($"<h2>Statement of Account</h2>");
             html.Append($"<p><b>Resident:</b> {fullName}<br>");
-            html.Append($"<b>Address:</b> {address}</p>");
-
+            html.Append($"<b>Address:</b> {address}<br>");
+            html.Append($"<b>Date Issued:</b> {DateTime.Now:MMMM dd, yyyy}</p>");
             html.Append("<table>");
-            html.Append("<tr><th>Month Covered</th><th>Amount Paid</th><th>Payment Date</th></tr>");
+            html.Append("<tr><th>Month</th><th>Debit (Due)</th><th>Credit (Payment)</th><th>Balance</th><th>Status</th></tr>");
 
-            decimal totalPaid = 0;
-            foreach (var p in payments)
+            foreach (string month in allMonths)
             {
-                html.Append($"<tr><td>{p.Month}</td><td>{p.Amount:F2}</td><td>{p.PaymentDate:MMMM dd, yyyy}</td></tr>");
-                totalPaid += p.Amount;
+                decimal paid = monthPaidAmounts.ContainsKey(month) ? monthPaidAmounts[month] : 0;
+                string status = paid >= monthlyDue ? "Paid" : "Missed";
+
+                runningBalance += monthlyDue - paid;
+
+                html.Append($"<tr class='{(status == "Paid" ? "paid" : "missed")}'><td>{month}</td>");
+                html.Append($"<td>₱{monthlyDue:F2}</td>");
+                html.Append($"<td>₱{paid:F2}</td>");
+                html.Append($"<td>₱{runningBalance:F2}</td>");
+                html.Append($"<td>{status}</td></tr>");
             }
 
-            html.Append($"<tr class='total-row'><td>Total Paid</td><td>{totalPaid:F2}</td><td></td></tr>");
-            html.Append("</table></body></html>");
+            html.Append($"<tr class='total-row'><td colspan='3'>Remaining Balance</td><td colspan='2'>₱{runningBalance:F2}</td></tr>");
+            html.Append("</table>");
+            html.Append("<p><i>This statement is computer-generated and does not require a signature.</i></p>");
+            html.Append("</body></html>");
 
-            WebBrowser webBrowser = new WebBrowser
-            {
-                DocumentText = html.ToString()
-            };
-
+            WebBrowser webBrowser = new WebBrowser { DocumentText = html.ToString() };
             webBrowser.DocumentCompleted += (s, ev) =>
             {
                 webBrowser.Print();
-                System.Windows.Forms.MessageBox.Show("The receipt is ready to print or save as PDF.", "Print Ready", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                System.Windows.Forms.MessageBox.Show(
+                    "The Statement of Account is ready to print or save as PDF.",
+                    "Print Ready",
+                    System.Windows.Forms.MessageBoxButtons.OK,
+                    System.Windows.Forms.MessageBoxIcon.Information
+                );
             };
         }
+
 
         public void cmbResidentFilter_SelectedIndexChanged(object sender, EventArgs e)
         {

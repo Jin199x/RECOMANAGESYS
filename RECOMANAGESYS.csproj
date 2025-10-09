@@ -422,6 +422,12 @@
   <ItemGroup>
     <None Include="Resources\garbage_icon.png" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\..png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\phase2f.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="packages\Avalonia.BuildServices.0.0.31\build\Avalonia.BuildServices.targets" Condition="Exists('packages\Avalonia.BuildServices.0.0.31\build\Avalonia.BuildServices.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
