@@ -73,9 +73,39 @@ namespace RECOMANAGESYS.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap announcement_icon {
+            get {
+                object obj = ResourceManager.GetObject("announcement_icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap default_icon {
+            get {
+                object obj = ResourceManager.GetObject("default_icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap emptyFolder {
             get {
                 object obj = ResourceManager.GetObject("emptyFolder", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap event_icon {
+            get {
+                object obj = ResourceManager.GetObject("event_icon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -106,6 +136,16 @@ namespace RECOMANAGESYS.Properties {
         internal static System.Drawing.Bitmap folderIcon {
             get {
                 object obj = ResourceManager.GetObject("folderIcon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap garbage_icon {
+            get {
+                object obj = ResourceManager.GetObject("garbage_icon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

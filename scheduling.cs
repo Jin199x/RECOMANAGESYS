@@ -824,9 +824,10 @@ namespace RECOMANAGESYS
         {
             tabControl1.SelectedTab = Tab1Events;
         }
+
     }
 
- }
+}
 
 
 

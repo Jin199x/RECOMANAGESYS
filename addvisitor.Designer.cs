@@ -149,6 +149,7 @@
             this.cancelvisitorbtn.TabIndex = 12;
             this.cancelvisitorbtn.Text = "Cancel";
             this.cancelvisitorbtn.UseVisualStyleBackColor = true;
+            this.cancelvisitorbtn.Click += new System.EventHandler(this.cancelvisitorbtn_Click);
             // 
             // Purposetxt
             // 

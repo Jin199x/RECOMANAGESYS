@@ -78,6 +78,7 @@
             // 
             // tabControl1
             // 
+            this.tabControl1.Appearance = System.Windows.Forms.TabAppearance.FlatButtons;
             this.tabControl1.Controls.Add(this.Tab1Events);
             this.tabControl1.Controls.Add(this.Tab2GarbageSched);
             this.tabControl1.Font = new System.Drawing.Font("Microsoft YaHei UI", 10.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -90,17 +91,17 @@
             // 
             // Tab1Events
             // 
+            this.Tab1Events.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
             this.Tab1Events.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.Tab1Events.Controls.Add(this.DGVEvents);
             this.Tab1Events.Controls.Add(this.panel5);
-            this.Tab1Events.Location = new System.Drawing.Point(4, 39);
+            this.Tab1Events.Location = new System.Drawing.Point(4, 42);
             this.Tab1Events.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.Tab1Events.Name = "Tab1Events";
             this.Tab1Events.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.Tab1Events.Size = new System.Drawing.Size(1135, 671);
+            this.Tab1Events.Size = new System.Drawing.Size(1135, 668);
             this.Tab1Events.TabIndex = 0;
             this.Tab1Events.Text = "Events";
-            this.Tab1Events.UseVisualStyleBackColor = true;
             this.Tab1Events.Click += new System.EventHandler(this.Tab1Events_Click);
             // 
             // DGVEvents
@@ -334,17 +335,17 @@
             // 
             // Tab2GarbageSched
             // 
+            this.Tab2GarbageSched.BackColor = System.Drawing.SystemColors.GradientActiveCaption;
             this.Tab2GarbageSched.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.Tab2GarbageSched.Controls.Add(this.DGVGarbageSched);
             this.Tab2GarbageSched.Controls.Add(this.panel2);
-            this.Tab2GarbageSched.Location = new System.Drawing.Point(4, 39);
+            this.Tab2GarbageSched.Location = new System.Drawing.Point(4, 42);
             this.Tab2GarbageSched.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.Tab2GarbageSched.Name = "Tab2GarbageSched";
             this.Tab2GarbageSched.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.Tab2GarbageSched.Size = new System.Drawing.Size(1135, 671);
+            this.Tab2GarbageSched.Size = new System.Drawing.Size(1135, 668);
             this.Tab2GarbageSched.TabIndex = 1;
             this.Tab2GarbageSched.Text = "Garbage Scheduling";
-            this.Tab2GarbageSched.UseVisualStyleBackColor = true;
             this.Tab2GarbageSched.Click += new System.EventHandler(this.Tab2GarbageSched_Click);
             // 
             // DGVGarbageSched

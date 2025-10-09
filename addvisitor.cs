@@ -134,5 +134,10 @@ namespace RECOMANAGESYS
                 e.Handled = true; // Ignore Enter key
             }
         }
+
+        private void cancelvisitorbtn_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
     }
 }

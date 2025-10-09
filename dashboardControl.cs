@@ -20,8 +20,11 @@ namespace RECOMANAGESYS
             this.AutoScaleMode = AutoScaleMode.Dpi;
             lvVisitor.ItemActivate -= lvVisitor_ItemActivate;
             lvVisitor.ItemActivate += lvVisitor_ItemActivate;
-            NotificationManager.NotificationsUpdated += UpdateNotificationUI;
-
+            NotificationManager.NotificationsUpdated += () =>
+            {
+                lblNotifCount.Text = NotificationManager.Notifications.Count(n => n.IsUnread).ToString();
+                lblNotifCount.Visible = NotificationManager.Notifications.Any(n => n.IsUnread);
+            };
             lblNotifCount.BackColor = Color.Red;
             lblNotifCount.ForeColor = Color.White;
             lblNotifCount.Font = new Font("Segoe UI", 8, FontStyle.Bold);
@@ -72,13 +75,6 @@ namespace RECOMANAGESYS
             lblNextDay2.Click += lblNextDay_Click;
             lblNextDay1.Cursor = Cursors.Hand;
             lblNextDay2.Cursor = Cursors.Hand;
-        }
-        private void UpdateNotificationUI()
-        {
-            // Update red counter
-            int count = NotificationManager.Notifications.Count;
-            lblNotifCount.Text = count.ToString();
-            lblNotifCount.Visible = count > 0;
         }
         private void LoadDashboardAnnouncements()
         {
@@ -557,8 +553,6 @@ namespace RECOMANAGESYS
                 MessageBox.Show("No new notifications.", "Notifications", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-
-            // open/close notif toggle
             if (notifForm != null && !notifForm.IsDisposed)
             {
                 notifForm.Close();
@@ -566,64 +560,161 @@ namespace RECOMANAGESYS
                 return;
             }
 
-            // Reset red counter
-            lblNotifCount.Visible = false;
-            lblNotifCount.Text = "0";
-
             notifForm = new Form
             {
-                Size = new Size(300, 300),
+                Size = new Size(398, 400),
                 StartPosition = FormStartPosition.Manual,
                 TopMost = true,
                 FormBorderStyle = FormBorderStyle.FixedToolWindow,
+                BackColor = Color.LightSteelBlue,
                 ControlBox = false
             };
 
-            notifForm.Location = btnNotif.PointToScreen(new Point(0, btnNotif.Height));
+            int offsetX = -350; 
+            notifForm.Location = btnNotif.PointToScreen(new Point(offsetX, btnNotif.Height));
+            notifForm.Deactivate += (s, ev) =>
+            {
+                if (notifForm != null && !notifForm.IsDisposed)
+                {
+                    notifForm.FormClosed -= null; 
+                    notifForm.Close();
+                    notifForm = null;
+                }
+            };
 
             FlowLayoutPanel panel = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                AutoScroll = true
+                AutoScroll = true,
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                Padding = new Padding(5)
             };
 
             foreach (var notif in notificationList)
             {
-                LinkLabel lbl = new LinkLabel
+                Panel notifPanel = new Panel
                 {
-                    Text = notif.message,
-                    AutoSize = true,
-                    Tag = notif.type,
-                    LinkColor = Color.Blue
+                    Size = new Size(350, 70),
+                    BackColor = Color.FromArgb(245, 245, 245),
+                    Margin = new Padding(5),
+                    Cursor = Cursors.Hand,
+                    Tag = notif
                 };
 
-                lbl.Click += (s, ev) =>
+                PictureBox icon = new PictureBox
                 {
-                    notifForm.Close();
-                    notifForm = null; // reset reference
+                    Size = new Size(40, 40),
+                    Location = new Point(10, 16),
+                    SizeMode = PictureBoxSizeMode.StretchImage
+                };
+
+                if (notif.type == "Announcement")
+                    icon.Image = Properties.Resources.announcement_icon;
+                else if (notif.type == "Event")
+                    icon.Image = Properties.Resources.event_icon;
+                else if (notif.type == "Garbage")
+                    icon.Image = Properties.Resources.garbage_icon;
+                else
+                    icon.Image = Properties.Resources.default_icon;
+
+                Label lblText = new Label
+                {
+                    Text = notif.message,
+                    AutoSize = false,
+                    Width = 300,
+                    Height = 60,
+                    Location = new Point(50, 0),
+                    Font = new Font("Segoe UI", 9),
+                    TextAlign = ContentAlignment.MiddleLeft
+                };
+
+                notifPanel.Controls.Add(icon);
+                notifPanel.Controls.Add(lblText);
+
+                notifPanel.Click += (s, ev) =>
+                {
+                    NotificationManager.MarkAsRead(notif);
+
+                    // Close the notification form safely
+                    if (notifForm != null && !notifForm.IsDisposed)
+                    {
+                        notifForm.Close();
+                        notifForm = null;
+                    }
+
                     Form parentForm = this.FindForm();
                     if (parentForm is dashboard dash)
                     {
                         switch (notif.type)
                         {
                             case "Announcement":
-                                dash.btnAnnouncement_Click(this, EventArgs.Empty);
+                                dash.ShowAnnouncementForm();
                                 break;
+
                             case "Event":
+                                dash.OpenSchedulingTab("Event");
+                                break;
                             case "Garbage":
-                                dash.btnScheduling_Click(this, EventArgs.Empty);
+                                dash.OpenSchedulingTab("Garbage");
                                 break;
                         }
                     }
+
+                    // Update red counter
+                    int current = int.Parse(lblNotifCount.Text);
+                    current = Math.Max(0, current - 1);
+                    lblNotifCount.Text = current.ToString();
+                    lblNotifCount.Visible = current > 0;
                 };
 
-                panel.Controls.Add(lbl);
+                notifPanel.Tag = notif;
+                // Click label/icon to trigger panel click
+                lblText.Click += (s, ev) => NotifyPanel_ClickHandler(notifPanel);
+                icon.Click += (s, ev) => NotifyPanel_ClickHandler(notifPanel);
+
+                notifPanel.MouseEnter += (s, ev) => notifPanel.BackColor = Color.FromArgb(230, 240, 255);
+                notifPanel.MouseLeave += (s, ev) => notifPanel.BackColor = Color.FromArgb(245, 245, 245);
+
+                panel.Controls.Add(notifPanel);
             }
 
             notifForm.Controls.Add(panel);
-            notifForm.FormClosed += (s, ev) => notifForm = null; // clear reference when closed
+            notifForm.FormClosed += (s, ev) => notifForm = null;
             notifForm.Show();
         }
+        private void NotifyPanel_ClickHandler(Panel notifPanel)
+        {
+            var notif = (Notification)notifPanel.Tag; // cast to Notification, not a tuple
+
+            notifForm.Close();
+            notifForm = null;
+
+            Form parentForm = this.FindForm();
+            if (parentForm is dashboard dash)
+            {
+                switch (notif.type)
+                {
+                    case "Announcement":
+                        dash.ShowAnnouncementForm(); 
+                        break;
+
+                    case "Event":
+                        dash.OpenSchedulingTab("Event");
+                        break;
+                    case "Garbage":
+                        dash.OpenSchedulingTab("Garbage");
+                        break;
+                }
+                NotificationManager.MarkAsRead(notif);
+                int current = NotificationManager.Notifications.Count(n => n.IsUnread);
+                lblNotifCount.Text = current.ToString();
+                lblNotifCount.Visible = current > 0;
+            }
+        }
+
+
+
         private void lblNextDay_Click(object sender, EventArgs e)
         {
             Form parentForm = this.FindForm();

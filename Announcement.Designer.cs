@@ -75,7 +75,7 @@
             this.btnPostAnnouncement.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnPostAnnouncement.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnPostAnnouncement.ForeColor = System.Drawing.Color.White;
-            this.btnPostAnnouncement.Location = new System.Drawing.Point(925, 39);
+            this.btnPostAnnouncement.Location = new System.Drawing.Point(924, 29);
             this.btnPostAnnouncement.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnPostAnnouncement.Name = "btnPostAnnouncement";
             this.btnPostAnnouncement.Size = new System.Drawing.Size(213, 51);

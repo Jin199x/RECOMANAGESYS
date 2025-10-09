@@ -29,7 +29,6 @@ namespace RECOMANAGESYS
             InitializeComponent();
             this.AutoScaleMode = AutoScaleMode.Dpi;
         }
-
         private void ShowControl(UserControl control)
         {
             flowLayoutPanel1.Controls.Clear();
@@ -61,7 +60,6 @@ namespace RECOMANAGESYS
             lblName.Text = loginform.CurrentUser.FullName;
             lblRole.Text = loginform.CurrentUser.Role;
 
-            // Initialize controls once
             dash = new dashboardControl();
             dues = new monthdues();
             announce = new Announcement();
@@ -70,7 +68,6 @@ namespace RECOMANAGESYS
             repo = new docurepo();
             homeowners = new Homeowners();
 
-            // Add to panel (optional, first load can show dash)
             flowLayoutPanel1.Controls.Add(dash);
 
             LoadUserProfilePicture();
@@ -148,11 +145,9 @@ namespace RECOMANAGESYS
                 this.Hide();
             }
         }
-
-        // --- Updated button handlers with RefreshData ---
         private void btnDashboard_Click(object sender, EventArgs e)
         {
-            dash.RefreshData();    // refresh all relevant panels inside dashboardControl
+            dash.RefreshData();    
             ShowControl(dash);
         }
 
@@ -201,6 +196,24 @@ namespace RECOMANAGESYS
         {
 
         }
+        public void ShowAnnouncementForm()
+        {
+            ShowControl(announce);
+        }
+        public void OpenSchedulingTab(string tabName)
+        {
+            btnScheduling_Click(this, EventArgs.Empty); // show the panel
+            if (sched == null) return;
 
+            switch (tabName)
+            {
+                case "Event":
+                    sched.ShowEventsTab();
+                    break;
+                case "Garbage":
+                    sched.ShowGarbageScheduleTab();
+                    break;
+            }
+        }
     }
 }
