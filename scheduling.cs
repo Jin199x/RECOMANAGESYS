@@ -580,7 +580,7 @@ namespace RECOMANAGESYS
             dgv.Dock = DockStyle.None;
             dgv.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
         }
-        
+
         private void DGVGarbageSched_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
@@ -816,10 +816,19 @@ namespace RECOMANAGESYS
                 return true; // Return true to prevent potential data issues
             }
         }
-
+        public void ShowGarbageScheduleTab()
+        {
+            tabControl1.SelectedTab = Tab2GarbageSched;
+        }
+        public void ShowEventsTab()
+        {
+            tabControl1.SelectedTab = Tab1Events;
+        }
     }
 
-}
+ }
+
+
 
 
 

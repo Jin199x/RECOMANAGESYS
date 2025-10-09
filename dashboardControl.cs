@@ -30,6 +30,9 @@ namespace RECOMANAGESYS
             lblNotifCount.Width = 18;
             lblNotifCount.Height = 18;
             lblNotifCount.Visible = false;
+            ToolTip tip = new ToolTip();
+            tip.SetToolTip(lblNextDay1, "View Garbage Collection Schedule");
+            tip.SetToolTip(lblNextDay2, "View Garbage Collection Schedule");
         }
 
         private ToolTip lvToolTip = new ToolTip();
@@ -65,6 +68,10 @@ namespace RECOMANAGESYS
             LoadScheduledEvents();
             LoadNextGarbageSchedules();
             NotificationManager.Reload();
+            lblNextDay1.Click += lblNextDay_Click;
+            lblNextDay2.Click += lblNextDay_Click;
+            lblNextDay1.Cursor = Cursors.Hand;
+            lblNextDay2.Cursor = Cursors.Hand;
         }
         private void UpdateNotificationUI()
         {
@@ -393,6 +400,14 @@ namespace RECOMANAGESYS
                             Cursor = Cursors.Hand
                         };
 
+                        // ✅ Add tooltip for event label
+                        ToolTip eventTip = new ToolTip();
+                        eventTip.AutoPopDelay = 5000;
+                        eventTip.InitialDelay = 500;
+                        eventTip.ReshowDelay = 200;
+                        eventTip.ShowAlways = true;
+                        eventTip.SetToolTip(lblEvent, "View Event Schedule");
+
                         int capturedEventId = eventId;
 
                         EventHandler clickHandler = (s, e) =>
@@ -401,6 +416,27 @@ namespace RECOMANAGESYS
                             if (parentForm is dashboard dash)
                             {
                                 dash.btnScheduling_Click(this, EventArgs.Empty);
+
+                                var schedulingControl = dash.Controls
+                                    .OfType<scheduling>()
+                                    .FirstOrDefault();
+
+                                if (schedulingControl != null)
+                                {
+                                    schedulingControl.ShowEventsTab();
+                                }
+                                else
+                                {
+                                    foreach (Control c in dash.Controls)
+                                    {
+                                        var sched = c.Controls.OfType<scheduling>().FirstOrDefault();
+                                        if (sched != null)
+                                        {
+                                            sched.ShowEventsTab();
+                                            break;
+                                        }
+                                    }
+                                }
                             }
                         };
 
@@ -412,10 +448,10 @@ namespace RECOMANAGESYS
                         eventPanel.Controls.Add(lblEvent);
                         flow.Controls.Add(eventPanel);
                     }
-
                 }
             }
         }
+
         public void RefreshScheduledEvents()
         {
             LoadScheduledEvents(); // auto refresh
@@ -510,7 +546,6 @@ namespace RECOMANAGESYS
             NotificationManager.Reload();
         }
 
-        // Add this at the top of your dashboardControl class
         private Form notifForm = null;
 
         private void btnNotif_Click(object sender, EventArgs e)
@@ -523,7 +558,7 @@ namespace RECOMANAGESYS
                 return;
             }
 
-            // If the form is already open, close it (toggle)
+            // open/close notif toggle
             if (notifForm != null && !notifForm.IsDisposed)
             {
                 notifForm.Close();
@@ -589,6 +624,34 @@ namespace RECOMANAGESYS
             notifForm.FormClosed += (s, ev) => notifForm = null; // clear reference when closed
             notifForm.Show();
         }
+        private void lblNextDay_Click(object sender, EventArgs e)
+        {
+            Form parentForm = this.FindForm();
+            if (parentForm is dashboard dash)
+            {
+                dash.btnScheduling_Click(this, EventArgs.Empty);
 
+                var schedulingControl = dash.Controls
+                    .OfType<scheduling>()
+                    .FirstOrDefault();
+
+                if (schedulingControl != null)
+                {
+                    schedulingControl.ShowGarbageScheduleTab();
+                }
+                else
+                {
+                    foreach (Control c in dash.Controls)
+                    {
+                        var sched = c.Controls.OfType<scheduling>().FirstOrDefault();
+                        if (sched != null)
+                        {
+                            sched.ShowGarbageScheduleTab();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 }

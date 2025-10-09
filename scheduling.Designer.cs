@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.tabGarbage = new System.Windows.Forms.TabControl();
+            this.tabControl1 = new System.Windows.Forms.TabControl();
             this.Tab1Events = new System.Windows.Forms.TabPage();
             this.DGVEvents = new System.Windows.Forms.DataGridView();
             this.panel5 = new System.Windows.Forms.Panel();
@@ -66,7 +66,7 @@
             this.label7 = new System.Windows.Forms.Label();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.tabGarbage.SuspendLayout();
+            this.tabControl1.SuspendLayout();
             this.Tab1Events.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.DGVEvents)).BeginInit();
             this.panel5.SuspendLayout();
@@ -76,17 +76,17 @@
             this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
-            // tabGarbage
+            // tabControl1
             // 
-            this.tabGarbage.Controls.Add(this.Tab1Events);
-            this.tabGarbage.Controls.Add(this.Tab2GarbageSched);
-            this.tabGarbage.Font = new System.Drawing.Font("Microsoft YaHei UI", 10.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tabGarbage.Location = new System.Drawing.Point(26, 26);
-            this.tabGarbage.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.tabGarbage.Name = "tabGarbage";
-            this.tabGarbage.SelectedIndex = 0;
-            this.tabGarbage.Size = new System.Drawing.Size(1143, 714);
-            this.tabGarbage.TabIndex = 0;
+            this.tabControl1.Controls.Add(this.Tab1Events);
+            this.tabControl1.Controls.Add(this.Tab2GarbageSched);
+            this.tabControl1.Font = new System.Drawing.Font("Microsoft YaHei UI", 10.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tabControl1.Location = new System.Drawing.Point(26, 26);
+            this.tabControl1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.tabControl1.Name = "tabControl1";
+            this.tabControl1.SelectedIndex = 0;
+            this.tabControl1.Size = new System.Drawing.Size(1143, 714);
+            this.tabControl1.TabIndex = 0;
             // 
             // Tab1Events
             // 
@@ -523,7 +523,7 @@
             // 
             this.panel1.BackColor = System.Drawing.Color.White;
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panel1.Controls.Add(this.tabGarbage);
+            this.panel1.Controls.Add(this.tabControl1);
             this.panel1.Location = new System.Drawing.Point(30, 121);
             this.panel1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.panel1.Name = "panel1";
@@ -541,7 +541,7 @@
             this.Name = "scheduling";
             this.Size = new System.Drawing.Size(1249, 920);
             this.Load += new System.EventHandler(this.scheduling_Load);
-            this.tabGarbage.ResumeLayout(false);
+            this.tabControl1.ResumeLayout(false);
             this.Tab1Events.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.DGVEvents)).EndInit();
             this.panel5.ResumeLayout(false);
@@ -557,7 +557,7 @@
 
         #endregion
 
-        private System.Windows.Forms.TabControl tabGarbage;
+        private System.Windows.Forms.TabControl tabControl1;
         private System.Windows.Forms.TabPage Tab1Events;
         private System.Windows.Forms.TabPage Tab2GarbageSched;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
