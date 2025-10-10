@@ -29,13 +29,14 @@
         private void InitializeComponent()
         {
             this.panel1 = new System.Windows.Forms.Panel();
+            this.btnToggleSelect = new System.Windows.Forms.Button();
             this.cmbResidentFilter = new System.Windows.Forms.ComboBox();
             this.lvResidents = new System.Windows.Forms.ListView();
             this.lvMonths = new System.Windows.Forms.ListView();
-            this.updatePayment = new System.Windows.Forms.Button();
-            this.btnGenerate = new System.Windows.Forms.Button();
+            this.btnProcess = new System.Windows.Forms.Button();
             this.searchbtn = new FontAwesome.Sharp.IconButton();
             this.txtSearch = new System.Windows.Forms.TextBox();
+            this.updatePayment = new System.Windows.Forms.Button();
             this.panel2 = new System.Windows.Forms.Panel();
             this.addPayment = new FontAwesome.Sharp.IconButton();
             this.panel1.SuspendLayout();
@@ -46,11 +47,11 @@
             // 
             this.panel1.BackColor = System.Drawing.Color.White;
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel1.Controls.Add(this.btnToggleSelect);
             this.panel1.Controls.Add(this.cmbResidentFilter);
             this.panel1.Controls.Add(this.lvResidents);
             this.panel1.Controls.Add(this.lvMonths);
-            this.panel1.Controls.Add(this.updatePayment);
-            this.panel1.Controls.Add(this.btnGenerate);
+            this.panel1.Controls.Add(this.btnProcess);
             this.panel1.Controls.Add(this.searchbtn);
             this.panel1.Controls.Add(this.txtSearch);
             this.panel1.Location = new System.Drawing.Point(30, 164);
@@ -58,6 +59,15 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(1193, 727);
             this.panel1.TabIndex = 1;
+            // 
+            // btnToggleSelect
+            // 
+            this.btnToggleSelect.Location = new System.Drawing.Point(110, 61);
+            this.btnToggleSelect.Name = "btnToggleSelect";
+            this.btnToggleSelect.Size = new System.Drawing.Size(139, 31);
+            this.btnToggleSelect.TabIndex = 10;
+            this.btnToggleSelect.Text = "Select all";
+            this.btnToggleSelect.UseVisualStyleBackColor = true;
             // 
             // cmbResidentFilter
             // 
@@ -72,6 +82,7 @@
             // 
             // lvResidents
             // 
+            this.lvResidents.CheckBoxes = true;
             this.lvResidents.GridLines = true;
             this.lvResidents.HideSelection = false;
             this.lvResidents.Location = new System.Drawing.Point(110, 111);
@@ -92,37 +103,21 @@
             this.lvMonths.UseCompatibleStateImageBehavior = false;
             this.lvMonths.View = System.Windows.Forms.View.Details;
             // 
-            // updatePayment
+            // btnProcess
             // 
-            this.updatePayment.BackColor = System.Drawing.SystemColors.HotTrack;
-            this.updatePayment.FlatAppearance.BorderSize = 0;
-            this.updatePayment.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.updatePayment.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.updatePayment.ForeColor = System.Drawing.Color.White;
-            this.updatePayment.Location = new System.Drawing.Point(24, 24);
-            this.updatePayment.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.updatePayment.Name = "updatePayment";
-            this.updatePayment.Size = new System.Drawing.Size(174, 48);
-            this.updatePayment.TabIndex = 5;
-            this.updatePayment.Text = "Update ";
-            this.updatePayment.UseVisualStyleBackColor = false;
-            this.updatePayment.Click += new System.EventHandler(this.button2_Click);
-            // 
-            // btnGenerate
-            // 
-            this.btnGenerate.BackColor = System.Drawing.SystemColors.HotTrack;
-            this.btnGenerate.FlatAppearance.BorderSize = 0;
-            this.btnGenerate.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnGenerate.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnGenerate.ForeColor = System.Drawing.Color.White;
-            this.btnGenerate.Location = new System.Drawing.Point(204, 24);
-            this.btnGenerate.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.btnGenerate.Name = "btnGenerate";
-            this.btnGenerate.Size = new System.Drawing.Size(225, 48);
-            this.btnGenerate.TabIndex = 4;
-            this.btnGenerate.Text = "Generate Report";
-            this.btnGenerate.UseVisualStyleBackColor = false;
-            this.btnGenerate.Click += new System.EventHandler(this.btnGenerate_Click);
+            this.btnProcess.BackColor = System.Drawing.SystemColors.HotTrack;
+            this.btnProcess.FlatAppearance.BorderSize = 0;
+            this.btnProcess.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnProcess.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnProcess.ForeColor = System.Drawing.Color.White;
+            this.btnProcess.Location = new System.Drawing.Point(24, 8);
+            this.btnProcess.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.btnProcess.Name = "btnProcess";
+            this.btnProcess.Size = new System.Drawing.Size(225, 48);
+            this.btnProcess.TabIndex = 4;
+            this.btnProcess.Text = "Generate SOA";
+            this.btnProcess.UseVisualStyleBackColor = false;
+            this.btnProcess.Click += new System.EventHandler(this.btnProcess_Click);
             // 
             // searchbtn
             // 
@@ -150,11 +145,28 @@
             this.txtSearch.TabIndex = 2;
             this.txtSearch.TextChanged += new System.EventHandler(this.txtSearch_TextChanged);
             // 
+            // updatePayment
+            // 
+            this.updatePayment.BackColor = System.Drawing.SystemColors.HotTrack;
+            this.updatePayment.FlatAppearance.BorderSize = 0;
+            this.updatePayment.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.updatePayment.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.updatePayment.ForeColor = System.Drawing.Color.White;
+            this.updatePayment.Location = new System.Drawing.Point(736, 30);
+            this.updatePayment.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.updatePayment.Name = "updatePayment";
+            this.updatePayment.Size = new System.Drawing.Size(199, 51);
+            this.updatePayment.TabIndex = 5;
+            this.updatePayment.Text = "Update Payment";
+            this.updatePayment.UseVisualStyleBackColor = false;
+            this.updatePayment.Click += new System.EventHandler(this.button2_Click);
+            // 
             // panel2
             // 
             this.panel2.BackColor = System.Drawing.Color.White;
             this.panel2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panel2.Controls.Add(this.addPayment);
+            this.panel2.Controls.Add(this.updatePayment);
             this.panel2.Location = new System.Drawing.Point(30, 29);
             this.panel2.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.panel2.Name = "panel2";
@@ -166,7 +178,7 @@
             this.addPayment.BackColor = System.Drawing.SystemColors.HotTrack;
             this.addPayment.FlatAppearance.BorderSize = 0;
             this.addPayment.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.addPayment.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.addPayment.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.addPayment.ForeColor = System.Drawing.Color.White;
             this.addPayment.IconChar = FontAwesome.Sharp.IconChar.Plus;
             this.addPayment.IconColor = System.Drawing.Color.White;
@@ -204,12 +216,13 @@
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.TextBox txtSearch;
         private FontAwesome.Sharp.IconButton searchbtn;
-        private System.Windows.Forms.Button btnGenerate;
+        private System.Windows.Forms.Button btnProcess;
         private FontAwesome.Sharp.IconButton addPayment;
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.Button updatePayment;
         private System.Windows.Forms.ListView lvMonths;
         private System.Windows.Forms.ListView lvResidents;
         private System.Windows.Forms.ComboBox cmbResidentFilter;
+        private System.Windows.Forms.Button btnToggleSelect;
     }
 }

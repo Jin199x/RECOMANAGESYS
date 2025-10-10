@@ -495,12 +495,63 @@ CREATE TABLE MonthlyDues (
     DueId INT PRIMARY KEY IDENTITY(1,1),
     HomeownerId INT NOT NULL FOREIGN KEY REFERENCES Residents(HomeownerID),
     UnitID INT NOT NULL FOREIGN KEY REFERENCES TBL_Units(UnitID),
-    PaymentDate DATE NOT NULL,
+    PaymentDate DATE NULL,
     AmountPaid DECIMAL(10,2) NOT NULL,
     DueRate DECIMAL(10,2) NOT NULL,
     MonthCovered VARCHAR(20) NOT NULL,
-    Remarks NVARCHAR(255) NULL
+    Remarks NVARCHAR(255) NULL,
+  -- (not used for now)  PaymentStatus NVARCHAR(20) DEFAULT 'Unpaid' NOT NULL
 );
+
+-- FOR monthlydues 
+CREATE OR ALTER PROCEDURE GenerateMonthlyDues
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @residentId INT;
+    DECLARE @unitId INT;
+    DECLARE @startDate DATE;
+    DECLARE @endDate DATE = GETDATE();
+    DECLARE @currentMonth DATE;
+
+    DECLARE residentCursor CURSOR FOR
+        SELECT h.HomeownerID, hu.UnitID, h.DateRegistered
+        FROM Residents h
+        INNER JOIN HomeownerUnits hu ON h.HomeownerID = hu.HomeownerID
+        WHERE h.IsActive = 1 AND hu.IsCurrent = 1;
+
+    OPEN residentCursor;
+    FETCH NEXT FROM residentCursor INTO @residentId, @unitId, @startDate;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        SET @currentMonth = DATEFROMPARTS(YEAR(@startDate), MONTH(@startDate), 1);
+
+        WHILE @currentMonth <= DATEFROMPARTS(YEAR(@endDate), MONTH(@endDate), 1)
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM MonthlyDues
+                WHERE HomeownerId = @residentId
+                  AND UnitID = @unitId
+                  AND MonthCovered = FORMAT(@currentMonth, 'MMMM yyyy')
+            )
+            BEGIN
+                INSERT INTO MonthlyDues (HomeownerId, UnitID, PaymentDate, AmountPaid, DueRate, MonthCovered, Remarks)
+                VALUES (@residentId, @unitId, NULL, 0, 100, FORMAT(@currentMonth, 'MMMM yyyy'), 'Missed');
+            END
+
+            SET @currentMonth = DATEADD(MONTH, 1, @currentMonth);
+        END
+
+        FETCH NEXT FROM residentCursor INTO @residentId, @unitId, @startDate;
+    END
+
+    CLOSE residentCursor;
+    DEALLOCATE residentCursor;
+END
+
 
 
 
