@@ -21,11 +21,9 @@ namespace RECOMANAGESYS
         );
 
         private static HashSet<string> readNotifications = new HashSet<string>();
-
         public static void Reload()
         {
             LoadReadStatus();
-
             notifications.Clear();
             DateTime now = DateTime.Now;
 
@@ -33,11 +31,11 @@ namespace RECOMANAGESYS
             {
                 conn.Open();
 
-                // Announcements
+                // Announcements 
                 string queryAnn = @"
-                SELECT Id, Title, IsImportant, DatePosted
-                FROM Announcements
-                WHERE ExpirationDate IS NULL OR ExpirationDate >= CAST(GETDATE() AS DATE)";
+            SELECT Id, Title, IsImportant, DatePosted
+            FROM Announcements
+            WHERE ExpirationDate IS NULL OR ExpirationDate >= CAST(GETDATE() AS DATE)";
                 using (SqlCommand cmd = new SqlCommand(queryAnn, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
@@ -47,16 +45,18 @@ namespace RECOMANAGESYS
                         int id = Convert.ToInt32(reader["Id"]);
                         bool isImportant = reader["IsImportant"] != DBNull.Value && Convert.ToBoolean(reader["IsImportant"]);
                         string title = reader["Title"].ToString();
-                        string key = $"Announcement_{id}";
                         DateTime datePosted = Convert.ToDateTime(reader["DatePosted"]);
 
                         if (isImportant)
                         {
-                            notifications.Add(new Notification($"⚠️ {title} (Important Announcement)", "Announcement", id, datePosted, !readNotifications.Contains(key)));
+                            var newNotif = new Notification($"⚠️ {title} (Important)", "Announcement", id, datePosted);
+                            newNotif.IsUnread = !readNotifications.Contains(newNotif.Key);
+                            notifications.Add(newNotif);
                         }
                         else
                         {
-                            if (datePosted.Date == DateTime.Today)
+                            var tempKey = $"Announcement_{id}";
+                            if (datePosted.Date == DateTime.Today && !readNotifications.Contains(tempKey))
                             {
                                 normalAnnouncementsPostedToday++;
                             }
@@ -64,17 +64,18 @@ namespace RECOMANAGESYS
                     }
                     if (normalAnnouncementsPostedToday > 0)
                     {
-                        string key = $"Announcement_Summary_{DateTime.Today:yyyy-MM-dd}";
                         string message = $"{normalAnnouncementsPostedToday} new announcement(s) posted today";
-                        notifications.Add(new Notification(message, "Announcement", null, DateTime.Today, !readNotifications.Contains(key)));
+                        var newNotif = new Notification(message, "Announcement", null, DateTime.Today);
+                        newNotif.IsUnread = !readNotifications.Contains(newNotif.Key);
+                        notifications.Add(newNotif);
                     }
                 }
 
-                // Events
+                // Events 
                 string queryEvents = @"
-                SELECT EventId, EventName, StartDateTime
-                FROM Events
-                WHERE CAST(StartDateTime AS DATE) IN (CAST(GETDATE() AS DATE), DATEADD(DAY,1,CAST(GETDATE() AS DATE)))";
+            SELECT EventId, EventName, StartDateTime
+            FROM Events
+            WHERE CAST(StartDateTime AS DATE) IN (CAST(GETDATE() AS DATE), DATEADD(DAY,1,CAST(GETDATE() AS DATE)))";
                 using (SqlCommand cmd = new SqlCommand(queryEvents, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
@@ -83,13 +84,14 @@ namespace RECOMANAGESYS
                         int id = Convert.ToInt32(reader["EventId"]);
                         string title = reader["EventName"].ToString();
                         DateTime start = Convert.ToDateTime(reader["StartDateTime"]);
-                        string key = $"Event_{id}";
                         string text = start.Date == DateTime.Today ? $"Event today: {title}" : $"Event tomorrow: {title}";
-                        notifications.Add(new Notification(text, "Event", id, start, !readNotifications.Contains(key)));
+                        var newNotif = new Notification(text, "Event", id, start);
+                        newNotif.IsUnread = !readNotifications.Contains(newNotif.Key);
+                        notifications.Add(newNotif);
                     }
                 }
 
-                // Garbage
+                // Garbage 
                 string queryGarbage = @"SELECT CollectionDay FROM GarbageCollectionSchedules WHERE Status = 1";
                 using (SqlCommand cmd = new SqlCommand(queryGarbage, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())
@@ -100,30 +102,50 @@ namespace RECOMANAGESYS
                         DayOfWeek scheduleDay = (DayOfWeek)Enum.Parse(typeof(DayOfWeek), day);
                         if (scheduleDay == now.DayOfWeek)
                         {
-                            string key = $"Garbage_Today_{now:yyyy-MM-dd}";
-                            // --- GEMINI: For "today" items, we use the current time to make them appear at the very top ---
-                            notifications.Add(new Notification("Garbage collection today!", "Garbage", null, now, !readNotifications.Contains(key)));
+                            var newNotif = new Notification("Garbage collection today!", "Garbage", null, now);
+                            newNotif.IsUnread = !readNotifications.Contains(newNotif.Key);
+                            notifications.Add(newNotif);
                         }
                     }
                 }
             }
 
             notifications = notifications.OrderByDescending(n => n.SortDate).ToList();
-
             NotificationsUpdated?.Invoke();
         }
-
+        
         public static void MarkAsRead(Notification notif)
         {
             if (!notif.IsUnread) return;
+            if (notif.id == null && notif.type == "Announcement")
+            {
+                using (SqlConnection conn = DatabaseHelper.GetConnection())
+                {
+                    conn.Open();
+                    string query = @"SELECT Id FROM Announcements 
+                             WHERE IsImportant = 0 AND CAST(DatePosted AS DATE) = CAST(GETDATE() AS DATE)";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            int id = Convert.ToInt32(reader["Id"]);
+                            readNotifications.Add($"Announcement_{id}");
+                        }
+                    }
+                }
+                readNotifications.Add(notif.Key);
+            }
+            else
+            {
+                readNotifications.Add(notif.Key);
+            }
 
-            notif.IsUnread = false;
-            string key = notif.type + "_" + (notif.id.HasValue ? notif.id.Value.ToString() : notif.message.GetHashCode().ToString());
-            readNotifications.Add(key);
+            notif.IsUnread = false; 
             SaveReadStatus();
-
             NotificationsUpdated?.Invoke();
         }
+        
 
         private static void LoadReadStatus()
         {
@@ -166,6 +188,22 @@ namespace RECOMANAGESYS
         public int? id;
         public bool IsUnread;
         public DateTime SortDate;
+
+        public string Key
+        {
+            get
+            {
+                if (id.HasValue) 
+                {
+                    return $"{type}_{id.Value}";
+                }
+                else 
+                {
+                    return $"{type}_Summary_{SortDate:yyyy-MM-dd}";
+                }
+            }
+        }
+
         public Notification(string message, string type, int? id, DateTime sortDate, bool isUnread = true)
         {
             this.message = message;
