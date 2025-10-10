@@ -52,6 +52,10 @@
             this.label9 = new System.Windows.Forms.Label();
             this.dtpEndMonth = new System.Windows.Forms.DateTimePicker();
             this.lblAmountPaid = new System.Windows.Forms.Label();
+            this.txtChange = new System.Windows.Forms.TextBox();
+            this.label10 = new System.Windows.Forms.Label();
+            this.label11 = new System.Windows.Forms.Label();
+            this.cmbRemarks = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // btnSave
@@ -66,7 +70,7 @@
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(112, 52);
             this.btnSave.TabIndex = 15;
-            this.btnSave.Text = "Save";
+            this.btnSave.Text = "Pay";
             this.btnSave.UseVisualStyleBackColor = false;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
@@ -215,7 +219,7 @@
             // 
             this.label6.AutoSize = true;
             this.label6.BackColor = System.Drawing.Color.Transparent;
-            this.label6.Location = new System.Drawing.Point(583, 276);
+            this.label6.Location = new System.Drawing.Point(576, 141);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(104, 20);
             this.label6.TabIndex = 30;
@@ -225,7 +229,7 @@
             // 
             this.label7.AutoSize = true;
             this.label7.BackColor = System.Drawing.Color.Transparent;
-            this.label7.Location = new System.Drawing.Point(583, 327);
+            this.label7.Location = new System.Drawing.Point(576, 192);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(82, 20);
             this.label7.TabIndex = 31;
@@ -235,7 +239,7 @@
             // 
             this.label8.AutoSize = true;
             this.label8.BackColor = System.Drawing.Color.Transparent;
-            this.label8.Location = new System.Drawing.Point(583, 380);
+            this.label8.Location = new System.Drawing.Point(576, 245);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(121, 20);
             this.label8.TabIndex = 32;
@@ -245,7 +249,7 @@
             // 
             this.lblDueRate.AutoSize = true;
             this.lblDueRate.BackColor = System.Drawing.Color.Transparent;
-            this.lblDueRate.Location = new System.Drawing.Point(685, 327);
+            this.lblDueRate.Location = new System.Drawing.Point(678, 192);
             this.lblDueRate.Name = "lblDueRate";
             this.lblDueRate.Size = new System.Drawing.Size(128, 20);
             this.lblDueRate.TabIndex = 34;
@@ -255,7 +259,7 @@
             // 
             this.lblMonthCovered.AutoSize = true;
             this.lblMonthCovered.BackColor = System.Drawing.Color.Transparent;
-            this.lblMonthCovered.Location = new System.Drawing.Point(710, 380);
+            this.lblMonthCovered.Location = new System.Drawing.Point(703, 245);
             this.lblMonthCovered.Name = "lblMonthCovered";
             this.lblMonthCovered.Size = new System.Drawing.Size(161, 20);
             this.lblMonthCovered.TabIndex = 35;
@@ -282,11 +286,46 @@
             // 
             this.lblAmountPaid.AutoSize = true;
             this.lblAmountPaid.BackColor = System.Drawing.Color.Transparent;
-            this.lblAmountPaid.Location = new System.Drawing.Point(707, 276);
+            this.lblAmountPaid.Location = new System.Drawing.Point(700, 141);
             this.lblAmountPaid.Name = "lblAmountPaid";
             this.lblAmountPaid.Size = new System.Drawing.Size(140, 20);
             this.lblAmountPaid.TabIndex = 38;
             this.lblAmountPaid.Text = "[pay monthly dues]";
+            // 
+            // txtChange
+            // 
+            this.txtChange.Location = new System.Drawing.Point(704, 308);
+            this.txtChange.Name = "txtChange";
+            this.txtChange.Size = new System.Drawing.Size(100, 26);
+            this.txtChange.TabIndex = 39;
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.BackColor = System.Drawing.Color.Transparent;
+            this.label10.Location = new System.Drawing.Point(576, 308);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(110, 20);
+            this.label10.TabIndex = 40;
+            this.label10.Text = "Change given:";
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.BackColor = System.Drawing.Color.Transparent;
+            this.label11.Location = new System.Drawing.Point(576, 364);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(77, 20);
+            this.label11.TabIndex = 41;
+            this.label11.Text = "Remarks:";
+            // 
+            // cmbRemarks
+            // 
+            this.cmbRemarks.FormattingEnabled = true;
+            this.cmbRemarks.Location = new System.Drawing.Point(682, 361);
+            this.cmbRemarks.Name = "cmbRemarks";
+            this.cmbRemarks.Size = new System.Drawing.Size(121, 28);
+            this.cmbRemarks.TabIndex = 42;
             // 
             // frmPayment
             // 
@@ -295,6 +334,10 @@
             this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(1022, 601);
+            this.Controls.Add(this.cmbRemarks);
+            this.Controls.Add(this.label11);
+            this.Controls.Add(this.label10);
+            this.Controls.Add(this.txtChange);
             this.Controls.Add(this.lblAmountPaid);
             this.Controls.Add(this.dtpEndMonth);
             this.Controls.Add(this.label9);
@@ -352,5 +395,9 @@
         private System.Windows.Forms.Label label9;
         private System.Windows.Forms.DateTimePicker dtpEndMonth;
         private System.Windows.Forms.Label lblAmountPaid;
+        private System.Windows.Forms.TextBox txtChange;
+        private System.Windows.Forms.Label label10;
+        private System.Windows.Forms.Label label11;
+        private System.Windows.Forms.ComboBox cmbRemarks;
     }
 }

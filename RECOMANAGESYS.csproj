@@ -355,6 +355,7 @@
     <EmbeddedResource Include="registerform.resx">
       <DependentUpon>registerform.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="PaymentReceipt.rdlc" />
     <EmbeddedResource Include="SOAReport.rdlc" />
     <EmbeddedResource Include="scheduling.resx">
       <DependentUpon>scheduling.cs</DependentUpon>

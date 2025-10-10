@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Drawing;
 using System.Windows.Forms;
+using static RECOMANAGESYS.loginform;
 
 namespace RECOMANAGESYS
 {
@@ -232,6 +233,7 @@ namespace RECOMANAGESYS
                     cmd.Parameters.AddWithValue("@amountPaid", BaseDueRate); // per month
                     cmd.Parameters.AddWithValue("@dueRate", BaseDueRate);
                     cmd.Parameters.AddWithValue("@monthCovered", monthCovered);
+                    cmd.Parameters.AddWithValue("@ProcessedByUserID", CurrentUser.UserId);
 
                     cmd.ExecuteNonQuery();
                 }
@@ -244,7 +246,43 @@ namespace RECOMANAGESYS
             else
             {
                 MessageBox.Show("Payment saved successfully!");
-                this.Close();
+
+                using (var receipt = new Form())
+                {
+                    receipt.Text = "Payment Receipt";
+                    receipt.StartPosition = FormStartPosition.CenterParent; 
+                    receipt.Width = 800;  
+                    receipt.Height = 600;
+
+                    var reportViewer = new Microsoft.Reporting.WinForms.ReportViewer
+                    {
+                        Dock = DockStyle.Fill,
+                        ProcessingMode = Microsoft.Reporting.WinForms.ProcessingMode.Local
+                    };
+
+                    receipt.Controls.Add(reportViewer);
+
+                    reportViewer.LocalReport.ReportEmbeddedResource = "RECOMANAGESYS.PaymentReceipt.rdlc";
+                    decimal.TryParse(txtChange.Text, out decimal changeAmount);
+
+                    var parameters = new Microsoft.Reporting.WinForms.ReportParameter[]
+                    {
+                      new Microsoft.Reporting.WinForms.ReportParameter("txtResidentID", txtResidentID.Text),
+                      new Microsoft.Reporting.WinForms.ReportParameter("txtResidentName", lblResidentName.Text),
+                      new Microsoft.Reporting.WinForms.ReportParameter("txtPayment", lblAmountPaid.Text),
+                      new Microsoft.Reporting.WinForms.ReportParameter("txtChange", changeAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                      new Microsoft.Reporting.WinForms.ReportParameter("txtRemarks", cmbRemarks.Text),
+                      new Microsoft.Reporting.WinForms.ReportParameter("txtDate", DateTime.Now.ToString("MMMM dd, yyyy")),
+                      new Microsoft.Reporting.WinForms.ReportParameter("txtOfficerName", CurrentUser.FullName),
+                      new Microsoft.Reporting.WinForms.ReportParameter("txtOfficerPosition", CurrentUser.Role)
+                    };
+                    reportViewer.LocalReport.SetParameters(parameters);
+                    reportViewer.RefreshReport();
+
+                    receipt.ShowDialog();
+                }
+
+                this.Close(); 
             }
         }
 
@@ -275,6 +313,14 @@ namespace RECOMANAGESYS
 
         private void frmPayment_Load(object sender, EventArgs e)
         {
+            cmbRemarks.Items.Clear();
+            cmbRemarks.Items.Add("N/A");
+            cmbRemarks.Items.Add("Others");
+            cmbRemarks.SelectedIndex = 0; 
+
+            cmbRemarks.SelectedIndexChanged += cmbRemarks_SelectedIndexChanged;
+            this.txtChange.KeyPress += new KeyPressEventHandler(this.txtChange_KeyPress);
+            this.txtChange.Leave += new EventHandler(this.txtChange_Leave);
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
@@ -286,5 +332,50 @@ namespace RECOMANAGESYS
         {
 
         }
+        private void cmbRemarks_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cmbRemarks.SelectedItem.ToString() == "Others")
+            {
+                string input = Microsoft.VisualBasic.Interaction.InputBox(
+                    "Please specify your remark:", "Other Remark", "");
+
+                if (!string.IsNullOrWhiteSpace(input))
+                {
+                    cmbRemarks.Items.Add(input);
+                    cmbRemarks.SelectedItem = input;
+                }
+                else
+                {
+                    cmbRemarks.SelectedIndex = 0; 
+                }
+            }
+        }
+        private void txtChange_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar) && (e.KeyChar != '.'))
+            {
+                e.Handled = true; 
+            }
+            if ((e.KeyChar == '.') && ((sender as TextBox).Text.IndexOf('.') > -1))
+            {
+                e.Handled = true; 
+            }
+        }
+        private void txtChange_Leave(object sender, EventArgs e)
+        {
+            TextBox tb = sender as TextBox;
+            if (string.IsNullOrWhiteSpace(tb.Text))
+            {
+                tb.Text = "0.00";
+            }
+            else
+            {
+                if (decimal.TryParse(tb.Text, out decimal value))
+                {
+                    tb.Text = value.ToString("F2");
+                }
+            }
+        }
+
     }
 }
