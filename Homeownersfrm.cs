@@ -326,7 +326,6 @@ namespace RECOMANAGESYS
             {
                 try
                 {
-                    // ✅ NEW: Check if resident is inactive
                     string status = DGVResidents.SelectedRows[0].Cells["Status"]?.Value?.ToString() ?? "Active";
 
                     if (status == "Inactive")
@@ -373,8 +372,6 @@ namespace RECOMANAGESYS
                 MessageBox.Show("Please select a resident first.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-
-            // Use ResidentID instead of HomeownerID
             int residentId = Convert.ToInt32(DGVResidents.SelectedRows[0].Cells["ResidentID"].Value);
 
             using (var unitsForm = new UnitsForm(residentId))
@@ -419,7 +416,6 @@ namespace RECOMANAGESYS
                                 residencyType = o == DBNull.Value || o == null ? "" : o.ToString();
                             }
 
-                            // Update HomeownerUnits - use ResidentID
                             using (SqlCommand cmd = new SqlCommand(
                                 @"UPDATE HomeownerUnits
                           SET IsCurrent = 0, DateOfOwnershipEnd = ISNULL(DateOfOwnershipEnd, GETDATE())
@@ -429,7 +425,7 @@ namespace RECOMANAGESYS
                                 cmd.Parameters.AddWithValue("@unitId", unitId);
                                 cmd.ExecuteNonQuery();
                             }
-                            // ✅ Step 3: Reset Apartment Room Count
+
                             if (unitType.Equals("Apartment", StringComparison.OrdinalIgnoreCase))
                             {
                                 using (SqlCommand cmd = new SqlCommand(
@@ -439,7 +435,7 @@ namespace RECOMANAGESYS
                                     cmd.ExecuteNonQuery();
                                 }
                             }
-                            // Handle apartment room availability
+
                             if (string.Equals(unitType, "Apartment", StringComparison.OrdinalIgnoreCase) &&
                                 string.Equals(residencyType, "Tenant", StringComparison.OrdinalIgnoreCase))
                             {
@@ -451,7 +447,6 @@ namespace RECOMANAGESYS
                                 }
                             }
 
-                            // Update unit occupation status for non-apartments
                             if (!string.Equals(unitType, "Apartment", StringComparison.OrdinalIgnoreCase))
                             {
                                 using (SqlCommand cmd = new SqlCommand(
@@ -471,7 +466,6 @@ namespace RECOMANAGESYS
                                 }
                             }
 
-                            // ✅ FIXED: Check if resident should be marked inactive (not deleted from view)
                             using (SqlCommand checkCmd = new SqlCommand(
                                 "SELECT COUNT(*) FROM HomeownerUnits WHERE ResidentID = @residentId AND IsCurrent = 1", conn, tran))
                             {
@@ -480,7 +474,6 @@ namespace RECOMANAGESYS
 
                                 if (activeLinks == 0)
                                 {
-                                    // ✅ CHANGE: Set IsActive = 0 and InactiveDate (but don't hide from grid)
                                     using (SqlCommand deactivate = new SqlCommand(
                                         "UPDATE Residents SET IsActive = 0, InactiveDate = GETDATE() WHERE ResidentID = @residentId", conn, tran))
                                     {
@@ -489,7 +482,7 @@ namespace RECOMANAGESYS
                                     }
                                 }
                             }
-                            // zzzzzzzz
+
                             using (SqlCommand cmd = new SqlCommand(@"
                                 UPDATE HomeownerUnits
                                 SET IsCurrent = 0, DateOfOwnershipEnd = ISNULL(DateOfOwnershipEnd, GETDATE())
@@ -526,7 +519,6 @@ namespace RECOMANAGESYS
             {
                 try
                 {
-                    // ✅ NEW: Check if resident is inactive
                     string status = DGVResidents.SelectedRows[0].Cells["Status"]?.Value?.ToString() ?? "Active";
 
                     if (status == "Inactive")
@@ -534,7 +526,7 @@ namespace RECOMANAGESYS
                         MessageBox.Show(
                             "This resident is currently inactive.\n\n" +
                             "Adding a unit will automatically reactivate them.",
-                            "Inactive Resident",
+                            "confirm",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Information);
                     }
@@ -563,7 +555,6 @@ namespace RECOMANAGESYS
                     AddUnits addUnitsForm = new AddUnits(residentId, homeownerId, residencyType);
                     if (addUnitsForm.ShowDialog() == DialogResult.OK)
                     {
-                        // ✅ NEW: Reactivate resident if they were inactive
                         if (status == "Inactive")
                         {
                             using (SqlConnection conn = DatabaseHelper.GetConnection())
@@ -579,7 +570,7 @@ namespace RECOMANAGESYS
                         }
 
                         LoadHomeowners();
-                        MessageBox.Show("Unit added successfully! Grid refreshed.", "Success",
+                        MessageBox.Show("Unit added successfully. Grid refreshed.", "Success",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
@@ -600,7 +591,6 @@ namespace RECOMANAGESYS
         {
             if (e.RowIndex >= 0)
             {
-                // Use ResidentID instead of HomeownerID
                 int residentId = Convert.ToInt32(DGVResidents.Rows[e.RowIndex].Cells["ResidentID"].Value);
                 ShowResidentUnits(residentId);
             }
@@ -613,8 +603,6 @@ namespace RECOMANAGESYS
                 using (SqlConnection conn = DatabaseHelper.GetConnection())
                 {
                     conn.Open();
-
-                    // Step 1: Get the clicked resident's name and HomeownerID
                     string residentName = "";
                     int homeownerId = 0;
 
@@ -631,24 +619,16 @@ namespace RECOMANAGESYS
                         }
                     }
 
-                    // ✅ FIXED: Step 2: Fetch unit information - GROUP BY to avoid duplicates
-                    // Replace existing query string in ShowResidentUnits(...) with this:
                     string query = @"
                                 SELECT 
                             tu.UnitNumber,
                             tu.Block,
                             tu.UnitType,
 
-                            -- earliest owner ownership
                             MIN(CASE WHEN r.ResidencyType = 'Owner' THEN hu.DateOfOwnership END) AS [Start Date],
-
-                            -- latest owner end (null if currently owned)
                             MAX(CASE WHEN r.ResidencyType = 'Owner' THEN hu.DateOfOwnershipEnd END) AS [End Date],
-
-                            -- owner name
                             MAX(CASE WHEN r.ResidencyType = 'Owner' THEN CONCAT(r.FirstName, ' ', r.LastName) END) AS [Owner Name],
 
-                            -- tenants/caretakers (line breaks)
                             STRING_AGG(
                                 CASE WHEN r.ResidencyType IN ('Tenant', 'Caretaker')
                                     THEN CONCAT(r.FirstName, ' ', r.LastName, ' (', r.ResidencyType, ')')
@@ -657,7 +637,6 @@ namespace RECOMANAGESYS
                                 CHAR(13) + CHAR(10)
                             ) AS [Residents (Tenants/Caretakers)],
 
-                            -- approved by from owner record (if any)
                             MAX(CASE WHEN r.ResidencyType = 'Owner' 
                                 THEN ISNULL(u.Lastname, '') + ' ' + ISNULL(u.Firstname, '') END) AS [Approved By]
 
@@ -666,7 +645,6 @@ namespace RECOMANAGESYS
                         INNER JOIN Residents r ON hu.ResidentID = r.ResidentID
                         LEFT JOIN Users u ON hu.ApprovedByUserID = u.UserID
                         WHERE r.HomeownerID = @homeownerId
-                        -- NOTE: removed 'AND hu.IsCurrent = 1' so historical (IsCurrent=0) rows are available for Start/End
                         GROUP BY 
                             tu.UnitID,
                             tu.UnitNumber, 
@@ -683,7 +661,6 @@ namespace RECOMANAGESYS
                     DataTable dt = new DataTable();
                     adapter.Fill(dt);
 
-                    // Step 3: Create the form
                     Form detailsForm = new Form
                     {
                         Text = $"Resident Units Information - {residentName}",
@@ -715,7 +692,7 @@ namespace RECOMANAGESYS
                         RowTemplate = { Height = 80 }
                     };
 
-                    // Header Styling
+            
                     dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(70, 130, 180);
                     dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
                     dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Arial", 11F, FontStyle.Bold);
@@ -723,13 +700,10 @@ namespace RECOMANAGESYS
                     dgv.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.True;
                     dgv.EnableHeadersVisualStyles = false;
 
-                    // Alternate row shading
                     dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
 
-                    // Selection color
                     dgv.DefaultCellStyle.SelectionBackColor = Color.FromArgb(100, 149, 237);
                     dgv.DefaultCellStyle.SelectionForeColor = Color.White;
-
 
                     detailsForm.Controls.Add(dgv);
                     detailsForm.ShowDialog();
@@ -756,7 +730,6 @@ namespace RECOMANAGESYS
                                 tu.TotalRooms,
                                 tu.AvailableRooms,
 
-                                -- 🧩 Owner(s) with Start and End Dates (include historical)
                                 (SELECT 
                                     STRING_AGG(
                                         CONCAT(
@@ -774,7 +747,6 @@ namespace RECOMANAGESYS
                                  WHERE hu.UnitID = tu.UnitID 
                                    AND r.ResidencyType = 'Owner') AS [Owner(s) History],
 
-                                -- 🧩 Tenants and Caretakers (formatted with consistent line breaks)
                                 (SELECT 
                                     STRING_AGG(
                                         CONCAT(
@@ -789,7 +761,6 @@ namespace RECOMANAGESYS
                                    AND r2.ResidencyType IN ('Tenant', 'Caretaker')
                                    AND r2.IsActive = 1) AS [Residents (Tenants/Caretakers)],
 
-                                -- 🧩 Status (same as before)
                                 CASE 
                                     WHEN tu.UnitType = 'Apartment' AND tu.AvailableRooms > 0 AND tu.AvailableRooms < tu.TotalRooms 
                                         THEN 'Partially Occupied (' + CAST(tu.AvailableRooms AS NVARCHAR(10)) + ' Available)'
@@ -843,7 +814,6 @@ namespace RECOMANAGESYS
                         RowTemplate = { Height = 80 }
                     };
 
-                    // Header Styling
                     dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(70, 130, 180);
                     dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
                     dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Arial", 11F, FontStyle.Bold);
@@ -851,10 +821,8 @@ namespace RECOMANAGESYS
                     dgv.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.True;
                     dgv.EnableHeadersVisualStyles = false;
 
-                    // Alternate row shading
                     dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
 
-                    // Selection color
                     dgv.DefaultCellStyle.SelectionBackColor = Color.FromArgb(100, 149, 237);
                     dgv.DefaultCellStyle.SelectionForeColor = Color.White;
 
@@ -882,7 +850,6 @@ namespace RECOMANAGESYS
             officerInfo.Show();
         }
 
-        // Empty event handlers
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e) { }
         private void panel2_Paint(object sender, PaintEventArgs e) { }
         private void button3_Click(object sender, EventArgs e) { }

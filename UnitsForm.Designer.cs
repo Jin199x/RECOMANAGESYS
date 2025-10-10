@@ -28,27 +28,17 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.lblInstruction = new System.Windows.Forms.Label();
             this.btnUnregisterSelected = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
             this.DGVUnits = new System.Windows.Forms.DataGridView();
             ((System.ComponentModel.ISupportInitialize)(this.DGVUnits)).BeginInit();
             this.SuspendLayout();
             // 
-            // lblInstruction
-            // 
-            this.lblInstruction.AutoSize = true;
-            this.lblInstruction.Location = new System.Drawing.Point(63, 30);
-            this.lblInstruction.Name = "lblInstruction";
-            this.lblInstruction.Size = new System.Drawing.Size(44, 16);
-            this.lblInstruction.TabIndex = 0;
-            this.lblInstruction.Text = "label1";
-            // 
             // btnUnregisterSelected
             // 
             this.btnUnregisterSelected.Location = new System.Drawing.Point(159, 30);
             this.btnUnregisterSelected.Name = "btnUnregisterSelected";
-            this.btnUnregisterSelected.Size = new System.Drawing.Size(159, 23);
+            this.btnUnregisterSelected.Size = new System.Drawing.Size(199, 34);
             this.btnUnregisterSelected.TabIndex = 1;
             this.btnUnregisterSelected.Text = "Unregister Units";
             this.btnUnregisterSelected.UseVisualStyleBackColor = true;
@@ -56,9 +46,9 @@
             // 
             // btnCancel
             // 
-            this.btnCancel.Location = new System.Drawing.Point(364, 30);
+            this.btnCancel.Location = new System.Drawing.Point(485, 30);
             this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(75, 23);
+            this.btnCancel.Size = new System.Drawing.Size(90, 34);
             this.btnCancel.TabIndex = 2;
             this.btnCancel.Text = "cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
@@ -87,19 +77,15 @@
             this.Controls.Add(this.DGVUnits);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnUnregisterSelected);
-            this.Controls.Add(this.lblInstruction);
             this.Name = "UnitsForm";
             this.Text = "UnitsForm";
             this.Load += new System.EventHandler(this.UnitsForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.DGVUnits)).EndInit();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
-
-        private System.Windows.Forms.Label lblInstruction;
         private System.Windows.Forms.Button btnUnregisterSelected;
         private System.Windows.Forms.Button btnCancel;
         private System.Windows.Forms.DataGridView DGVUnits;

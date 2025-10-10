@@ -6,8 +6,8 @@ namespace RECOMANAGESYS
 {
     public partial class AddUnits : Form
     {
-        private int _residentId;      // ResidentID of the person we're adding a unit for
-        private int _homeownerId;     // HomeownerID (group identifier)
+        private int _residentId;      
+        private int _homeownerId;     
         private string _residencyType;
 
         public AddUnits(int residentId, int homeownerId, string residencyType)
@@ -139,7 +139,6 @@ namespace RECOMANAGESYS
                 Text = text;
                 Value = value;
             }
-
             public override string ToString()
             {
                 return Text;
@@ -250,7 +249,6 @@ namespace RECOMANAGESYS
 
             return true;
         }
-        // Fixed AddUnits.cs - Replace your Savebtn_Click method with this version
 
         private void Savebtn_Click(object sender, EventArgs e)
         {
@@ -265,7 +263,6 @@ namespace RECOMANAGESYS
                     {
                         try
                         {
-                            // Verify resident exists
                             string checkQuery = "SELECT COUNT(*) FROM Residents WHERE ResidentID = @id AND IsActive = 1";
                             using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn, transaction))
                             {
@@ -293,7 +290,6 @@ namespace RECOMANAGESYS
 
                             if (_residencyType == "Owner")
                             {
-                                // Owner can create new units or use existing ones
                                 string findUnitQuery = @"SELECT UnitID FROM TBL_Units WHERE UnitNumber = @unitNumber AND Block = @block";
                                 using (SqlCommand findUnitCmd = new SqlCommand(findUnitQuery, conn, transaction))
                                 {
@@ -305,7 +301,6 @@ namespace RECOMANAGESYS
                                     {
                                         unitId = Convert.ToInt32(existingUnit);
 
-                                        // Check if THIS OWNER already owns this unit
                                         string checkOwnerQuery = @"
                                     SELECT COUNT(*) 
                                     FROM HomeownerUnits hu
@@ -328,7 +323,7 @@ namespace RECOMANAGESYS
                                             }
                                         }
 
-                                        // Prevent different owners from owning the same non-apartment unit
+
                                         if (unitTypeText != "Apartment")
                                         {
                                             string checkDifferentOwnerQuery = @"
@@ -356,7 +351,6 @@ namespace RECOMANAGESYS
                                     }
                                     else
                                     {
-                                        // Create new unit
                                         string insertUnitQuery = @"
                                     INSERT INTO TBL_Units (UnitNumber, Block, UnitType, IsOccupied, TotalRooms, AvailableRooms)
                                     VALUES (@unitNumber, @block, @unitType, @isOccupied, @totalRooms, @availableRooms);
@@ -389,7 +383,6 @@ namespace RECOMANAGESYS
                             }
                             else
                             {
-                                // Tenant/Caretaker must use existing units
                                 string findUnitQuery = @"SELECT UnitID, UnitType FROM TBL_Units WHERE UnitNumber = @unitNumber AND Block = @block";
                                 using (SqlCommand findUnitCmd = new SqlCommand(findUnitQuery, conn, transaction))
                                 {
@@ -409,7 +402,7 @@ namespace RECOMANAGESYS
                                     }
                                 }
 
-                                // ✅ CRITICAL FIX: Check apartment availability DIRECTLY from TBL_Units.AvailableRooms
+
                                 if (unitTypeText == "Apartment" && _residencyType == "Tenant")
                                 {
                                     string checkAvailabilityQuery = @"
@@ -448,7 +441,6 @@ namespace RECOMANAGESYS
                                     }
                                 }
 
-                                // Verify they're being assigned to their owner's unit
                                 string verifyOwnershipQuery = @"
                             SELECT COUNT(*)
                             FROM HomeownerUnits hu
@@ -477,7 +469,6 @@ namespace RECOMANAGESYS
                                 }
                             }
 
-                            // Get unit type if not already set
                             if (string.IsNullOrEmpty(unitTypeText))
                             {
                                 string getUnitTypeQuery = "SELECT UnitType FROM TBL_Units WHERE UnitID = @unitId";
@@ -488,7 +479,6 @@ namespace RECOMANAGESYS
                                 }
                             }
 
-                            // Check for duplicate registration or reactivate inactive record
                             string checkInactiveQuery = @"
                         SELECT COUNT(*) 
                         FROM HomeownerUnits 
@@ -504,7 +494,6 @@ namespace RECOMANAGESYS
 
                                 if (inactiveExists > 0)
                                 {
-                                    // Reactivate existing record
                                     string reactivateQuery = @"
                                 UPDATE HomeownerUnits
                                 SET IsCurrent = 1,
@@ -520,7 +509,6 @@ namespace RECOMANAGESYS
                                         reactivateCmd.ExecuteNonQuery();
                                     }
 
-                                    // Reactivate resident record
                                     string reactivateResident = "UPDATE Residents SET IsActive = 1, InactiveDate = NULL WHERE ResidentID = @residentId";
                                     using (SqlCommand cmd = new SqlCommand(reactivateResident, conn, transaction))
                                     {
@@ -530,7 +518,6 @@ namespace RECOMANAGESYS
                                 }
                                 else
                                 {
-                                    // Insert new record
                                     string insertJunctionQuery;
                                     if (_residencyType == "Owner")
                                     {
@@ -568,7 +555,6 @@ namespace RECOMANAGESYS
                                 }
                             }
 
-                            // Update apartment rooms for Tenants
                             if (unitTypeText == "Apartment" && _residencyType == "Tenant")
                             {
                                 string updateRoomsQuery = @"
@@ -657,7 +643,6 @@ namespace RECOMANAGESYS
             }
         }
 
-        // Event handlers
         private void HomeownerID_TextChanged(object sender, EventArgs e) { }
         private void DTPOwnership_ValueChanged(object sender, EventArgs e) { }
         private void label2_Click(object sender, EventArgs e) { }

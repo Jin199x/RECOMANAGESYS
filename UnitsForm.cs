@@ -20,8 +20,6 @@ namespace RECOMANAGESYS
         private void InitializeDataGridView()
         {
             DGVUnits.Columns.Clear();
-
-            // Add columns
             DGVUnits.Columns.Add(new DataGridViewCheckBoxColumn
             {
                 Name = "Select",
@@ -34,14 +32,9 @@ namespace RECOMANAGESYS
             DGVUnits.Columns.Add("UnitType", "Unit Type");
             DGVUnits.Columns.Add("Status", "Status");
 
-            // Hide UnitID
             DGVUnits.Columns["UnitID"].Visible = false;
-
-            // Basic sizing
             DGVUnits.Size = new Size(850, 400);
             DGVUnits.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-
-            // Header styling - Arial 12 Bold
             DGVUnits.ColumnHeadersHeight = 45;
             DGVUnits.ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
             {
@@ -51,8 +44,6 @@ namespace RECOMANAGESYS
                 Alignment = DataGridViewContentAlignment.MiddleCenter
             };
             DGVUnits.EnableHeadersVisualStyles = false;
-
-            // Row styling - Arial 11
             DGVUnits.DefaultCellStyle = new DataGridViewCellStyle
             {
                 Font = new Font("Arial", 11F),
@@ -60,10 +51,8 @@ namespace RECOMANAGESYS
                 SelectionForeColor = Color.White
             };
 
-            // Alternating rows
             DGVUnits.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
             DGVUnits.ScrollBars = ScrollBars.Both;
-            // Clean appearance
             DGVUnits.RowHeadersVisible = false;
             DGVUnits.GridColor = Color.LightGray;
         }
@@ -139,6 +128,11 @@ namespace RECOMANAGESYS
         {
             DialogResult = DialogResult.Cancel;
             Close();
+        }
+
+        private void lblInstruction_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
