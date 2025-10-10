@@ -270,128 +270,200 @@ namespace RECOMANAGESYS
                 using (SqlConnection conn = DatabaseHelper.GetConnection())
                 {
                     conn.Open();
-                    SqlCommand cmd;
 
-                    if (isEditMode)
-                    {
-                        // 🔒 IN EDIT MODE: DO NOT UPDATE HomeownerID or ResidencyType
-                        cmd = new SqlCommand(@"
-                            UPDATE Residents
-                            SET FirstName = @FirstName,
-                                MiddleName = @MiddleName,
-                                LastName = @LastName,
-                                HomeAddress = @Address,
-                                ContactNumber = @ContactNumber,
-                                EmailAddress = @Email,
-                                EmergencyContactPerson = @EmergencyContactPerson,
-                                EmergencyContactNumber = @EmergencyContactNumber
-                            WHERE ResidentID = @ResidentID", conn);
-
-                        cmd.Parameters.AddWithValue("@ResidentID", editResidentId.Value);
-                    }
-                    else
-                    {
-                        cmd = new SqlCommand(@"
-                            INSERT INTO Residents
-                                (HomeownerID, FirstName, MiddleName, LastName, HomeAddress,
-                                 ContactNumber, EmailAddress, EmergencyContactPerson,
-                                 EmergencyContactNumber, ResidencyType)
-                            VALUES
-                                (@HomeownerID, @FirstName, @MiddleName, @LastName, @Address,
-                                 @ContactNumber, @Email, @EmergencyContactPerson,
-                                 @EmergencyContactNumber, @ResidencyType)", conn);
-
-                        cmd.Parameters.AddWithValue("@HomeownerID", homeownerId);
-                        cmd.Parameters.AddWithValue("@ResidencyType", residencyType);
-                    }
-
-                    cmd.Parameters.AddWithValue("@FirstName", FirstNametxt.Text.Trim());
-                    cmd.Parameters.AddWithValue("@MiddleName", string.IsNullOrWhiteSpace(MiddleNametxt.Text) ? (object)DBNull.Value : MiddleNametxt.Text.Trim());
-                    cmd.Parameters.AddWithValue("@LastName", lastNametxt.Text.Trim());
-                    cmd.Parameters.AddWithValue("@Address", addresstxt.Text.Trim());
-                    cmd.Parameters.AddWithValue("@ContactNumber", contactnumtxt.Text.Trim());
-                    cmd.Parameters.AddWithValue("@Email", string.IsNullOrWhiteSpace(Emailtxt.Text) ? (object)DBNull.Value : Emailtxt.Text.Trim());
-                    cmd.Parameters.AddWithValue("@EmergencyContactPerson", string.IsNullOrWhiteSpace(emergencyPersontxt.Text) ? (object)DBNull.Value : emergencyPersontxt.Text.Trim());
-                    cmd.Parameters.AddWithValue("@EmergencyContactNumber", string.IsNullOrWhiteSpace(emergencyNumtxt.Text) ? (object)DBNull.Value : emergencyNumtxt.Text.Trim());
-
-                    cmd.ExecuteNonQuery();
-
-                    int newResidentId = 0;
-                    if (!isEditMode)
-                    {
-                        using (SqlCommand getNewId = new SqlCommand("SELECT IDENT_CURRENT('Residents')", conn))
-                        {
-                            newResidentId = Convert.ToInt32(getNewId.ExecuteScalar());
-                        }
-                    }
-                    else
-                    {
-                        newResidentId = editResidentId.Value;
-                    }
-
-                    // Only link unit for new Tenant/Caretaker registrations
+                    // ✅ NEW: For Tenant/Caretaker, validate apartment availability BEFORE saving
                     if (!isEditMode && (residencyType == "Tenant" || residencyType == "Caretaker"))
                     {
                         if (!(cmbUnitNum.SelectedItem is ComboBoxItem selectedUnit))
                         {
-                            MessageBox.Show("Please select a unit before saving.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            MessageBox.Show("Please select a unit before saving.", "Validation",
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             return;
                         }
 
                         int selectedUnitId = selectedUnit.Value;
 
-                        // Link new resident to the selected specific unit
-                        string linkQuery = @"INSERT INTO HomeownerUnits (ResidentID, UnitID, IsCurrent) VALUES (@newResidentId, @unitId, 1);";
-                        using (SqlCommand linkCmd = new SqlCommand(linkQuery, conn))
+                        // ✅ CRITICAL: Check available rooms BEFORE inserting resident
+                        if (residencyType == "Tenant")
                         {
-                            linkCmd.Parameters.AddWithValue("@newResidentId", newResidentId);
-                            linkCmd.Parameters.AddWithValue("@unitId", selectedUnitId);
-                            linkCmd.ExecuteNonQuery();
-                        }
+                            string checkRoomsQuery = @"
+                        SELECT UnitType, AvailableRooms, TotalRooms 
+                        FROM TBL_Units 
+                        WHERE UnitID = @unitId";
 
-                        // Only deduct apartment room if residency type is Tenant
-                        if (residencyType.Equals("Tenant", StringComparison.OrdinalIgnoreCase))
-                        {
-                            string updateRoomsQuery = @"
-                                UPDATE TBL_Units
-                                SET AvailableRooms = CASE WHEN AvailableRooms > 0 THEN AvailableRooms - 1 ELSE 0 END
-                                WHERE UnitID = @unitId AND UnitType = 'Apartment';";
-                            using (SqlCommand updateCmd = new SqlCommand(updateRoomsQuery, conn))
+                            using (SqlCommand checkCmd = new SqlCommand(checkRoomsQuery, conn))
                             {
-                                updateCmd.Parameters.AddWithValue("@unitId", selectedUnitId);
-                                updateCmd.ExecuteNonQuery();
+                                checkCmd.Parameters.AddWithValue("@unitId", selectedUnitId);
+
+                                using (SqlDataReader reader = checkCmd.ExecuteReader())
+                                {
+                                    if (reader.Read())
+                                    {
+                                        string unitType = reader["UnitType"]?.ToString() ?? "";
+
+                                        if (unitType.Equals("Apartment", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            int availableRooms = reader["AvailableRooms"] == DBNull.Value ? 0 : Convert.ToInt32(reader["AvailableRooms"]);
+                                            int totalRooms = reader["TotalRooms"] == DBNull.Value ? 0 : Convert.ToInt32(reader["TotalRooms"]);
+
+                                            if (availableRooms <= 0)
+                                            {
+                                                reader.Close();
+                                                MessageBox.Show(
+                                                    $"This apartment is already full.\n\n" +
+                                                    $"Total Rooms: {totalRooms}\n" +
+                                                    $"Available Rooms: {availableRooms}\n\n" +
+                                                    $"Cannot register new tenant. Please select a different unit.",
+                                                    "Apartment Fully Occupied",
+                                                    MessageBoxButtons.OK,
+                                                    MessageBoxIcon.Warning
+
+                                                );
+                                                return;
+                                            }
+
+                                        }
+                                    }
+                                }
                             }
                         }
 
-                        // Update IsOccupied if rooms now zero
-                        string updateStatusQuery = @"
-                            UPDATE TBL_Units
-                            SET IsOccupied = CASE WHEN ISNULL(AvailableRooms,0) = 0 THEN 1 ELSE 0 END
-                            WHERE UnitID = @unitId;";
-                        using (SqlCommand updateStatusCmd = new SqlCommand(updateStatusQuery, conn))
-                        {
-                            updateStatusCmd.Parameters.AddWithValue("@unitId", selectedUnitId);
-                            updateStatusCmd.ExecuteNonQuery();
+                        }
+
+                        SqlCommand cmd;
+
+                            if (isEditMode)
+                            {
+                                // Edit mode - only update personal info
+                                cmd = new SqlCommand(@"
+                    UPDATE Residents
+                    SET FirstName = @FirstName,
+                        MiddleName = @MiddleName,
+                        LastName = @LastName,
+                        HomeAddress = @Address,
+                        ContactNumber = @ContactNumber,
+                        EmailAddress = @Email,
+                        EmergencyContactPerson = @EmergencyContactPerson,
+                        EmergencyContactNumber = @EmergencyContactNumber
+                    WHERE ResidentID = @ResidentID", conn);
+
+                                cmd.Parameters.AddWithValue("@ResidentID", editResidentId.Value);
+                            }
+                            else
+                            {
+                                // Add mode - insert new resident
+                                cmd = new SqlCommand(@"
+                    INSERT INTO Residents
+                        (HomeownerID, FirstName, MiddleName, LastName, HomeAddress,
+                         ContactNumber, EmailAddress, EmergencyContactPerson,
+                         EmergencyContactNumber, ResidencyType)
+                    VALUES
+                        (@HomeownerID, @FirstName, @MiddleName, @LastName, @Address,
+                         @ContactNumber, @Email, @EmergencyContactPerson,
+                         @EmergencyContactNumber, @ResidencyType)", conn);
+
+                                cmd.Parameters.AddWithValue("@HomeownerID", homeownerId);
+                                cmd.Parameters.AddWithValue("@ResidencyType", residencyType);
+                            }
+
+                            cmd.Parameters.AddWithValue("@FirstName", FirstNametxt.Text.Trim());
+                            cmd.Parameters.AddWithValue("@MiddleName", string.IsNullOrWhiteSpace(MiddleNametxt.Text) ? (object)DBNull.Value : MiddleNametxt.Text.Trim());
+                            cmd.Parameters.AddWithValue("@LastName", lastNametxt.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Address", addresstxt.Text.Trim());
+                            cmd.Parameters.AddWithValue("@ContactNumber", contactnumtxt.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Email", string.IsNullOrWhiteSpace(Emailtxt.Text) ? (object)DBNull.Value : Emailtxt.Text.Trim());
+                            cmd.Parameters.AddWithValue("@EmergencyContactPerson", string.IsNullOrWhiteSpace(emergencyPersontxt.Text) ? (object)DBNull.Value : emergencyPersontxt.Text.Trim());
+                            cmd.Parameters.AddWithValue("@EmergencyContactNumber", string.IsNullOrWhiteSpace(emergencyNumtxt.Text) ? (object)DBNull.Value : emergencyNumtxt.Text.Trim());
+
+                            cmd.ExecuteNonQuery();
+
+                            int newResidentId = 0;
+
+                            if (!isEditMode)
+                            {
+                                using (SqlCommand getNewId = new SqlCommand("SELECT IDENT_CURRENT('Residents')", conn))
+                                {
+                                    newResidentId = Convert.ToInt32(getNewId.ExecuteScalar());
+                                }
+                            }
+                            else
+                            {
+                                newResidentId = editResidentId.Value;
+                            }
+
+                            // Only link unit for new Tenant/Caretaker registrations
+                            if (!isEditMode && (residencyType == "Tenant" || residencyType == "Caretaker"))
+                            {
+                                if (!(cmbUnitNum.SelectedItem is ComboBoxItem selectedUnit))
+                                {
+                                    MessageBox.Show("Please select a unit before saving.", "Validation",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                    return;
+                                }
+
+                                int selectedUnitId = selectedUnit.Value;
+
+                                // Link new resident to the selected unit
+                                string linkQuery = @"
+                    INSERT INTO HomeownerUnits (ResidentID, UnitID, IsCurrent, DateOfOwnership) 
+                    VALUES (@newResidentId, @unitId, 1, GETDATE());";
+                                using (SqlCommand linkCmd = new SqlCommand(linkQuery, conn))
+                                {
+                                    linkCmd.Parameters.AddWithValue("@newResidentId", newResidentId);
+                                    linkCmd.Parameters.AddWithValue("@unitId", selectedUnitId);
+                                    linkCmd.ExecuteNonQuery();
+                                }
+
+                                // Only deduct apartment room if residency type is Tenant
+                                if (residencyType.Equals("Tenant", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    string updateRoomsQuery = @"
+                        UPDATE TBL_Units
+                        SET AvailableRooms = CASE 
+                            WHEN AvailableRooms > 0 THEN AvailableRooms - 1 
+                            ELSE 0 
+                        END
+                        WHERE UnitID = @unitId AND UnitType = 'Apartment';";
+                                    using (SqlCommand updateCmd = new SqlCommand(updateRoomsQuery, conn))
+                                    {
+                                        updateCmd.Parameters.AddWithValue("@unitId", selectedUnitId);
+                                        updateCmd.ExecuteNonQuery();
+                                    }
+                                }
+
+                                // Update IsOccupied based on available rooms
+                                string updateStatusQuery = @"
+                    UPDATE TBL_Units
+                    SET IsOccupied = CASE 
+                        WHEN UnitType = 'Apartment' AND ISNULL(AvailableRooms,0) = 0 THEN 1 
+                        WHEN UnitType != 'Apartment' THEN 1
+                        ELSE IsOccupied 
+                    END
+                    WHERE UnitID = @unitId;";
+                                using (SqlCommand updateStatusCmd = new SqlCommand(updateStatusQuery, conn))
+                                {
+                                    updateStatusCmd.Parameters.AddWithValue("@unitId", selectedUnitId);
+                                    updateStatusCmd.ExecuteNonQuery();
+                                }
+                            }
+
+                            MessageBox.Show(
+                                isEditMode ? "Resident updated successfully!" : "Resident registered successfully!",
+                                "Success",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information);
+
+                            this.DialogResult = DialogResult.OK;
+                            this.Close();
                         }
                     }
-
-                    // ✅ SHOW SUCCESS MESSAGE AND CLOSE FORM
-                    MessageBox.Show(
-                        isEditMode ? "Resident updated successfully!" : "Resident registered successfully!",
-                        "Success",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
-
-                    this.DialogResult = DialogResult.OK;
-                    this.Close();
-                }
-            }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error saving resident: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+    
 
         private void ClearForm()
         {

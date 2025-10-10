@@ -373,6 +373,8 @@ namespace RECOMANAGESYS
             }
         }
 
+
+
         private void Deletebtn_Click(object sender, EventArgs e)
         {
             if (DGVResidents.SelectedRows.Count == 0)
@@ -671,7 +673,7 @@ namespace RECOMANAGESYS
                     Form detailsForm = new Form
                     {
                         Text = $"Resident Units Information - {residentName}",
-                        Width = 1000,
+                        Width = 1100,
                         Height = 500,
                         StartPosition = FormStartPosition.CenterParent
                     };
@@ -682,23 +684,38 @@ namespace RECOMANAGESYS
                         DataSource = dt,
                         ReadOnly = true,
                         AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                        ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing,
+                        ColumnHeadersHeight = 50,
                         SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                         AllowUserToAddRows = false,
-                        AllowUserToResizeRows = false,
+                        AllowUserToResizeRows = true,
+                        AllowUserToResizeColumns = true,
+                        ScrollBars = ScrollBars.Both,
                         DefaultCellStyle = new DataGridViewCellStyle
                         {
+                            Font = new Font("Arial", 11F, FontStyle.Regular),
                             WrapMode = DataGridViewTriState.True,
                             Alignment = DataGridViewContentAlignment.TopLeft
                         },
-                        AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells
+                        AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells,
+                        RowTemplate = { Height = 80 }
                     };
 
-                    // Header styling
+                    // Header Styling
                     dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(70, 130, 180);
                     dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-                    dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
+                    dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Arial", 11F, FontStyle.Bold);
+                    dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    dgv.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.True;
                     dgv.EnableHeadersVisualStyles = false;
-                    dgv.RowTemplate.Height = 60;
+
+                    // Alternate row shading
+                    dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
+
+                    // Selection color
+                    dgv.DefaultCellStyle.SelectionBackColor = Color.FromArgb(100, 149, 237);
+                    dgv.DefaultCellStyle.SelectionForeColor = Color.White;
+
 
                     detailsForm.Controls.Add(dgv);
                     detailsForm.ShowDialog();
@@ -718,68 +735,63 @@ namespace RECOMANAGESYS
                     conn.Open();
 
                     string query = @"
-                SELECT 
-                    tu.UnitID,
-                    tu.UnitNumber,
-                    tu.Block,
-                    tu.UnitType,
-                    tu.TotalRooms,
-                    tu.AvailableRooms,
+                            SELECT 
+                                tu.UnitNumber,
+                                tu.Block,
+                                tu.UnitType,
+                                tu.TotalRooms,
+                                tu.AvailableRooms,
 
-                    -- 🧩 Owner(s) with Start and End Dates (include historical)
-                    (SELECT 
-                        STRING_AGG(
-                            CONCAT(
-                                r.FirstName, ' ', r.LastName,
-                                ' [Start: ', 
-                                FORMAT(hu.DateOfOwnership, 'yyyy-MM-dd'), 
-                                ISNULL(CONCAT(', End: ', FORMAT(hu.DateOfOwnershipEnd, 'yyyy-MM-dd')), ''),
-                                CASE WHEN hu.IsCurrent = 1 THEN ' - CURRENT' ELSE '' END,
-                                ']'
-                            ), 
-                            CHAR(13) + CHAR(10)
-                        )
-                     FROM HomeownerUnits hu
-                     INNER JOIN Residents r ON hu.ResidentID = r.ResidentID
-                     WHERE hu.UnitID = tu.UnitID 
-                       AND r.ResidencyType = 'Owner') AS [Owner(s) History],
+                                -- 🧩 Owner(s) with Start and End Dates (include historical)
+                                (SELECT 
+                                    STRING_AGG(
+                                        CONCAT(
+                                            r.FirstName, ' ', r.LastName,
+                                            ' [Start: ', 
+                                            FORMAT(hu.DateOfOwnership, 'yyyy-MM-dd'), 
+                                            ISNULL(CONCAT(', End: ', FORMAT(hu.DateOfOwnershipEnd, 'yyyy-MM-dd')), ''),
+                                            CASE WHEN hu.IsCurrent = 1 THEN ' - CURRENT' ELSE '' END,
+                                            ']'
+                                        ), 
+                                        CHAR(13) + CHAR(10)
+                                    )
+                                 FROM HomeownerUnits hu
+                                 INNER JOIN Residents r ON hu.ResidentID = r.ResidentID
+                                 WHERE hu.UnitID = tu.UnitID 
+                                   AND r.ResidencyType = 'Owner') AS [Owner(s) History],
 
-                    -- 🧩 Tenants and Caretakers (still showing only current + active)
-                    (SELECT 
-                        STRING_AGG(
-                            CONCAT(
-                                r2.FirstName, ' ', r2.LastName, 
-                                ' (', r2.ResidencyType, ') [Start: ', 
-                                FORMAT(hu2.DateOfOwnership, 'yyyy-MM-dd'),
-                                ISNULL(CONCAT(', End: ', FORMAT(hu2.DateOfOwnershipEnd, 'yyyy-MM-dd')), ''),
-                                CASE WHEN hu2.IsCurrent = 1 THEN ' - CURRENT' ELSE '' END,
-                                ']'
-                            ),
-                            CHAR(13) + CHAR(10)
-                        )
-                     FROM HomeownerUnits hu2
-                     INNER JOIN Residents r2 ON hu2.ResidentID = r2.ResidentID
-                     WHERE hu2.UnitID = tu.UnitID
-                       AND r2.ResidencyType IN ('Tenant', 'Caretaker')
-                       AND r2.IsActive = 1) AS [Residents (Tenants/Caretakers)],
+                                -- 🧩 Tenants and Caretakers (formatted with consistent line breaks)
+                                (SELECT 
+                                    STRING_AGG(
+                                        CONCAT(
+                                            r2.FirstName, ' ', r2.LastName, 
+                                            ' (', r2.ResidencyType, ')'
+                                        ),
+                                        CHAR(13) + CHAR(10)
+                                    )
+                                 FROM HomeownerUnits hu2
+                                 INNER JOIN Residents r2 ON hu2.ResidentID = r2.ResidentID
+                                 WHERE hu2.UnitID = tu.UnitID
+                                   AND r2.ResidencyType IN ('Tenant', 'Caretaker')
+                                   AND r2.IsActive = 1) AS [Residents (Tenants/Caretakers)],
 
-                    -- 🧩 Status (same as before)
-                    CASE 
-                        WHEN tu.UnitType = 'Apartment' AND tu.AvailableRooms > 0 AND tu.AvailableRooms < tu.TotalRooms 
-                            THEN 'Partially Occupied (' + CAST(tu.AvailableRooms AS NVARCHAR(10)) + ' Available)'
-                        WHEN tu.UnitType = 'Apartment' AND tu.AvailableRooms = 0 
-                            THEN 'Fully Occupied'
-                        WHEN tu.UnitType = 'Apartment' AND tu.AvailableRooms = tu.TotalRooms 
-                            THEN 'Available'
-                        WHEN tu.IsOccupied = 1 THEN 'Occupied'
-                        ELSE 'Available'
-                    END AS [Status]
+                                -- 🧩 Status (same as before)
+                                CASE 
+                                    WHEN tu.UnitType = 'Apartment' AND tu.AvailableRooms > 0 AND tu.AvailableRooms < tu.TotalRooms 
+                                        THEN 'Partially Occupied (' + CAST(tu.AvailableRooms AS NVARCHAR(10)) + ' Available)'
+                                    WHEN tu.UnitType = 'Apartment' AND tu.AvailableRooms = 0 
+                                        THEN 'Fully Occupied'
+                                    WHEN tu.UnitType = 'Apartment' AND tu.AvailableRooms = tu.TotalRooms 
+                                        THEN 'Available'
+                                    WHEN tu.IsOccupied = 1 THEN 'Occupied'
+                                    ELSE 'Available'
+                                END AS [Status]
 
-                FROM TBL_Units tu
-                ORDER BY 
-                    TRY_CAST(tu.UnitNumber AS INT),  
-                    tu.UnitNumber;
-            ";
+                            FROM TBL_Units tu
+                            ORDER BY 
+                                TRY_CAST(tu.UnitNumber AS INT),  
+                                tu.UnitNumber;
+                        ";
 
                     SqlCommand cmd = new SqlCommand(query, conn);
                     SqlDataAdapter adapter = new SqlDataAdapter(cmd);
@@ -789,8 +801,8 @@ namespace RECOMANAGESYS
                     Form unitsForm = new Form
                     {
                         Text = "All Units Information (with Ownership History)",
-                        Width = 1200,
-                        Height = 650,
+                        Width = 1300,
+                        Height = 700,
                         StartPosition = FormStartPosition.CenterScreen
                     };
 
@@ -800,22 +812,29 @@ namespace RECOMANAGESYS
                         DataSource = dt,
                         ReadOnly = true,
                         AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                        ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing,
+                        ColumnHeadersHeight = 50,
                         SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                         AllowUserToAddRows = false,
-                        AllowUserToResizeRows = false,
+                        AllowUserToResizeRows = true,
+                        AllowUserToResizeColumns = true,
+                        ScrollBars = ScrollBars.Both,
                         DefaultCellStyle = new DataGridViewCellStyle
                         {
+                            Font = new Font("Arial", 11F, FontStyle.Regular),
                             WrapMode = DataGridViewTriState.True,
                             Alignment = DataGridViewContentAlignment.TopLeft
                         },
                         AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells,
-                        RowTemplate = { Height = 60 }
+                        RowTemplate = { Height = 80 }
                     };
 
                     // Header Styling
                     dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(70, 130, 180);
                     dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-                    dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
+                    dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Arial", 11F, FontStyle.Bold);
+                    dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    dgv.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.True;
                     dgv.EnableHeadersVisualStyles = false;
 
                     // Alternate row shading
@@ -824,6 +843,9 @@ namespace RECOMANAGESYS
                     // Selection color
                     dgv.DefaultCellStyle.SelectionBackColor = Color.FromArgb(100, 149, 237);
                     dgv.DefaultCellStyle.SelectionForeColor = Color.White;
+
+               
+               
 
                     unitsForm.Controls.Add(dgv);
                     unitsForm.ShowDialog();

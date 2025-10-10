@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace RECOMANAGESYS
@@ -16,21 +17,62 @@ namespace RECOMANAGESYS
             _residentId = residentId;
         }
 
-        private void UnitsForm_Load(object sender, EventArgs e)
+        private void InitializeDataGridView()
         {
             DGVUnits.Columns.Clear();
 
-            DGVUnits.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Select", HeaderText = "Select" });
+            // Add columns
+            DGVUnits.Columns.Add(new DataGridViewCheckBoxColumn
+            {
+                Name = "Select",
+                HeaderText = "Select",
+                Width = 70
+            });
             DGVUnits.Columns.Add("UnitID", "UnitID");
             DGVUnits.Columns.Add("UnitNumber", "Unit Number");
             DGVUnits.Columns.Add("Block", "Block");
             DGVUnits.Columns.Add("UnitType", "Unit Type");
             DGVUnits.Columns.Add("Status", "Status");
 
+            // Hide UnitID
             DGVUnits.Columns["UnitID"].Visible = false;
 
+            // Basic sizing
+            DGVUnits.Size = new Size(850, 400);
+            DGVUnits.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
+            // Header styling - Arial 12 Bold
+            DGVUnits.ColumnHeadersHeight = 45;
+            DGVUnits.ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
+            {
+                BackColor = Color.SteelBlue,
+                ForeColor = Color.White,
+                Font = new Font("Arial", 12F, FontStyle.Bold),
+                Alignment = DataGridViewContentAlignment.MiddleCenter
+            };
+            DGVUnits.EnableHeadersVisualStyles = false;
+
+            // Row styling - Arial 11
+            DGVUnits.DefaultCellStyle = new DataGridViewCellStyle
+            {
+                Font = new Font("Arial", 11F),
+                SelectionBackColor = Color.CornflowerBlue,
+                SelectionForeColor = Color.White
+            };
+
+            // Alternating rows
+            DGVUnits.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
+            DGVUnits.ScrollBars = ScrollBars.Both;
+            // Clean appearance
+            DGVUnits.RowHeadersVisible = false;
+            DGVUnits.GridColor = Color.LightGray;
+        }
+        private void UnitsForm_Load(object sender, EventArgs e)
+        {
+            InitializeDataGridView();
             LoadUnitsForResident();
         }
+      
 
         private void LoadUnitsForResident()
         {
@@ -66,6 +108,7 @@ namespace RECOMANAGESYS
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
 
         private void btnUnregisterSelected_Click(object sender, EventArgs e)
         {

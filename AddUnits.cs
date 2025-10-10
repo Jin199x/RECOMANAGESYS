@@ -250,6 +250,8 @@ namespace RECOMANAGESYS
 
             return true;
         }
+        // Fixed AddUnits.cs - Replace your Savebtn_Click method with this version
+
         private void Savebtn_Click(object sender, EventArgs e)
         {
             if (!ValidateInput()) return;
@@ -303,15 +305,15 @@ namespace RECOMANAGESYS
                                     {
                                         unitId = Convert.ToInt32(existingUnit);
 
-                                        // ✅ FIXED: Check if THIS OWNER already owns this unit
+                                        // Check if THIS OWNER already owns this unit
                                         string checkOwnerQuery = @"
-                                            SELECT COUNT(*) 
-                                            FROM HomeownerUnits hu
-                                            JOIN Residents r ON hu.ResidentID = r.ResidentID
-                                            WHERE hu.UnitID = @unitId 
-                                              AND r.HomeownerID = @homeownerId
-                                              AND r.ResidencyType = 'Owner'
-                                              AND hu.IsCurrent = 1";
+                                    SELECT COUNT(*) 
+                                    FROM HomeownerUnits hu
+                                    JOIN Residents r ON hu.ResidentID = r.ResidentID
+                                    WHERE hu.UnitID = @unitId 
+                                      AND r.HomeownerID = @homeownerId
+                                      AND r.ResidencyType = 'Owner'
+                                      AND hu.IsCurrent = 1";
                                         using (SqlCommand checkOwnerCmd = new SqlCommand(checkOwnerQuery, conn, transaction))
                                         {
                                             checkOwnerCmd.Parameters.AddWithValue("@unitId", unitId);
@@ -326,17 +328,17 @@ namespace RECOMANAGESYS
                                             }
                                         }
 
-                                        // ✅ ADDITIONAL CHECK: Prevent different owners from owning the same non-apartment unit
+                                        // Prevent different owners from owning the same non-apartment unit
                                         if (unitTypeText != "Apartment")
                                         {
                                             string checkDifferentOwnerQuery = @"
-                                                SELECT COUNT(*) 
-                                                FROM HomeownerUnits hu
-                                                JOIN Residents r ON hu.ResidentID = r.ResidentID
-                                                WHERE hu.UnitID = @unitId 
-                                                  AND r.HomeownerID <> @homeownerId
-                                                  AND r.ResidencyType = 'Owner'
-                                                  AND hu.IsCurrent = 1";
+                                        SELECT COUNT(*) 
+                                        FROM HomeownerUnits hu
+                                        JOIN Residents r ON hu.ResidentID = r.ResidentID
+                                        WHERE hu.UnitID = @unitId 
+                                          AND r.HomeownerID <> @homeownerId
+                                          AND r.ResidencyType = 'Owner'
+                                          AND hu.IsCurrent = 1";
                                             using (SqlCommand checkDiffOwnerCmd = new SqlCommand(checkDifferentOwnerQuery, conn, transaction))
                                             {
                                                 checkDiffOwnerCmd.Parameters.AddWithValue("@unitId", unitId);
@@ -356,9 +358,9 @@ namespace RECOMANAGESYS
                                     {
                                         // Create new unit
                                         string insertUnitQuery = @"
-                                            INSERT INTO TBL_Units (UnitNumber, Block, UnitType, IsOccupied, TotalRooms, AvailableRooms)
-                                            VALUES (@unitNumber, @block, @unitType, @isOccupied, @totalRooms, @availableRooms);
-                                            SELECT SCOPE_IDENTITY();";
+                                    INSERT INTO TBL_Units (UnitNumber, Block, UnitType, IsOccupied, TotalRooms, AvailableRooms)
+                                    VALUES (@unitNumber, @block, @unitType, @isOccupied, @totalRooms, @availableRooms);
+                                    SELECT SCOPE_IDENTITY();";
                                         using (SqlCommand insertUnitCmd = new SqlCommand(insertUnitQuery, conn, transaction))
                                         {
                                             insertUnitCmd.Parameters.AddWithValue("@unitNumber", unitNumber);
@@ -407,33 +409,54 @@ namespace RECOMANAGESYS
                                     }
                                 }
 
-                                // Check apartment availability for Tenants
+                                // ✅ CRITICAL FIX: Check apartment availability DIRECTLY from TBL_Units.AvailableRooms
                                 if (unitTypeText == "Apartment" && _residencyType == "Tenant")
                                 {
-                                    string checkAvailQuery = "SELECT ISNULL(AvailableRooms, 0) FROM TBL_Units WHERE UnitID = @unitId";
-                                    using (SqlCommand checkAvail = new SqlCommand(checkAvailQuery, conn, transaction))
+                                    string checkAvailabilityQuery = @"
+                                SELECT AvailableRooms, TotalRooms 
+                                FROM TBL_Units 
+                                WHERE UnitID = @unitId";
+
+                                    using (SqlCommand checkCmd = new SqlCommand(checkAvailabilityQuery, conn, transaction))
                                     {
-                                        checkAvail.Parameters.AddWithValue("@unitId", unitId);
-                                        int avail = Convert.ToInt32(checkAvail.ExecuteScalar());
-                                        if (avail <= 0)
+                                        checkCmd.Parameters.AddWithValue("@unitId", unitId);
+
+                                        using (SqlDataReader rdr = checkCmd.ExecuteReader())
                                         {
-                                            MessageBox.Show("No available rooms in this apartment.", "No Rooms Available",
-                                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                                            transaction.Rollback();
-                                            return;
+                                            if (rdr.Read())
+                                            {
+                                                int availableRooms = rdr["AvailableRooms"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["AvailableRooms"]);
+                                                int totalRooms = rdr["TotalRooms"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["TotalRooms"]);
+
+                                                if (availableRooms <= 0)
+                                                {
+                                                    rdr.Close();
+                                                    transaction.Rollback();
+                                                    MessageBox.Show(
+                                                        $"This apartment is already full.\n\n" +
+                                                        $"Total Rooms: {totalRooms}\n" +
+                                                        $"Available Rooms: {availableRooms}\n\n" +
+                                                        $"Please unregister an existing tenant before adding a new one.",
+                                                        "Apartment Fully Occupied",
+                                                        MessageBoxButtons.OK,
+                                                        MessageBoxIcon.Warning
+                                                    );
+                                                    return;
+                                                }
+                                            }
                                         }
                                     }
                                 }
 
-                                // ✅ FIXED: For Tenant/Caretaker, verify they're being assigned to their owner's unit
+                                // Verify they're being assigned to their owner's unit
                                 string verifyOwnershipQuery = @"
-                                    SELECT COUNT(*)
-                                    FROM HomeownerUnits hu
-                                    INNER JOIN Residents r ON hu.ResidentID = r.ResidentID
-                                    WHERE hu.UnitID = @unitId
-                                      AND r.HomeownerID = @homeownerId
-                                      AND r.ResidencyType = 'Owner'
-                                      AND hu.IsCurrent = 1";
+                            SELECT COUNT(*)
+                            FROM HomeownerUnits hu
+                            INNER JOIN Residents r ON hu.ResidentID = r.ResidentID
+                            WHERE hu.UnitID = @unitId
+                              AND r.HomeownerID = @homeownerId
+                              AND r.ResidencyType = 'Owner'
+                              AND hu.IsCurrent = 1";
                                 using (SqlCommand verifyCmd = new SqlCommand(verifyOwnershipQuery, conn, transaction))
                                 {
                                     verifyCmd.Parameters.AddWithValue("@unitId", unitId);
@@ -465,64 +488,96 @@ namespace RECOMANAGESYS
                                 }
                             }
 
-                            // ✅ FIXED: Check for duplicate registration (same resident, same unit)
-                            string dupCheck = @"SELECT COUNT(*) 
-                                                FROM HomeownerUnits 
-                                                WHERE ResidentID = @residentId 
-                                                  AND UnitID = @unitId 
-                                                  AND IsCurrent = 1";
-                            using (SqlCommand dupCmd = new SqlCommand(dupCheck, conn, transaction))
+                            // Check for duplicate registration or reactivate inactive record
+                            string checkInactiveQuery = @"
+                        SELECT COUNT(*) 
+                        FROM HomeownerUnits 
+                        WHERE ResidentID = @residentId 
+                          AND UnitID = @unitId 
+                          AND IsCurrent = 0";
+
+                            using (SqlCommand checkInactiveCmd = new SqlCommand(checkInactiveQuery, conn, transaction))
                             {
-                                dupCmd.Parameters.AddWithValue("@residentId", _residentId);
-                                dupCmd.Parameters.AddWithValue("@unitId", unitId);
-                                int exists = Convert.ToInt32(dupCmd.ExecuteScalar());
-                                if (exists > 0)
+                                checkInactiveCmd.Parameters.AddWithValue("@residentId", _residentId);
+                                checkInactiveCmd.Parameters.AddWithValue("@unitId", unitId);
+                                int inactiveExists = Convert.ToInt32(checkInactiveCmd.ExecuteScalar());
+
+                                if (inactiveExists > 0)
                                 {
-                                    MessageBox.Show("This resident is already registered for this unit.",
-                                        "Duplicate Registration", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                                    transaction.Rollback();
-                                    return;
-                                }
-                            }
+                                    // Reactivate existing record
+                                    string reactivateQuery = @"
+                                UPDATE HomeownerUnits
+                                SET IsCurrent = 1,
+                                    DateOfOwnershipEnd = NULL,
+                                    DateOfOwnership = ISNULL(DateOfOwnership, GETDATE())
+                                WHERE ResidentID = @residentId
+                                  AND UnitID = @unitId";
 
-                            // Insert into HomeownerUnits - USE RESIDENTID
-                            string insertJunctionQuery;
-                            if (_residencyType == "Owner")
-                            {
-                                insertJunctionQuery = @"INSERT INTO HomeownerUnits (ResidentID, UnitID, DateOfOwnership, ApprovedByUserID, IsCurrent)
-                                                        VALUES (@residentId, @unitId, @dateOfOwnership, @ApprovedByUserID, 1)";
-                            }
-                            else
-                            {
-                                insertJunctionQuery = @"INSERT INTO HomeownerUnits (ResidentID, UnitID, IsCurrent)
-                                                        VALUES (@residentId, @unitId, 1)";
-                            }
-
-                            using (SqlCommand insertJunctionCmd = new SqlCommand(insertJunctionQuery, conn, transaction))
-                            {
-                                insertJunctionCmd.Parameters.AddWithValue("@residentId", _residentId);
-                                insertJunctionCmd.Parameters.AddWithValue("@unitId", unitId);
-
-                                if (_residencyType == "Owner")
-                                {
-                                    insertJunctionCmd.Parameters.AddWithValue("@dateOfOwnership", DTPOwnership.Value);
-
-                                    object approvedByValue = DBNull.Value;
-                                    if (cmbApprovedBy != null && cmbApprovedBy.SelectedIndex > 0)
+                                    using (SqlCommand reactivateCmd = new SqlCommand(reactivateQuery, conn, transaction))
                                     {
-                                        ListItem selectedItem = (ListItem)cmbApprovedBy.SelectedItem;
-                                        approvedByValue = selectedItem.Value;
+                                        reactivateCmd.Parameters.AddWithValue("@residentId", _residentId);
+                                        reactivateCmd.Parameters.AddWithValue("@unitId", unitId);
+                                        reactivateCmd.ExecuteNonQuery();
                                     }
-                                    insertJunctionCmd.Parameters.AddWithValue("@ApprovedByUserID", approvedByValue);
-                                }
 
-                                insertJunctionCmd.ExecuteNonQuery();
+                                    // Reactivate resident record
+                                    string reactivateResident = "UPDATE Residents SET IsActive = 1, InactiveDate = NULL WHERE ResidentID = @residentId";
+                                    using (SqlCommand cmd = new SqlCommand(reactivateResident, conn, transaction))
+                                    {
+                                        cmd.Parameters.AddWithValue("@residentId", _residentId);
+                                        cmd.ExecuteNonQuery();
+                                    }
+                                }
+                                else
+                                {
+                                    // Insert new record
+                                    string insertJunctionQuery;
+                                    if (_residencyType == "Owner")
+                                    {
+                                        insertJunctionQuery = @"
+                                    INSERT INTO HomeownerUnits (ResidentID, UnitID, DateOfOwnership, ApprovedByUserID, IsCurrent)
+                                    VALUES (@residentId, @unitId, @dateOfOwnership, @ApprovedByUserID, 1)";
+                                    }
+                                    else
+                                    {
+                                        insertJunctionQuery = @"
+                                    INSERT INTO HomeownerUnits (ResidentID, UnitID, IsCurrent)
+                                    VALUES (@residentId, @unitId, 1)";
+                                    }
+
+                                    using (SqlCommand insertJunctionCmd = new SqlCommand(insertJunctionQuery, conn, transaction))
+                                    {
+                                        insertJunctionCmd.Parameters.AddWithValue("@residentId", _residentId);
+                                        insertJunctionCmd.Parameters.AddWithValue("@unitId", unitId);
+
+                                        if (_residencyType == "Owner")
+                                        {
+                                            insertJunctionCmd.Parameters.AddWithValue("@dateOfOwnership", DTPOwnership.Value);
+
+                                            object approvedByValue = DBNull.Value;
+                                            if (cmbApprovedBy != null && cmbApprovedBy.SelectedIndex > 0)
+                                            {
+                                                ListItem selectedItem = (ListItem)cmbApprovedBy.SelectedItem;
+                                                approvedByValue = selectedItem.Value;
+                                            }
+                                            insertJunctionCmd.Parameters.AddWithValue("@ApprovedByUserID", approvedByValue);
+                                        }
+
+                                        insertJunctionCmd.ExecuteNonQuery();
+                                    }
+                                }
                             }
 
                             // Update apartment rooms for Tenants
                             if (unitTypeText == "Apartment" && _residencyType == "Tenant")
                             {
-                                string updateRoomsQuery = "UPDATE TBL_Units SET AvailableRooms = AvailableRooms - 1 WHERE UnitID = @unitId";
+                                string updateRoomsQuery = @"
+                            UPDATE TBL_Units 
+                            SET AvailableRooms = CASE 
+                                WHEN AvailableRooms > 0 THEN AvailableRooms - 1 
+                                ELSE 0 
+                            END 
+                            WHERE UnitID = @unitId";
                                 using (SqlCommand updateRoomsCmd = new SqlCommand(updateRoomsQuery, conn, transaction))
                                 {
                                     updateRoomsCmd.Parameters.AddWithValue("@unitId", unitId);
@@ -530,30 +585,20 @@ namespace RECOMANAGESYS
                                 }
 
                                 string updateStatusQuery = @"
-                                    UPDATE TBL_Units
-                                    SET IsOccupied = 
-                                        CASE 
-                                            WHEN AvailableRooms = 0 THEN 1 
-                                            ELSE 0 
-                                        END
-                                    WHERE UnitID = @unitId";
+                            UPDATE TBL_Units
+                            SET IsOccupied = 
+                                CASE 
+                                    WHEN AvailableRooms = 0 THEN 1 
+                                    ELSE 0 
+                                END
+                            WHERE UnitID = @unitId";
                                 using (SqlCommand updateStatusCmd = new SqlCommand(updateStatusQuery, conn, transaction))
                                 {
                                     updateStatusCmd.Parameters.AddWithValue("@unitId", unitId);
                                     updateStatusCmd.ExecuteNonQuery();
                                 }
                             }
-                            else if (unitTypeText != "Apartment")
-                            {
-                                // Mark non-apartment units as occupied
-                                string updateUnitStatusQuery = "UPDATE TBL_Units SET IsOccupied = 1 WHERE UnitID = @unitId";
-                                using (SqlCommand updateUnitStatusCmd = new SqlCommand(updateUnitStatusQuery, conn, transaction))
-                                {
-                                    updateUnitStatusCmd.Parameters.AddWithValue("@unitId", unitId);
-                                    updateUnitStatusCmd.ExecuteNonQuery();
-                                }
-                            }
-
+                           
                             transaction.Commit();
                             MessageBox.Show("Unit added successfully", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
@@ -575,7 +620,6 @@ namespace RECOMANAGESYS
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
 
         private void Cancelbtn_Click(object sender, EventArgs e)
         {
