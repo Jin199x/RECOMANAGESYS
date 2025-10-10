@@ -57,7 +57,7 @@ namespace RECOMANAGESYS
             frmPayment payform = new frmPayment();
             payform.ShowDialog();
 
-            LoadResidentsList(); 
+            LoadResidentsList();
 
             if (lastSelectedResidentId != -1)
                 LoadMonthlyDues(lastSelectedResidentId, lastSelectedUnitId);
@@ -110,14 +110,14 @@ namespace RECOMANAGESYS
 
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
-                string query = @"SELECT r.HomeownerID, r.FirstName, r.MiddleName, r.LastName, r.HomeAddress, r.IsActive
+                string query = @"SELECT r.ResidentID, r.FirstName, r.MiddleName, r.LastName, r.HomeAddress, r.IsActive
                          FROM Residents r
-                         WHERE EXISTS (SELECT 1 FROM MonthlyDues md WHERE md.HomeownerId = r.HomeownerID)";
+                         WHERE EXISTS (SELECT 1 FROM MonthlyDues md WHERE md.ResidentID = r.ResidentID)";
 
                 if (isActive.HasValue)
                     query += " AND r.IsActive = @isActive";
 
-                query += " ORDER BY r.HomeownerID";
+                query += " ORDER BY r.ResidentID";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -129,7 +129,7 @@ namespace RECOMANAGESYS
                     {
                         while (reader.Read())
                         {
-                            int residentId = Convert.ToInt32(reader["HomeownerID"]);
+                            int residentId = Convert.ToInt32(reader["ResidentID"]);
                             string fullName = $"{reader["FirstName"]} {reader["MiddleName"]} {reader["LastName"]}";
                             string address = reader["HomeAddress"].ToString();
                             bool status = Convert.ToBoolean(reader["IsActive"]);
@@ -138,9 +138,9 @@ namespace RECOMANAGESYS
                             List<int> unitIds = new List<int>();
                             using (SqlConnection connUnits = DatabaseHelper.GetConnection())
                             using (SqlCommand cmdUnits = new SqlCommand(
-                                "SELECT DISTINCT UnitID FROM MonthlyDues WHERE HomeownerId=@residentId", connUnits))
+                                "SELECT DISTINCT UnitID FROM MonthlyDues WHERE ResidentID=@ResidentID", connUnits))
                             {
-                                cmdUnits.Parameters.AddWithValue("@residentId", residentId);
+                                cmdUnits.Parameters.AddWithValue("@ResidentID", residentId);
                                 connUnits.Open();
                                 using (SqlDataReader unitReader = cmdUnits.ExecuteReader())
                                 {
@@ -173,9 +173,9 @@ namespace RECOMANAGESYS
         {
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             using (SqlCommand cmd = new SqlCommand(
-                "SELECT COUNT(*) FROM MonthlyDues WHERE HomeownerId=@residentId AND UnitID=@unitId", conn))
+                "SELECT COUNT(*) FROM MonthlyDues WHERE ResidentID=@ResidentID AND UnitID=@unitId", conn))
             {
-                cmd.Parameters.AddWithValue("@residentId", residentId);
+                cmd.Parameters.AddWithValue("@ResidentID", residentId);
                 cmd.Parameters.AddWithValue("@unitId", unitId);
                 conn.Open();
                 return (int)cmd.ExecuteScalar() > 0;
@@ -188,9 +188,9 @@ namespace RECOMANAGESYS
 
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             using (SqlCommand cmd = new SqlCommand(
-                "SELECT MonthCovered, AmountPaid FROM MonthlyDues WHERE HomeownerId=@residentId AND UnitID=@unitId", conn))
+                "SELECT MonthCovered, AmountPaid FROM MonthlyDues WHERE ResidentID=@ResidentID AND UnitID=@unitId", conn))
             {
-                cmd.Parameters.AddWithValue("@residentId", residentId);
+                cmd.Parameters.AddWithValue("@ResidentID", residentId);
                 cmd.Parameters.AddWithValue("@unitId", unitId);
                 conn.Open();
                 using (SqlDataReader reader = cmd.ExecuteReader())
@@ -229,9 +229,9 @@ namespace RECOMANAGESYS
         {
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             using (SqlCommand cmd = new SqlCommand(
-                "SELECT TOP 1 UnitID FROM HomeownerUnits WHERE HomeownerID=@residentId", conn))
+                "SELECT TOP 1 UnitID FROM HomeownerUnits WHERE ResidentID=@ResidentID", conn))
             {
-                cmd.Parameters.AddWithValue("@residentId", residentId);
+                cmd.Parameters.AddWithValue("@ResidentID", residentId);
                 conn.Open();
                 var result = cmd.ExecuteScalar();
                 return result != null ? Convert.ToInt32(result) : 0;
@@ -248,10 +248,10 @@ namespace RECOMANAGESYS
             using (SqlCommand cmd = new SqlCommand(
                 @"SELECT MonthCovered, PaymentDate, AmountPaid 
           FROM MonthlyDues
-          WHERE HomeownerId=@residentId AND UnitID=@unitId
+          WHERE ResidentID=@ResidentID AND UnitID=@unitId
           ORDER BY MonthCovered ASC", conn))
             {
-                cmd.Parameters.AddWithValue("@residentId", residentId);
+                cmd.Parameters.AddWithValue("@ResidentID", residentId);
                 cmd.Parameters.AddWithValue("@unitId", unitId);
                 conn.Open();
                 using (SqlDataReader reader = cmd.ExecuteReader())
@@ -272,9 +272,9 @@ namespace RECOMANAGESYS
             DateTime? inactiveDate = null;
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             using (SqlCommand cmd = new SqlCommand(
-                "SELECT IsActive, InactiveDate FROM Residents WHERE HomeownerID=@residentId", conn))
+                "SELECT IsActive, InactiveDate FROM Residents WHERE ResidentID=@ResidentID", conn))
             {
-                cmd.Parameters.AddWithValue("@residentId", residentId);
+                cmd.Parameters.AddWithValue("@ResidentID", residentId);
                 conn.Open();
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
@@ -343,9 +343,9 @@ namespace RECOMANAGESYS
 
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             using (SqlCommand cmd = new SqlCommand(
-                @"SELECT r.HomeownerID, r.FirstName, r.MiddleName, r.LastName, r.HomeAddress
+                @"SELECT r.ResidentID, r.FirstName, r.MiddleName, r.LastName, r.HomeAddress
                   FROM Residents r
-                  WHERE r.FirstName LIKE @keyword OR r.LastName LIKE @keyword OR r.HomeownerID LIKE @keyword", conn))
+                  WHERE r.FirstName LIKE @keyword OR r.LastName LIKE @keyword OR r.ResidentID LIKE @keyword", conn))
             {
                 cmd.Parameters.AddWithValue("@keyword", $"%{keyword}%");
                 conn.Open();
@@ -353,7 +353,7 @@ namespace RECOMANAGESYS
                 {
                     while (reader.Read())
                     {
-                        int residentId = Convert.ToInt32(reader["HomeownerID"]);
+                        int residentId = Convert.ToInt32(reader["ResidentID"]);
                         string fullName = $"{reader["FirstName"]} {reader["MiddleName"]} {reader["LastName"]}";
                         string address = reader["HomeAddress"].ToString();
 
@@ -373,9 +373,9 @@ namespace RECOMANAGESYS
                             bool isActive = false;
                             using (SqlConnection connCheck = DatabaseHelper.GetConnection())
                             using (SqlCommand cmdCheck = new SqlCommand(
-                                "SELECT COUNT(*) FROM Residents WHERE HomeownerID=@residentId", connCheck))
+                                "SELECT COUNT(*) FROM Residents WHERE ResidentID=@ResidentID", connCheck))
                             {
-                                cmdCheck.Parameters.AddWithValue("@residentId", residentId);
+                                cmdCheck.Parameters.AddWithValue("@ResidentID", residentId);
                                 connCheck.Open();
                                 isActive = (int)cmdCheck.ExecuteScalar() > 0;
                             }
@@ -407,8 +407,8 @@ namespace RECOMANAGESYS
                 conn.Open();
 
                 SqlCommand cmdResident = new SqlCommand(
-                    "SELECT FirstName, MiddleName, LastName, HomeAddress FROM Residents WHERE HomeownerID=@residentId", conn);
-                cmdResident.Parameters.AddWithValue("@residentId", residentId);
+                    "SELECT FirstName, MiddleName, LastName, HomeAddress FROM Residents WHERE ResidentID=@ResidentID", conn);
+                cmdResident.Parameters.AddWithValue("@ResidentID", residentId);
 
                 using (SqlDataReader reader = cmdResident.ExecuteReader())
                 {
@@ -425,7 +425,7 @@ namespace RECOMANAGESYS
                 }
 
                 SqlCommand cmdPayments = new SqlCommand(
-                    "SELECT MonthCovered, AmountPaid, PaymentDate FROM MonthlyDues WHERE HomeownerId=@residentId ORDER BY MonthCovered", conn);
+                    "SELECT MonthCovered, AmountPaid, PaymentDate FROM MonthlyDues WHERE ResidentID=@ResidentID ORDER BY MonthCovered", conn);
                 cmdPayments.Parameters.AddWithValue("@residentId", residentId);
 
                 using (SqlDataReader reader = cmdPayments.ExecuteReader())

@@ -1,29 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Data.SqlClient;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace RECOMANAGESYS
 {
     public partial class UnitsForm : Form
     {
-        private int _homeownerId;
+        private int _residentId;
         public List<int> SelectedUnitIds { get; private set; } = new List<int>();
-        public UnitsForm(int homeownerId)
+
+        public UnitsForm(int residentId)
         {
             InitializeComponent();
-            _homeownerId = homeownerId;
+            _residentId = residentId;
         }
 
         private void UnitsForm_Load(object sender, EventArgs e)
         {
-
             DGVUnits.Columns.Clear();
 
             DGVUnits.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Select", HeaderText = "Select" });
@@ -35,9 +29,10 @@ namespace RECOMANAGESYS
 
             DGVUnits.Columns["UnitID"].Visible = false;
 
-            LoadUnitsForHomeowner();
+            LoadUnitsForResident();
         }
-        private void LoadUnitsForHomeowner()
+
+        private void LoadUnitsForResident()
         {
             try
             {
@@ -49,24 +44,26 @@ namespace RECOMANAGESYS
                                CASE WHEN u.IsOccupied = 1 THEN 'Occupied' ELSE 'Available' END AS Status
                         FROM TBL_Units u
                         INNER JOIN HomeownerUnits hu ON hu.UnitID = u.UnitID
-                        WHERE hu.HomeownerID = @hid AND hu.IsCurrent = 1";
+                        WHERE hu.ResidentID = @residentId AND hu.IsCurrent = 1";
 
                     SqlCommand cmd = new SqlCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@hid", _homeownerId);
+                    cmd.Parameters.AddWithValue("@residentId", _residentId);
 
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         DGVUnits.Rows.Clear();
                         while (reader.Read())
                         {
-                            DGVUnits.Rows.Add(false, reader["UnitID"], reader["UnitNumber"], reader["Block"], reader["UnitType"], reader["Status"]);
+                            DGVUnits.Rows.Add(false, reader["UnitID"], reader["UnitNumber"],
+                                reader["Block"], reader["UnitType"], reader["Status"]);
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading units: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error loading units: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -86,10 +83,10 @@ namespace RECOMANAGESYS
 
             if (SelectedUnitIds.Count == 0)
             {
-                MessageBox.Show("Please select at least one unit to unregister.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please select at least one unit to unregister.", "No Selection",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-
 
             DialogResult = DialogResult.OK;
             Close();
@@ -101,4 +98,4 @@ namespace RECOMANAGESYS
             Close();
         }
     }
-    }
+}
