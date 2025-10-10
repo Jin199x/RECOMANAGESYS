@@ -35,40 +35,46 @@ namespace RECOMANAGESYS
 
                 // Announcements
                 string queryAnn = @"
-                    SELECT Id, Title, IsImportant
-                    FROM Announcements
-                    WHERE ExpirationDate IS NULL OR ExpirationDate >= CAST(GETDATE() AS DATE)";
+                SELECT Id, Title, IsImportant, DatePosted
+                FROM Announcements
+                WHERE ExpirationDate IS NULL OR ExpirationDate >= CAST(GETDATE() AS DATE)";
                 using (SqlCommand cmd = new SqlCommand(queryAnn, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
-                    int normalCount = 0;
+                    int normalAnnouncementsPostedToday = 0;
                     while (reader.Read())
                     {
                         int id = Convert.ToInt32(reader["Id"]);
                         bool isImportant = reader["IsImportant"] != DBNull.Value && Convert.ToBoolean(reader["IsImportant"]);
                         string title = reader["Title"].ToString();
                         string key = $"Announcement_{id}";
+                        DateTime datePosted = Convert.ToDateTime(reader["DatePosted"]);
 
                         if (isImportant)
                         {
-                            notifications.Add(new Notification($"⚠️ {title} (Important Announcement)", "Announcement", id, !readNotifications.Contains(key)));
+                            notifications.Add(new Notification($"⚠️ {title} (Important Announcement)", "Announcement", id, datePosted, !readNotifications.Contains(key)));
                         }
                         else
                         {
-                            normalCount++;
+                            if (datePosted.Date == DateTime.Today)
+                            {
+                                normalAnnouncementsPostedToday++;
+                            }
                         }
                     }
-                    if (normalCount > 0)
+                    if (normalAnnouncementsPostedToday > 0)
                     {
-                        notifications.Add(new Notification($"{normalCount} announcement(s) posted today", "Announcement", null, true));
+                        string key = $"Announcement_Summary_{DateTime.Today:yyyy-MM-dd}";
+                        string message = $"{normalAnnouncementsPostedToday} new announcement(s) posted today";
+                        notifications.Add(new Notification(message, "Announcement", null, DateTime.Today, !readNotifications.Contains(key)));
                     }
                 }
 
                 // Events
                 string queryEvents = @"
-                    SELECT EventId, EventName, StartDateTime
-                    FROM Events
-                    WHERE CAST(StartDateTime AS DATE) IN (CAST(GETDATE() AS DATE), DATEADD(DAY,1,CAST(GETDATE() AS DATE)))";
+                SELECT EventId, EventName, StartDateTime
+                FROM Events
+                WHERE CAST(StartDateTime AS DATE) IN (CAST(GETDATE() AS DATE), DATEADD(DAY,1,CAST(GETDATE() AS DATE)))";
                 using (SqlCommand cmd = new SqlCommand(queryEvents, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
@@ -78,12 +84,8 @@ namespace RECOMANAGESYS
                         string title = reader["EventName"].ToString();
                         DateTime start = Convert.ToDateTime(reader["StartDateTime"]);
                         string key = $"Event_{id}";
-
-                        string text = start.Date == DateTime.Today
-                            ? $"Event today: {title}"
-                            : $"Event tomorrow: {title}";
-
-                        notifications.Add(new Notification(text, "Event", id, !readNotifications.Contains(key)));
+                        string text = start.Date == DateTime.Today ? $"Event today: {title}" : $"Event tomorrow: {title}";
+                        notifications.Add(new Notification(text, "Event", id, start, !readNotifications.Contains(key)));
                     }
                 }
 
@@ -98,12 +100,15 @@ namespace RECOMANAGESYS
                         DayOfWeek scheduleDay = (DayOfWeek)Enum.Parse(typeof(DayOfWeek), day);
                         if (scheduleDay == now.DayOfWeek)
                         {
-                            string key = $"Garbage_{day}";
-                            notifications.Add(new Notification("Garbage collection today!", "Garbage", null, !readNotifications.Contains(key)));
+                            string key = $"Garbage_Today_{now:yyyy-MM-dd}";
+                            // --- GEMINI: For "today" items, we use the current time to make them appear at the very top ---
+                            notifications.Add(new Notification("Garbage collection today!", "Garbage", null, now, !readNotifications.Contains(key)));
                         }
                     }
                 }
             }
+
+            notifications = notifications.OrderByDescending(n => n.SortDate).ToList();
 
             NotificationsUpdated?.Invoke();
         }
@@ -160,12 +165,13 @@ namespace RECOMANAGESYS
         public string type;
         public int? id;
         public bool IsUnread;
-
-        public Notification(string message, string type, int? id, bool isUnread = true)
+        public DateTime SortDate;
+        public Notification(string message, string type, int? id, DateTime sortDate, bool isUnread = true)
         {
             this.message = message;
             this.type = type;
             this.id = id;
+            this.SortDate = sortDate;
             this.IsUnread = isUnread;
         }
     }

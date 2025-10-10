@@ -661,7 +661,7 @@ namespace RECOMANAGESYS
                         }
                     }
 
-                    // Update red counter
+                    //Update red counter
                     int current = int.Parse(lblNotifCount.Text);
                     current = Math.Max(0, current - 1);
                     lblNotifCount.Text = current.ToString();
@@ -685,7 +685,7 @@ namespace RECOMANAGESYS
         }
         private void NotifyPanel_ClickHandler(Panel notifPanel)
         {
-            var notif = (Notification)notifPanel.Tag; // cast to Notification, not a tuple
+            var notif = (Notification)notifPanel.Tag; 
 
             notifForm.Close();
             notifForm = null;
@@ -706,7 +706,7 @@ namespace RECOMANAGESYS
                         dash.OpenSchedulingTab("Garbage");
                         break;
                 }
-                NotificationManager.MarkAsRead(notif);
+               NotificationManager.MarkAsRead(notif);
                 int current = NotificationManager.Notifications.Count(n => n.IsUnread);
                 lblNotifCount.Text = current.ToString();
                 lblNotifCount.Visible = current > 0;
