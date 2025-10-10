@@ -572,47 +572,78 @@ CREATE TABLE GarbageCollectionSchedules (
 );
 
 CREATE TABLE Residents (
-    HomeownerID INT PRIMARY KEY, 
-    FirstName NVARCHAR(50),
+    ResidentID INT IDENTITY(1,1) PRIMARY KEY,      
+    HomeownerID INT NOT NULL,                       
+    FirstName NVARCHAR(50) NOT NULL,
     MiddleName NVARCHAR(50),
-    LastName NVARCHAR(50),
-    HomeAddress NVARCHAR(255),
-    ContactNumber NVARCHAR(15),
+    LastName NVARCHAR(50) NOT NULL,
+    HomeAddress NVARCHAR(255) NOT NULL,
+    ContactNumber NVARCHAR(15) NOT NULL,
     EmailAddress NVARCHAR(100),
     EmergencyContactPerson NVARCHAR(100),
     EmergencyContactNumber NVARCHAR(15),
-    ResidencyType NVARCHAR(50),
+    ResidencyType NVARCHAR(50) NOT NULL CHECK (ResidencyType IN ('Owner', 'Tenant', 'Caretaker')),
     IsActive BIT DEFAULT 1,
     InactiveDate DATE NULL,
-    DateRegistered DATETIME DEFAULT GETDATE()
+    DateRegistered DATETIME DEFAULT GETDATE(),
+    INDEX IX_Residents_HomeownerID (HomeownerID),
+    INDEX IX_Residents_ResidencyType (ResidencyType),
+    INDEX IX_Residents_IsActive (IsActive)
 );
-
 
 CREATE TABLE TBL_Units (
     UnitID INT IDENTITY(1,1) PRIMARY KEY,
-    UnitNumber NVARCHAR(20),
-    UnitType NVARCHAR(50),
-    Block NVARCHAR(10),
+    UnitNumber NVARCHAR(20) NOT NULL,
+    Block NVARCHAR(10) NOT NULL,
+    UnitType NVARCHAR(50) NOT NULL CHECK (UnitType IN ('Town house', 'Single Attach', 'Single Detach', 'Apartment')),
     TotalRooms INT NULL,
     AvailableRooms INT NULL,
     IsOccupied BIT NOT NULL DEFAULT 0,
+    DateCreated DATETIME DEFAULT GETDATE(),
     CONSTRAINT UQ_UnitNumber_Block UNIQUE (UnitNumber, Block),
-    CONSTRAINT CK_Rooms CHECK (AvailableRooms <= TotalRooms)
+    CONSTRAINT CK_Rooms CHECK (AvailableRooms IS NULL OR TotalRooms IS NULL OR AvailableRooms <= TotalRooms),
+    CONSTRAINT CK_Apartment_Rooms CHECK (
+        (UnitType = 'Apartment' AND TotalRooms IS NOT NULL AND AvailableRooms IS NOT NULL) OR
+        (UnitType != 'Apartment' AND TotalRooms IS NULL AND AvailableRooms IS NULL)
+    ),
+    INDEX IX_Units_Type (UnitType),
+    INDEX IX_Units_Occupied (IsOccupied)
 );
-
 
 CREATE TABLE HomeownerUnits (
     HomeownerUnitID INT IDENTITY(1,1) PRIMARY KEY,
-    HomeownerID INT NOT NULL,
+    ResidentID INT NOT NULL,
     UnitID INT NOT NULL,
-    DateOfOwnership DATETIME,
+    DateOfOwnership DATETIME NULL,
     DateOfOwnershipEnd DATETIME NULL,
     ApprovedByUserID INT NULL,
     IsCurrent BIT DEFAULT 1,
-
-    CONSTRAINT FK_HomeownerUnits_Resident FOREIGN KEY (HomeownerID) REFERENCES Residents(HomeownerID),
+    DateCreated DATETIME DEFAULT GETDATE(),
+    CONSTRAINT FK_HomeownerUnits_Resident FOREIGN KEY (ResidentID) REFERENCES Residents(ResidentID),
     CONSTRAINT FK_HomeownerUnits_Unit FOREIGN KEY (UnitID) REFERENCES TBL_Units(UnitID),
-    CONSTRAINT FK_HomeownerUnits_User FOREIGN KEY (ApprovedByUserID) REFERENCES Users(UserID)
+    CONSTRAINT FK_HomeownerUnits_User FOREIGN KEY (ApprovedByUserID) REFERENCES Users(UserID),
+    CONSTRAINT UQ_Active_Resident_Unit UNIQUE (ResidentID, UnitID, IsCurrent),
+    INDEX IX_HomeownerUnits_Resident (ResidentID),
+    INDEX IX_HomeownerUnits_Unit (UnitID),
+    INDEX IX_HomeownerUnits_Current (IsCurrent)
 );
 
+CREATE TABLE MonthlyDues (
+    DueId INT IDENTITY(1,1) PRIMARY KEY,
+    ResidentID INT NOT NULL,                       
+    UnitID INT NOT NULL,
+    PaymentDate DATE NOT NULL,
+    AmountPaid DECIMAL(10,2) NOT NULL,
+    DueRate DECIMAL(10,2) NOT NULL,
+    MonthCovered VARCHAR(20) NOT NULL,             
+    Remarks NVARCHAR(255) NULL,
+    DateRecorded DATETIME DEFAULT GETDATE(),
+    CONSTRAINT FK_MonthlyDues_Resident FOREIGN KEY (ResidentID) REFERENCES Residents(ResidentID),
+    CONSTRAINT FK_MonthlyDues_Unit FOREIGN KEY (UnitID) REFERENCES TBL_Units(UnitID),
+
+    INDEX IX_MonthlyDues_Resident (ResidentID),
+    INDEX IX_MonthlyDues_Unit (UnitID),
+    INDEX IX_MonthlyDues_Month (MonthCovered),
+    INDEX IX_MonthlyDues_Date (PaymentDate)
+);
 */

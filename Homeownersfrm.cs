@@ -4,7 +4,6 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Windows.Forms;
 
 namespace RECOMANAGESYS
@@ -46,14 +45,11 @@ namespace RECOMANAGESYS
                     ISNULL(r.EmergencyContactPerson, '') AS EmergencyContactPerson,
                     ISNULL(r.EmergencyContactNumber, '') AS EmergencyContactNumber,
                     ISNULL(r.ResidencyType, '') AS ResidencyType,
-                    
-                    -- ✅ NEW: Status column
+                      
                     CASE 
                         WHEN r.IsActive = 1 THEN 'Active'
                         ELSE 'Inactive'
-                    END AS Status,
-                    
-                    -- ✅ NEW: Inactive date
+                    END AS Status,                 
                     r.InactiveDate,
                    
                     (SELECT 
@@ -134,7 +130,7 @@ namespace RECOMANAGESYS
             {
                 if (DGVResidents.Columns.Count > 0)
                 {
-                    // Hide ResidentID but keep it for operations
+               
                     if (DGVResidents.Columns["ResidentID"] != null)
                     {
                         DGVResidents.Columns["ResidentID"].Visible = false;
@@ -259,22 +255,18 @@ namespace RECOMANAGESYS
             try
             {
                 DataGridViewRow row = DGVResidents.Rows[e.RowIndex];
-
-                // Check if Status column exists and equals "Inactive"
                 if (row.Cells["Status"] != null && row.Cells["Status"].Value != null)
                 {
                     string status = row.Cells["Status"].Value.ToString();
 
                     if (status == "Inactive")
                     {
-                        // Gray out inactive rows
                         e.CellStyle.ForeColor = Color.Gray;
                         e.CellStyle.BackColor = Color.FromArgb(245, 245, 245);
                         e.CellStyle.Font = new Font(e.CellStyle.Font, FontStyle.Italic);
                     }
                     else
                     {
-                        // Keep default styling for active rows
                         if (e.RowIndex % 2 == 1)
                         {
                             e.CellStyle.BackColor = Color.FromArgb(240, 240, 240);
@@ -284,7 +276,6 @@ namespace RECOMANAGESYS
             }
             catch
             {
-                // Ignore formatting errors
             }
         }
         private void SetupBasicColumns()
@@ -438,7 +429,16 @@ namespace RECOMANAGESYS
                                 cmd.Parameters.AddWithValue("@unitId", unitId);
                                 cmd.ExecuteNonQuery();
                             }
-
+                            // ✅ Step 3: Reset Apartment Room Count
+                            if (unitType.Equals("Apartment", StringComparison.OrdinalIgnoreCase))
+                            {
+                                using (SqlCommand cmd = new SqlCommand(
+                                    "UPDATE TBL_Units SET AvailableRooms = TotalRooms WHERE UnitID = @unitId", conn, tran))
+                                {
+                                    cmd.Parameters.AddWithValue("@unitId", unitId);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
                             // Handle apartment room availability
                             if (string.Equals(unitType, "Apartment", StringComparison.OrdinalIgnoreCase) &&
                                 string.Equals(residencyType, "Tenant", StringComparison.OrdinalIgnoreCase))
@@ -488,6 +488,20 @@ namespace RECOMANAGESYS
                                         deactivate.ExecuteNonQuery();
                                     }
                                 }
+                            }
+                            // zzzzzzzz
+                            using (SqlCommand cmd = new SqlCommand(@"
+                                UPDATE HomeownerUnits
+                                SET IsCurrent = 0, DateOfOwnershipEnd = ISNULL(DateOfOwnershipEnd, GETDATE())
+                                WHERE UnitID = @unitId
+                                  AND ResidentID IN (
+                                      SELECT ResidentID FROM Residents
+                                      WHERE ResidencyType IN ('Tenant', 'Caretaker')
+                                  )
+                                  AND IsCurrent = 1", conn, tran))
+                            {
+                                cmd.Parameters.AddWithValue("@unitId", unitId);
+                                cmd.ExecuteNonQuery();
                             }
 
                             tran.Commit();
@@ -844,8 +858,8 @@ namespace RECOMANAGESYS
                     dgv.DefaultCellStyle.SelectionBackColor = Color.FromArgb(100, 149, 237);
                     dgv.DefaultCellStyle.SelectionForeColor = Color.White;
 
-               
-               
+
+
 
                     unitsForm.Controls.Add(dgv);
                     unitsForm.ShowDialog();
