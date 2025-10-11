@@ -3,13 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.Linq; 
 using System.Windows.Forms;
 
 namespace RECOMANAGESYS
 {
     public partial class addvisitor : Form
     {
-        public event EventHandler VisitorAdded; //auto refresh
+        public event EventHandler VisitorAdded;
+
         public addvisitor()
         {
             InitializeComponent();
@@ -18,29 +20,13 @@ namespace RECOMANAGESYS
             VisitorDTP.Value = DateTime.Now;
             VisitorDTP.Format = DateTimePickerFormat.Custom;
             VisitorDTP.CustomFormat = "dddd, dd MMMM yyyy";
-
             VisitorDTP.Format = DateTimePickerFormat.Time;
-            VisitorDTP.ShowUpDown = true;
 
-            // Attach event handler for "Other" selection
             Purposetxt.SelectedIndexChanged += Purposetxt_SelectedIndexChanged;
         }
 
-        private void label6_Click(object sender, EventArgs e) { }
-
-        private void label1_Click(object sender, EventArgs e) { }
-
-        private void label2_Click(object sender, EventArgs e) { }
-
-        private void label3_Click(object sender, EventArgs e) { }
-
-        private void label4_Click(object sender, EventArgs e) { }
-
-        private void label5_Click(object sender, EventArgs e) { }
-
         private void addvisitor_Load(object sender, EventArgs e)
         {
-            // Populate ComboBox if not already done in Designer
             if (Purposetxt.Items.Count == 0)
             {
                 Purposetxt.Items.AddRange(new object[]
@@ -60,7 +46,6 @@ namespace RECOMANAGESYS
         {
             if (Purposetxt.SelectedItem.ToString() == "Other")
             {
-                // Show input dialog for custom reason
                 string input = Interaction.InputBox(
                     "Please specify the other reason:",
                     "Other Reason",
@@ -68,13 +53,14 @@ namespace RECOMANAGESYS
 
                 if (string.IsNullOrWhiteSpace(input))
                 {
-                    // If user cancels or leaves blank, revert to default selection
                     Purposetxt.SelectedIndex = 0;
                 }
                 else
                 {
-                    // Replace "Other" with custom input and select it
-                    Purposetxt.Items[Purposetxt.SelectedIndex] = input;
+                    if (!Purposetxt.Items.Contains(input))
+                    {
+                        Purposetxt.Items.Insert(Purposetxt.Items.Count - 1, input);
+                    }
                     Purposetxt.SelectedItem = input;
                 }
             }
@@ -87,12 +73,13 @@ namespace RECOMANAGESYS
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
                 string query = @"INSERT INTO TBL_VisitorsLog
-                                (VisitorName, ContactNumber, Date, VisitPurpose, TimeIn)
-                                VALUES 
-                                (@Name, @ContactNumber, @Date, @Purpose, @TimeIn)";
+                                 (VisitorName, ContactNumber, Date, VisitPurpose, TimeIn)
+                                 VALUES 
+                                 (@Name, @ContactNumber, @Date, @Purpose, @TimeIn)";
 
                 SqlCommand cmd = new SqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@Name", VisitorNametxt.Text);
+
+                cmd.Parameters.AddWithValue("@Name", VisitorNametxt.Text.Trim());
                 cmd.Parameters.AddWithValue("@ContactNumber", ContactNumtxt.Text);
                 cmd.Parameters.AddWithValue("@Date", VisitorDTP.Value.Date);
                 cmd.Parameters.AddWithValue("@Purpose", Purposetxt.SelectedItem.ToString());
@@ -108,14 +95,32 @@ namespace RECOMANAGESYS
 
         private bool ValidateInputs()
         {
-            if (string.IsNullOrWhiteSpace(VisitorNametxt.Text) ||
-                string.IsNullOrWhiteSpace(ContactNumtxt.Text) ||
+            string visitorName = VisitorNametxt.Text.Trim();
+            string contactNumber = ContactNumtxt.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(visitorName) ||
+                string.IsNullOrWhiteSpace(contactNumber) ||
                 Purposetxt.SelectedItem == null)
             {
-                MessageBox.Show("Please fill in all required fields.", "Error",
+                MessageBox.Show("Please fill in all required fields.", "Incomplete Form",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
+
+            if (!visitorName.All(c => char.IsLetter(c) || char.IsWhiteSpace(c)))
+            {
+                MessageBox.Show("The Visitor Name must only contain letters and spaces.", "Invalid Name",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+
+            if (contactNumber.Length != 11 || !contactNumber.All(char.IsDigit))
+            {
+                MessageBox.Show("The Contact Number must be exactly 11 digits.", "Invalid Contact Number",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+
             return true;
         }
 
@@ -123,15 +128,26 @@ namespace RECOMANAGESYS
         {
             if (e.KeyChar == (char)Keys.Enter)
             {
-                e.Handled = true; // Ignore Enter key
+                e.Handled = true;
+                SelectNextControl((Control)sender, true, true, true, true);
+            }
+
+            if (!char.IsLetter(e.KeyChar) && !char.IsControl(e.KeyChar) && e.KeyChar != ' ')
+            {
+                e.Handled = true; 
             }
         }
 
         private void ContactNumtxt_KeyPress(object sender, KeyPressEventArgs e)
         {
-            if (e.KeyChar == (char)Keys.Enter)
+            if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar))
             {
-                e.Handled = true; // Ignore Enter key
+                e.Handled = true;
+            }
+
+            if (ContactNumtxt.Text.Length >= 11 && !char.IsControl(e.KeyChar))
+            {
+                e.Handled = true;
             }
         }
 
@@ -139,5 +155,10 @@ namespace RECOMANAGESYS
         {
             this.Close();
         }
+
+        private void label6_Click(object sender, EventArgs e) { }
+        private void label1_Click(object sender, EventArgs e) { }
+        private void label2_Click(object sender, EventArgs e) { }
+        private void label3_Click(object sender, EventArgs e) { }
     }
 }

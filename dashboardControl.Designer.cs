@@ -39,15 +39,15 @@
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.visitorShowPanel = new System.Windows.Forms.Panel();
-            this.lblTodayVisitors = new System.Windows.Forms.Label();
-            this.lvVisitor = new System.Windows.Forms.ListView();
             this.label4 = new System.Windows.Forms.Label();
+            this.lvVisitor = new System.Windows.Forms.ListView();
+            this.lblTodayVisitors = new System.Windows.Forms.Label();
             this.panelSchedule = new System.Windows.Forms.Panel();
             this.panelGarbageDisplay = new System.Windows.Forms.Panel();
-            this.lblNextDay1 = new System.Windows.Forms.Label();
-            this.lblNextTime1 = new System.Windows.Forms.Label();
-            this.lblNextDay2 = new System.Windows.Forms.Label();
             this.lblNextTime2 = new System.Windows.Forms.Label();
+            this.lblNextDay2 = new System.Windows.Forms.Label();
+            this.lblNextTime1 = new System.Windows.Forms.Label();
+            this.lblNextDay1 = new System.Windows.Forms.Label();
             this.visitorShowPanel.SuspendLayout();
             this.panelGarbageDisplay.SuspendLayout();
             this.SuspendLayout();
@@ -172,15 +172,15 @@
             this.visitorShowPanel.Size = new System.Drawing.Size(294, 217);
             this.visitorShowPanel.TabIndex = 13;
             // 
-            // lblTodayVisitors
+            // label4
             // 
-            this.lblTodayVisitors.AutoSize = true;
-            this.lblTodayVisitors.Font = new System.Drawing.Font("Microsoft Sans Serif", 22F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblTodayVisitors.Location = new System.Drawing.Point(71, 25);
-            this.lblTodayVisitors.Name = "lblTodayVisitors";
-            this.lblTodayVisitors.Size = new System.Drawing.Size(72, 52);
-            this.lblTodayVisitors.TabIndex = 0;
-            this.lblTodayVisitors.Text = "00";
+            this.label4.AutoSize = true;
+            this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label4.Location = new System.Drawing.Point(149, 47);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(84, 25);
+            this.label4.TabIndex = 2;
+            this.label4.Text = "Visitors";
             // 
             // lvVisitor
             // 
@@ -192,15 +192,15 @@
             this.lvVisitor.TabIndex = 1;
             this.lvVisitor.UseCompatibleStateImageBehavior = false;
             // 
-            // label4
+            // lblTodayVisitors
             // 
-            this.label4.AutoSize = true;
-            this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label4.Location = new System.Drawing.Point(149, 47);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(84, 25);
-            this.label4.TabIndex = 2;
-            this.label4.Text = "Visitors";
+            this.lblTodayVisitors.AutoSize = true;
+            this.lblTodayVisitors.Font = new System.Drawing.Font("Microsoft Sans Serif", 22F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblTodayVisitors.Location = new System.Drawing.Point(71, 25);
+            this.lblTodayVisitors.Name = "lblTodayVisitors";
+            this.lblTodayVisitors.Size = new System.Drawing.Size(72, 52);
+            this.lblTodayVisitors.TabIndex = 0;
+            this.lblTodayVisitors.Text = "00";
             // 
             // panelSchedule
             // 
@@ -222,25 +222,15 @@
             this.panelGarbageDisplay.Size = new System.Drawing.Size(294, 217);
             this.panelGarbageDisplay.TabIndex = 15;
             // 
-            // lblNextDay1
+            // lblNextTime2
             // 
-            this.lblNextDay1.AutoSize = true;
-            this.lblNextDay1.Font = new System.Drawing.Font("Microsoft Sans Serif", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblNextDay1.Location = new System.Drawing.Point(15, 25);
-            this.lblNextDay1.Name = "lblNextDay1";
-            this.lblNextDay1.Size = new System.Drawing.Size(105, 40);
-            this.lblNextDay1.TabIndex = 3;
-            this.lblNextDay1.Text = "Day1";
-            // 
-            // lblNextTime1
-            // 
-            this.lblNextTime1.AutoSize = true;
-            this.lblNextTime1.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblNextTime1.Location = new System.Drawing.Point(17, 65);
-            this.lblNextTime1.Name = "lblNextTime1";
-            this.lblNextTime1.Size = new System.Drawing.Size(72, 25);
-            this.lblNextTime1.TabIndex = 3;
-            this.lblNextTime1.Text = "Time1";
+            this.lblNextTime2.AutoSize = true;
+            this.lblNextTime2.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblNextTime2.Location = new System.Drawing.Point(17, 163);
+            this.lblNextTime2.Name = "lblNextTime2";
+            this.lblNextTime2.Size = new System.Drawing.Size(72, 25);
+            this.lblNextTime2.TabIndex = 5;
+            this.lblNextTime2.Text = "Time2";
             // 
             // lblNextDay2
             // 
@@ -252,15 +242,25 @@
             this.lblNextDay2.TabIndex = 4;
             this.lblNextDay2.Text = "Day2";
             // 
-            // lblNextTime2
+            // lblNextTime1
             // 
-            this.lblNextTime2.AutoSize = true;
-            this.lblNextTime2.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblNextTime2.Location = new System.Drawing.Point(17, 163);
-            this.lblNextTime2.Name = "lblNextTime2";
-            this.lblNextTime2.Size = new System.Drawing.Size(72, 25);
-            this.lblNextTime2.TabIndex = 5;
-            this.lblNextTime2.Text = "Time2";
+            this.lblNextTime1.AutoSize = true;
+            this.lblNextTime1.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblNextTime1.Location = new System.Drawing.Point(17, 65);
+            this.lblNextTime1.Name = "lblNextTime1";
+            this.lblNextTime1.Size = new System.Drawing.Size(72, 25);
+            this.lblNextTime1.TabIndex = 3;
+            this.lblNextTime1.Text = "Time1";
+            // 
+            // lblNextDay1
+            // 
+            this.lblNextDay1.AutoSize = true;
+            this.lblNextDay1.Font = new System.Drawing.Font("Microsoft Sans Serif", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblNextDay1.Location = new System.Drawing.Point(15, 25);
+            this.lblNextDay1.Name = "lblNextDay1";
+            this.lblNextDay1.Size = new System.Drawing.Size(105, 40);
+            this.lblNextDay1.TabIndex = 3;
+            this.lblNextDay1.Text = "Day1";
             // 
             // dashboardControl
             // 

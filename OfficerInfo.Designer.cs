@@ -30,14 +30,14 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(OfficerInfo));
             this.officerPanel = new System.Windows.Forms.Panel();
+            this.viewLockAccounts = new System.Windows.Forms.Button();
             this.Editbtn = new System.Windows.Forms.Button();
             this.registerbtn = new System.Windows.Forms.Button();
             this.searchbtn = new FontAwesome.Sharp.IconButton();
-            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.txtSearch = new System.Windows.Forms.TextBox();
             this.Deletebtn = new System.Windows.Forms.Button();
             this.Refreshbtn = new System.Windows.Forms.Button();
             this.DGVOfficers = new System.Windows.Forms.DataGridView();
-            this.viewLockAccounts = new System.Windows.Forms.Button();
             this.officerPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.DGVOfficers)).BeginInit();
             this.SuspendLayout();
@@ -50,7 +50,7 @@
             this.officerPanel.Controls.Add(this.Editbtn);
             this.officerPanel.Controls.Add(this.registerbtn);
             this.officerPanel.Controls.Add(this.searchbtn);
-            this.officerPanel.Controls.Add(this.textBox1);
+            this.officerPanel.Controls.Add(this.txtSearch);
             this.officerPanel.Controls.Add(this.Deletebtn);
             this.officerPanel.Controls.Add(this.Refreshbtn);
             this.officerPanel.Controls.Add(this.DGVOfficers);
@@ -61,6 +61,17 @@
             this.officerPanel.TabIndex = 4;
             this.officerPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.officerPanel_Paint);
             // 
+            // viewLockAccounts
+            // 
+            this.viewLockAccounts.Location = new System.Drawing.Point(649, 98);
+            this.viewLockAccounts.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.viewLockAccounts.Name = "viewLockAccounts";
+            this.viewLockAccounts.Size = new System.Drawing.Size(170, 46);
+            this.viewLockAccounts.TabIndex = 14;
+            this.viewLockAccounts.Text = "Lock Accounts";
+            this.viewLockAccounts.UseVisualStyleBackColor = true;
+            this.viewLockAccounts.Click += new System.EventHandler(this.viewLockAccounts_Click);
+            // 
             // Editbtn
             // 
             this.Editbtn.Location = new System.Drawing.Point(190, 81);
@@ -70,6 +81,7 @@
             this.Editbtn.TabIndex = 13;
             this.Editbtn.Text = "Edit";
             this.Editbtn.UseVisualStyleBackColor = true;
+            this.Editbtn.Click += new System.EventHandler(this.Editbtn_Click);
             // 
             // registerbtn
             // 
@@ -96,15 +108,16 @@
             this.searchbtn.TabIndex = 11;
             this.searchbtn.UseVisualStyleBackColor = true;
             // 
-            // textBox1
+            // txtSearch
             // 
-            this.textBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.textBox1.Location = new System.Drawing.Point(772, 31);
-            this.textBox1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.textBox1.Multiline = true;
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(397, 47);
-            this.textBox1.TabIndex = 10;
+            this.txtSearch.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtSearch.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.txtSearch.Location = new System.Drawing.Point(772, 31);
+            this.txtSearch.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.txtSearch.Multiline = true;
+            this.txtSearch.Name = "txtSearch";
+            this.txtSearch.Size = new System.Drawing.Size(397, 47);
+            this.txtSearch.TabIndex = 10;
             // 
             // Deletebtn
             // 
@@ -140,17 +153,6 @@
             this.DGVOfficers.Size = new System.Drawing.Size(1149, 559);
             this.DGVOfficers.TabIndex = 8;
             // 
-            // viewLockAccounts
-            // 
-            this.viewLockAccounts.Location = new System.Drawing.Point(649, 98);
-            this.viewLockAccounts.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.viewLockAccounts.Name = "viewLockAccounts";
-            this.viewLockAccounts.Size = new System.Drawing.Size(170, 46);
-            this.viewLockAccounts.TabIndex = 14;
-            this.viewLockAccounts.Text = "Lock Accounts";
-            this.viewLockAccounts.UseVisualStyleBackColor = true;
-            this.viewLockAccounts.Click += new System.EventHandler(this.viewLockAccounts_Click);
-            // 
             // OfficerInfo
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -177,7 +179,7 @@
         private System.Windows.Forms.Button Editbtn;
         private System.Windows.Forms.Button registerbtn;
         private FontAwesome.Sharp.IconButton searchbtn;
-        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.TextBox txtSearch;
         private System.Windows.Forms.Button Deletebtn;
         private System.Windows.Forms.Button Refreshbtn;
         private System.Windows.Forms.DataGridView DGVOfficers;

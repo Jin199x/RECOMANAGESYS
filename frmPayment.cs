@@ -25,7 +25,6 @@ namespace RECOMANAGESYS
             displayedUnits = new List<Tuple<int, string, bool, string, string, int, int>>();
             this.dtpPaymentDate.ValueChanged += new EventHandler(this.dtpPaymentDate_ValueChanged);
             this.dtpEndMonth.ValueChanged += new EventHandler(this.dtpEndMonth_ValueChanged);
-            this.Load += new EventHandler(this.frmPayment_Load);
         }
 
         private void frmPayment_Load(object sender, EventArgs e)

@@ -11,6 +11,9 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+// Make sure you have this using statement for the loginform static class
+using static RECOMANAGESYS.loginform;
+
 
 namespace RECOMANAGESYS
 {
@@ -30,10 +33,10 @@ namespace RECOMANAGESYS
         }
 
         private void InitializeNewControls()
-        {     
+        {
             if (DTPProfile != null)
                 DTPProfile.Value = DateTime.Now;
-            
+
             if (pbProfilePic != null)
             {
                 pbProfilePic.SizeMode = PictureBoxSizeMode.Zoom;
@@ -42,8 +45,60 @@ namespace RECOMANAGESYS
         }
         private void registerform_Load(object sender, EventArgs e)
         {
-            LoadRolesIntoComboBox();
+            // Call our new, efficient method
+            LoadAvailableRoles();
         }
+
+        // --- NEW AND IMPROVED METHOD ---
+        // This method uses a single, efficient query to get only the roles that are available.
+        private void LoadAvailableRoles()
+        {
+            try
+            {
+                using (SqlConnection conn = DatabaseHelper.GetConnection())
+                {
+                    conn.Open();
+
+                    // This query starts by selecting all roles that are NOT assigned to an active user.
+                    // It uses a LEFT JOIN and checks for NULL, which is very efficient.
+                    string query = @"
+                        SELECT r.RoleId, r.RoleName
+                        FROM TBL_Roles r
+                        LEFT JOIN Users u ON r.RoleId = u.RoleId AND u.IsActive = 1
+                        WHERE u.UserID IS NULL";
+
+                    // If the current user IS NOT a Developer, we add another condition
+                    // to explicitly exclude the 'Developer' role from the list.
+                    if (!CurrentUser.Role.Equals("Developer", StringComparison.OrdinalIgnoreCase))
+                    {
+                        query += " AND r.RoleName <> 'Developer'";
+                    }
+
+                    // Add ordering for a clean dropdown list
+                    query += " ORDER BY r.RoleName";
+
+                    using (SqlDataAdapter da = new SqlDataAdapter(query, conn))
+                    {
+                        DataTable dt = new DataTable();
+                        da.Fill(dt);
+
+                        cmbRole.DataSource = dt;
+                        cmbRole.DisplayMember = "RoleName";
+                        cmbRole.ValueMember = "RoleId";
+                        cmbRole.SelectedIndex = -1; // No preselection
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading roles: {ex.Message}", "Error",
+                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+
+        // --- YOUR OLD METHOD (Commented out for reference) ---
+        /*
         private void LoadRolesIntoComboBox()
         {
             try
@@ -102,9 +157,10 @@ namespace RECOMANAGESYS
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading roles: {ex.Message}", "Error",
-                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+        */
 
 
         private void btnregister_Click(object sender, EventArgs e)
@@ -119,7 +175,7 @@ namespace RECOMANAGESYS
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 RegistrationSuccess?.Invoke(this, EventArgs.Empty);
-                
+
                 ClearForm();
                 this.Hide();
             }
@@ -168,13 +224,13 @@ namespace RECOMANAGESYS
                 MessageBox.Show("Passwords do not match.", "Validation Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
-            }         
+            }
             if (!Regex.IsMatch(txtEmail.Text.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
             {
                 MessageBox.Show("Please enter a valid email address.", "Validation Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
-            }     
+            }
             if (!Regex.IsMatch(txtContactnum.Text.Trim(), @"^\d{" + ContactNumberLength + "}$"))
             {
                 MessageBox.Show($"Contact number must be exactly {ContactNumberLength} digits.", "Validation Error",
@@ -197,7 +253,7 @@ namespace RECOMANAGESYS
                     return count > 0;
                 }
             }
-        }           
+        }
 
         private void RegisterNewUser()
         {
@@ -217,7 +273,7 @@ namespace RECOMANAGESYS
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
-                    
+
                     cmd.Parameters.AddWithValue("@username", txtUsername.Text.Trim());
                     cmd.Parameters.AddWithValue("@password_hash", BCrypt.Net.BCrypt.HashPassword(txtPass.Text));
                     cmd.Parameters.AddWithValue("@firstName", txtFname.Text.Trim());
@@ -225,14 +281,14 @@ namespace RECOMANAGESYS
                     cmd.Parameters.AddWithValue("@middleName",
                         string.IsNullOrWhiteSpace(txtMname.Text) ? (object)DBNull.Value : txtMname.Text.Trim());
 
-              
+
                     cmd.Parameters.AddWithValue("@roleId", cmbRole.SelectedValue);
                     cmd.Parameters.AddWithValue("@address",
                         string.IsNullOrWhiteSpace(txtAddress.Text) ? (object)DBNull.Value : txtAddress.Text.Trim());
                     cmd.Parameters.AddWithValue("@contactNumber", txtContactnum.Text.Trim());
                     cmd.Parameters.AddWithValue("@email", txtEmail.Text.Trim());
 
-                
+
                     cmd.Parameters.AddWithValue("@memberSince", DTPProfile?.Value ?? DateTime.Now);
                     cmd.Parameters.AddWithValue("@adminAuthorizedID",
                         string.IsNullOrWhiteSpace(txtAdminID?.Text) ? (object)DBNull.Value : txtAdminID.Text.Trim());
@@ -256,22 +312,22 @@ namespace RECOMANAGESYS
                 {
                     try
                     {
-                       
+
                         FileInfo fileInfo = new FileInfo(ofd.FileName);
                         if (fileInfo.Length > 5 * 1024 * 1024)
                         {
                             MessageBox.Show("Image file size must be less than 5MB.", "File Too Large",
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             return;
-                        }                   
+                        }
                         using (var originalImage = Image.FromFile(ofd.FileName))
                         {
                             var resized = ResizeImage(originalImage, 150, 150);
 
                             if (pbProfilePic != null)
                             {
-                                pbProfilePic.Image?.Dispose(); 
-                                pbProfilePic.Image = new Bitmap(resized); 
+                                pbProfilePic.Image?.Dispose();
+                                pbProfilePic.Image = new Bitmap(resized);
                             }
 
                             using (var ms = new MemoryStream())

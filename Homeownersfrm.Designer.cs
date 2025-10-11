@@ -38,7 +38,7 @@
             this.Deletebtn = new System.Windows.Forms.Button();
             this.AddUnitbtn = new System.Windows.Forms.Button();
             this.searchbtn = new FontAwesome.Sharp.IconButton();
-            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.txtSearch = new System.Windows.Forms.TextBox();
             this.DGVResidents = new System.Windows.Forms.DataGridView();
             this.panel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.DGVResidents)).BeginInit();
@@ -47,9 +47,10 @@
             // button4
             // 
             this.button4.BackColor = System.Drawing.SystemColors.ActiveCaption;
-            this.button4.Location = new System.Drawing.Point(749, 23);
+            this.button4.Location = new System.Drawing.Point(843, 29);
+            this.button4.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(290, 28);
+            this.button4.Size = new System.Drawing.Size(326, 35);
             this.button4.TabIndex = 5;
             this.button4.Text = "View Officer ";
             this.button4.UseVisualStyleBackColor = false;
@@ -59,9 +60,10 @@
             // 
             this.Edit.BackColor = System.Drawing.SystemColors.HotTrack;
             this.Edit.ForeColor = System.Drawing.SystemColors.ButtonFace;
-            this.Edit.Location = new System.Drawing.Point(18, 82);
+            this.Edit.Location = new System.Drawing.Point(20, 102);
+            this.Edit.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.Edit.Name = "Edit";
-            this.Edit.Size = new System.Drawing.Size(157, 34);
+            this.Edit.Size = new System.Drawing.Size(177, 42);
             this.Edit.TabIndex = 3;
             this.Edit.Text = "Edit Residents";
             this.Edit.UseVisualStyleBackColor = false;
@@ -71,9 +73,10 @@
             // 
             this.AddResidentsbtn.BackColor = System.Drawing.SystemColors.HotTrack;
             this.AddResidentsbtn.ForeColor = System.Drawing.SystemColors.ButtonFace;
-            this.AddResidentsbtn.Location = new System.Drawing.Point(201, 82);
+            this.AddResidentsbtn.Location = new System.Drawing.Point(226, 102);
+            this.AddResidentsbtn.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.AddResidentsbtn.Name = "AddResidentsbtn";
-            this.AddResidentsbtn.Size = new System.Drawing.Size(148, 34);
+            this.AddResidentsbtn.Size = new System.Drawing.Size(166, 42);
             this.AddResidentsbtn.TabIndex = 2;
             this.AddResidentsbtn.Text = "Add residents";
             this.AddResidentsbtn.UseVisualStyleBackColor = false;
@@ -81,9 +84,10 @@
             // 
             // refreshbtn
             // 
-            this.refreshbtn.Location = new System.Drawing.Point(18, 15);
+            this.refreshbtn.Location = new System.Drawing.Point(20, 19);
+            this.refreshbtn.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.refreshbtn.Name = "refreshbtn";
-            this.refreshbtn.Size = new System.Drawing.Size(101, 36);
+            this.refreshbtn.Size = new System.Drawing.Size(114, 45);
             this.refreshbtn.TabIndex = 1;
             this.refreshbtn.Text = "Refresh";
             this.refreshbtn.UseVisualStyleBackColor = true;
@@ -98,23 +102,25 @@
             this.panel2.Controls.Add(this.button4);
             this.panel2.Controls.Add(this.AddUnitbtn);
             this.panel2.Controls.Add(this.searchbtn);
-            this.panel2.Controls.Add(this.textBox1);
+            this.panel2.Controls.Add(this.txtSearch);
             this.panel2.Controls.Add(this.AddResidentsbtn);
             this.panel2.Controls.Add(this.DGVResidents);
             this.panel2.Controls.Add(this.refreshbtn);
             this.panel2.Controls.Add(this.Edit);
-            this.panel2.Location = new System.Drawing.Point(18, 90);
+            this.panel2.Location = new System.Drawing.Point(20, 112);
+            this.panel2.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(1074, 626);
+            this.panel2.Size = new System.Drawing.Size(1208, 782);
             this.panel2.TabIndex = 6;
             this.panel2.Paint += new System.Windows.Forms.PaintEventHandler(this.panel2_Paint);
             // 
             // ViewUnitbtn
             // 
             this.ViewUnitbtn.BackColor = System.Drawing.SystemColors.ActiveCaption;
-            this.ViewUnitbtn.Location = new System.Drawing.Point(749, 63);
+            this.ViewUnitbtn.Location = new System.Drawing.Point(843, 79);
+            this.ViewUnitbtn.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.ViewUnitbtn.Name = "ViewUnitbtn";
-            this.ViewUnitbtn.Size = new System.Drawing.Size(290, 32);
+            this.ViewUnitbtn.Size = new System.Drawing.Size(326, 40);
             this.ViewUnitbtn.TabIndex = 14;
             this.ViewUnitbtn.Text = "View Unit";
             this.ViewUnitbtn.UseVisualStyleBackColor = false;
@@ -122,9 +128,10 @@
             // 
             // Deletebtn
             // 
-            this.Deletebtn.Location = new System.Drawing.Point(523, 110);
+            this.Deletebtn.Location = new System.Drawing.Point(588, 138);
+            this.Deletebtn.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.Deletebtn.Name = "Deletebtn";
-            this.Deletebtn.Size = new System.Drawing.Size(161, 31);
+            this.Deletebtn.Size = new System.Drawing.Size(181, 39);
             this.Deletebtn.TabIndex = 13;
             this.Deletebtn.Text = "Unregister";
             this.Deletebtn.UseVisualStyleBackColor = true;
@@ -134,9 +141,10 @@
             // 
             this.AddUnitbtn.BackColor = System.Drawing.SystemColors.HotTrack;
             this.AddUnitbtn.ForeColor = System.Drawing.SystemColors.ButtonFace;
-            this.AddUnitbtn.Location = new System.Drawing.Point(365, 82);
+            this.AddUnitbtn.Location = new System.Drawing.Point(411, 102);
+            this.AddUnitbtn.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.AddUnitbtn.Name = "AddUnitbtn";
-            this.AddUnitbtn.Size = new System.Drawing.Size(120, 34);
+            this.AddUnitbtn.Size = new System.Drawing.Size(135, 42);
             this.AddUnitbtn.TabIndex = 12;
             this.AddUnitbtn.Text = "Add Unit";
             this.AddUnitbtn.UseVisualStyleBackColor = false;
@@ -149,44 +157,49 @@
             this.searchbtn.IconColor = System.Drawing.Color.Black;
             this.searchbtn.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.searchbtn.IconSize = 28;
-            this.searchbtn.Location = new System.Drawing.Point(985, 110);
+            this.searchbtn.Location = new System.Drawing.Point(1108, 138);
+            this.searchbtn.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.searchbtn.Name = "searchbtn";
-            this.searchbtn.Size = new System.Drawing.Size(54, 31);
+            this.searchbtn.Size = new System.Drawing.Size(61, 39);
             this.searchbtn.TabIndex = 11;
             this.searchbtn.UseVisualStyleBackColor = true;
             this.searchbtn.Click += new System.EventHandler(this.searchbtn_Click);
             // 
-            // textBox1
+            // txtSearch
             // 
-            this.textBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.textBox1.Location = new System.Drawing.Point(749, 110);
-            this.textBox1.Multiline = true;
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(290, 31);
-            this.textBox1.TabIndex = 10;
+            this.txtSearch.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtSearch.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.txtSearch.Location = new System.Drawing.Point(843, 138);
+            this.txtSearch.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.txtSearch.Multiline = true;
+            this.txtSearch.Name = "txtSearch";
+            this.txtSearch.Size = new System.Drawing.Size(326, 38);
+            this.txtSearch.TabIndex = 10;
             // 
             // DGVResidents
             // 
             this.DGVResidents.BackgroundColor = System.Drawing.SystemColors.ControlLight;
             this.DGVResidents.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.DGVResidents.Location = new System.Drawing.Point(18, 147);
+            this.DGVResidents.Location = new System.Drawing.Point(20, 184);
+            this.DGVResidents.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.DGVResidents.Name = "DGVResidents";
             this.DGVResidents.RowHeadersWidth = 51;
             this.DGVResidents.RowTemplate.Height = 24;
-            this.DGVResidents.Size = new System.Drawing.Size(1021, 447);
+            this.DGVResidents.Size = new System.Drawing.Size(1149, 559);
             this.DGVResidents.TabIndex = 8;
             this.DGVResidents.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
             // 
             // Homeowners
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ControlLight;
             this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.Controls.Add(this.panel2);
+            this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.Name = "Homeowners";
-            this.Size = new System.Drawing.Size(1110, 736);
+            this.Size = new System.Drawing.Size(1249, 920);
             this.Load += new System.EventHandler(this.Homeowners_Load);
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
@@ -202,7 +215,7 @@
         private System.Windows.Forms.Button refreshbtn;
         private System.Windows.Forms.Panel panel2;
         private FontAwesome.Sharp.IconButton searchbtn;
-        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.TextBox txtSearch;
         private System.Windows.Forms.DataGridView DGVResidents;
         private System.Windows.Forms.Button AddUnitbtn;
         private System.Windows.Forms.Button Deletebtn;

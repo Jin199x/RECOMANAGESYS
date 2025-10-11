@@ -2,182 +2,313 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
+using Microsoft.Reporting.WinForms;
+using Microsoft.VisualBasic;
+using static RECOMANAGESYS.loginform;
 
 namespace RECOMANAGESYS
 {
     public partial class UpdateMonthlyDues : Form
-
     {
         public Action OnPaymentSaved;
-        private int selectedHomeownerId;
-        private List<Tuple<int, string>> residentUnits; // UnitID, Address
-        private decimal dueRate = 100; // fixed per month
+        private int currentOwnerResidentId = -1;
+        private string ownerFullName = "";
+        private List<Tuple<int, string, string, string>> displayedUnits; // UnitID, UnitNumber, Block, HomeAddress
+        private decimal dueRate = 100;
 
         public UpdateMonthlyDues()
         {
             InitializeComponent();
             this.AutoScaleMode = AutoScaleMode.Dpi;
-            btnSearch.Click += btnSearch_Click;
+
+            displayedUnits = new List<Tuple<int, string, string, string>>();
+
+            this.Load += UpdateMonthlyDues_Load;
+            btnSelectHomeowner.Click += btnSelectHomeowner_Click;
+            cmbResidency.SelectedIndexChanged += cmbResidency_SelectedIndexChanged;
             cmbUnits.SelectedIndexChanged += cmbUnits_SelectedIndexChanged;
             clbMissedMonths.ItemCheck += clbMissedMonths_ItemCheck;
-            residentUnits = new List<Tuple<int, string>>();
+            btnToggleSelectAll.Click += btnToggleSelectAll_Click;
         }
 
-        private void cancelvisitor_Click(object sender, EventArgs e)
+        private void UpdateMonthlyDues_Load(object sender, EventArgs e)
         {
-            this.Close();
+            cmbResidency.Items.AddRange(new object[] { "Owner", "Tenant", "Caretaker" });
+            cmbResidency.SelectedIndex = 0;
+            lblNames.Visible = false;
+            cmbNames.Visible = false;
+
+            PopulatePaymentComboBox(cmbPaid);
+            PopulateChangeComboBox(cmbChange);
+            cmbRemarks.Items.AddRange(new object[] { "N/A", "Others..." });
+            cmbRemarks.SelectedIndex = 0;
+
+            cmbPaid.SelectedIndexChanged += cmbPayment_HandleOther;
+            cmbChange.SelectedIndexChanged += cmbPayment_HandleOther;
+            cmbRemarks.SelectedIndexChanged += cmbRemarks_SelectedIndexChanged;
         }
 
-        private void btnSearch_Click(object sender, EventArgs e)
+        private void btnSelectHomeowner_Click(object sender, EventArgs e)
         {
-            if (!int.TryParse(txtResidentID.Text, out selectedHomeownerId))
+            using (frmSelectHomeowner selectForm = new frmSelectHomeowner())
             {
-                MessageBox.Show("Please enter a valid Resident ID.");
-                return;
-            }
-
-            residentUnits.Clear();
-            cmbUnits.Items.Clear();
-            clbMissedMonths.Items.Clear();
-            lblResidentName.Text = "";
-            lblUnit.Text = "";
-            lblRemainingDebt.Text = "0.00";
-            lblTotalAmount.Text = "0.00";
-
-            // Fetch resident info with IsActive check
-            using (SqlConnection conn = DatabaseHelper.GetConnection())
-            using (SqlCommand cmd = new SqlCommand(
-                @"SELECT FirstName, MiddleName, LastName, HomeAddress, IsActive 
-          FROM Residents 
-          WHERE HomeownerID=@residentId", conn))
-            {
-                cmd.Parameters.AddWithValue("@residentId", selectedHomeownerId);
-                conn.Open();
-                using (SqlDataReader reader = cmd.ExecuteReader())
+                if (selectForm.ShowDialog() == DialogResult.OK)
                 {
-                    if (reader.Read())
-                    {
-                        bool isActive = Convert.ToBoolean(reader["IsActive"]);
-                        if (!isActive)
-                        {
-                            MessageBox.Show("This resident is inactive.", "Inactive Resident", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            this.Close();
-                            return;
-                        }
-
-                        lblResidentName.Text = $"{reader["FirstName"]} {reader["MiddleName"]} {reader["LastName"]}";
-                        string defaultAddress = reader["HomeAddress"].ToString();
-
-                        // Fetch units for this resident
-                        using (SqlConnection conn2 = DatabaseHelper.GetConnection())
-                        using (SqlCommand cmd2 = new SqlCommand(
-                            @"SELECT hu.UnitID, r.HomeAddress 
-                      FROM HomeownerUnits hu
-                      INNER JOIN Residents r ON hu.HomeownerID = r.HomeownerID
-                      WHERE hu.HomeownerID=@residentId", conn2))
-                        {
-                            cmd2.Parameters.AddWithValue("@residentId", selectedHomeownerId);
-                            conn2.Open();
-                            using (SqlDataReader reader2 = cmd2.ExecuteReader())
-                            {
-                                while (reader2.Read())
-                                {
-                                    int unitId = Convert.ToInt32(reader2["UnitID"]);
-                                    string address = reader2["HomeAddress"] != DBNull.Value
-                                        ? reader2["HomeAddress"].ToString()
-                                        : defaultAddress;
-
-                                    residentUnits.Add(new Tuple<int, string>(unitId, address));
-                                    cmbUnits.Items.Add(unitId.ToString()); // Only UnitID shown
-                                }
-                            }
-                        }
-
-                        // Auto-select and lock combo box if only 1 unit
-                        if (cmbUnits.Items.Count == 1)
-                        {
-                            cmbUnits.SelectedIndex = 0;
-                            cmbUnits.Enabled = false;
-                        }
-                        else if (cmbUnits.Items.Count > 1)
-                        {
-                            cmbUnits.Enabled = true;
-                        }
-                    }
-                    else
-                    {
-                        MessageBox.Show("Resident not found.");
-                        return;
-                    }
+                    txtHomeownerIDDisplay.Text = selectForm.SelectedHomeownerId.ToString();
+                    LoadHomeownerData(selectForm.SelectedHomeownerId);
                 }
             }
         }
 
+        private void LoadHomeownerData(int homeownerId)
+        {
+            lblResidentName.Text = "";
+            lblUnitAddress.Text = "";
+            clbMissedMonths.Items.Clear();
+            lblRemainingDebt.Text = "0.00";
+            lblTotalAmount.Text = "0.00";
+            cmbResidency.SelectedIndex = 0;
+
+            using (SqlConnection conn = DatabaseHelper.GetConnection())
+            {
+                conn.Open();
+                string residentQuery = @"SELECT ResidentID, FirstName, MiddleName, LastName FROM Residents 
+                                         WHERE HomeownerID = @homeownerId AND ResidencyType = 'Owner' AND IsActive = 1";
+                using (SqlCommand cmd = new SqlCommand(residentQuery, conn))
+                {
+                    cmd.Parameters.AddWithValue("@homeownerId", homeownerId);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (!reader.Read())
+                        {
+                            MessageBox.Show("Active owner with that Homeowner ID not found.", "Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
+                        currentOwnerResidentId = Convert.ToInt32(reader["ResidentID"]);
+                        ownerFullName = $"{reader["FirstName"]} {reader["MiddleName"]} {reader["LastName"]}".Trim();
+                        lblResidentName.Text = ownerFullName;
+                    }
+                }
+            }
+            FilterAndDisplayUnits();
+        }
+
+        private void cmbResidency_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (currentOwnerResidentId > 0)
+            {
+                FilterAndDisplayUnits();
+            }
+
+            string selection = cmbResidency.SelectedItem.ToString();
+            if (selection == "Owner")
+            {
+                lblNames.Visible = false;
+                cmbNames.Visible = false;
+                cmbNames.Items.Clear();
+                lblResidentName.Text = ownerFullName;
+            }
+            else
+            {
+                lblNames.Visible = true;
+                cmbNames.Visible = true;
+                cmbNames.Enabled = false;
+                cmbNames.Text = "Select a unit first...";
+            }
+        }
+
+        private void FilterAndDisplayUnits()
+        {
+            cmbUnits.Items.Clear();
+            displayedUnits.Clear();
+            ResetPaymentUI();
+
+            if (currentOwnerResidentId <= 0) return;
+
+            string payerType = cmbResidency.SelectedItem.ToString();
+
+            using (SqlConnection conn = DatabaseHelper.GetConnection())
+            {
+                string query;
+                if (payerType == "Owner")
+                {
+                    query = @"SELECT u.UnitID, u.UnitNumber, u.Block, r.HomeAddress
+                              FROM HomeownerUnits hu
+                              JOIN Residents r ON hu.ResidentID = r.ResidentID
+                              JOIN TBL_Units u ON hu.UnitID = u.UnitID
+                              WHERE hu.ResidentID = @ownerResidentId AND hu.IsCurrent = 1 AND r.ResidencyType = 'Owner'";
+                }
+                else
+                {
+                    query = @"SELECT u.UnitID, u.UnitNumber, u.Block, r_owner.HomeAddress
+                              FROM TBL_Units u
+                              JOIN HomeownerUnits hu_owner ON u.UnitID = hu_owner.UnitID
+                              JOIN Residents r_owner ON hu_owner.ResidentID = r_owner.ResidentID
+                              WHERE hu_owner.ResidentID = @ownerResidentId AND hu_owner.IsCurrent = 1
+                              AND EXISTS (
+                                  SELECT 1 FROM HomeownerUnits hu_other
+                                  JOIN Residents r_other ON hu_other.ResidentID = r_other.ResidentID
+                                  WHERE hu_other.UnitID = u.UnitID AND r_other.ResidencyType = @payerType AND r_other.IsActive = 1
+                              )";
+                }
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@ownerResidentId", currentOwnerResidentId);
+                    if (payerType != "Owner")
+                    {
+                        cmd.Parameters.AddWithValue("@payerType", payerType);
+                    }
+
+                    conn.Open();
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            displayedUnits.Add(new Tuple<int, string, string, string>(
+                                Convert.ToInt32(reader["UnitID"]),
+                                reader["UnitNumber"].ToString(),
+                                reader["Block"].ToString(),
+                                reader["HomeAddress"].ToString()
+                            ));
+                            cmbUnits.Items.Add($"Unit {reader["UnitNumber"]} Block {reader["Block"]}");
+                        }
+                    }
+                }
+            }
+
+            if (displayedUnits.Count == 1)
+            {
+                cmbUnits.SelectedIndex = 0;
+            }
+            else if (displayedUnits.Count > 1)
+            {
+                cmbUnits.Enabled = true;
+            }
+            else if (payerType != "Owner")
+            {
+                MessageBox.Show($"This owner has no units with active {payerType}s.", "No Units Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
 
         private void cmbUnits_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (cmbUnits.SelectedIndex == -1) return;
 
-            int unitId = residentUnits[cmbUnits.SelectedIndex].Item1;
-            string address = residentUnits[cmbUnits.SelectedIndex].Item2;
+            var selectedUnit = displayedUnits[cmbUnits.SelectedIndex];
+            int unitId = selectedUnit.Item1;
+            string unitNumber = selectedUnit.Item2;
+            string block = selectedUnit.Item3;
+            string address = selectedUnit.Item4;
 
-            lblUnit.Text = address;
+            lblUnitAddress.Text = $"Unit {unitNumber} Block {block}, {address}";
 
+            PopulatePayerNames(unitId);
             LoadMissedMonths(unitId);
+        }
+
+        private void PopulatePayerNames(int unitId)
+        {
+            string payerType = cmbResidency.SelectedItem.ToString();
+            if (payerType == "Owner") return;
+
+            cmbNames.Items.Clear();
+            using (SqlConnection conn = DatabaseHelper.GetConnection())
+            {
+                string query = @"SELECT r.FirstName, r.MiddleName, r.LastName FROM Residents r
+                                 JOIN HomeownerUnits hu ON r.ResidentID = hu.ResidentID
+                                 WHERE hu.UnitID = @unitId AND r.ResidencyType = @payerType AND r.IsActive = 1";
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@unitId", unitId);
+                    cmd.Parameters.AddWithValue("@payerType", payerType);
+                    conn.Open();
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            cmbNames.Items.Add($"{reader["FirstName"]} {reader["MiddleName"]} {reader["LastName"]}".Trim());
+                        }
+                    }
+                }
+            }
+            cmbNames.Enabled = cmbNames.Items.Count > 0;
+            lblResidentName.Text = ownerFullName;
+        }
+
+        private void cmbNames_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cmbNames.SelectedItem != null)
+            {
+                lblResidentName.Text = cmbNames.SelectedItem.ToString();
+            }
         }
 
         private void LoadMissedMonths(int unitId)
         {
             clbMissedMonths.Items.Clear();
-            HashSet<string> paidMonths = new HashSet<string>();
-            decimal totalPaid = 0;
+            var paidMonths = new HashSet<string>();
+            DateTime? dateRegistered = null;
 
             using (SqlConnection conn = DatabaseHelper.GetConnection())
-            using (SqlCommand cmd = new SqlCommand(
-                @"SELECT MonthCovered, AmountPaid FROM MonthlyDues 
-                  WHERE HomeownerId=@residentId AND UnitID=@unitId", conn))
             {
-                cmd.Parameters.AddWithValue("@residentId", selectedHomeownerId);
-                cmd.Parameters.AddWithValue("@unitId", unitId);
                 conn.Open();
-                using (SqlDataReader reader = cmd.ExecuteReader())
+                using (SqlCommand cmd = new SqlCommand("SELECT DateRegistered FROM Residents WHERE ResidentID = @residentId", conn))
                 {
-                    while (reader.Read())
+                    cmd.Parameters.AddWithValue("@residentId", currentOwnerResidentId);
+                    var result = cmd.ExecuteScalar();
+                    if (result != DBNull.Value) dateRegistered = Convert.ToDateTime(result);
+                }
+
+                if (!dateRegistered.HasValue)
+                {
+                    MessageBox.Show("Could not determine resident registration date.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                using (SqlCommand cmd = new SqlCommand("SELECT MonthCovered FROM MonthlyDues WHERE ResidentID=@residentId AND UnitID=@unitId", conn))
+                {
+                    cmd.Parameters.AddWithValue("@residentId", currentOwnerResidentId);
+                    cmd.Parameters.AddWithValue("@unitId", unitId);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        paidMonths.Add(reader["MonthCovered"].ToString());
-                        totalPaid += Convert.ToDecimal(reader["AmountPaid"]);
+                        while (reader.Read())
+                        {
+                            paidMonths.Add(reader["MonthCovered"].ToString());
+                        }
                     }
                 }
             }
 
             DateTime now = DateTime.Now;
-            for (int m = 1; m <= now.Month; m++)
+            for (DateTime monthIterator = dateRegistered.Value; monthIterator < now; monthIterator = monthIterator.AddMonths(1))
             {
-                string monthName = new DateTime(now.Year, m, 1).ToString("MMMM yyyy");
+                string monthName = monthIterator.ToString("MMMM yyyy");
                 if (!paidMonths.Contains(monthName))
+                {
                     clbMissedMonths.Items.Add(monthName);
+                }
             }
 
             lblRemainingDebt.Text = (clbMissedMonths.Items.Count * dueRate).ToString("F2");
-            UpdateTotalAmount(); // Reset total
+            UpdateTotalAmount();
+            UpdateToggleSelectAllButtonText();
         }
 
         private void clbMissedMonths_ItemCheck(object sender, ItemCheckEventArgs e)
         {
-            // Delay calculation until after the check state is applied
-            this.BeginInvoke((Action)(() => UpdateTotalAmount()));
+            this.BeginInvoke((Action)(() =>
+            {
+                UpdateTotalAmount();
+                UpdateToggleSelectAllButtonText();
+            }));
         }
 
         private void UpdateTotalAmount()
         {
             decimal total = clbMissedMonths.CheckedItems.Count * dueRate;
-            // Include the item currently being checked/unchecked
-            foreach (int i in clbMissedMonths.CheckedIndices)
-            {
-                total += 0; // Already counted
-            }
-
             lblTotalAmount.Text = total.ToString("F2");
         }
 
@@ -185,58 +316,244 @@ namespace RECOMANAGESYS
         {
             if (cmbUnits.SelectedIndex == -1 || clbMissedMonths.CheckedItems.Count == 0)
             {
-                MessageBox.Show("Select a unit and at least one month to pay.");
+                MessageBox.Show("Please select a unit and at least one missed month to pay.", "Selection Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (!decimal.TryParse(lblTotalAmount.Text, out decimal totalAmount) || totalAmount <= 0)
+            {
+                MessageBox.Show("No payment to save. Please check at least one month.", "Invalid Amount", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (!decimal.TryParse(cmbPaid.Text, out decimal amountPaid))
+            {
+                MessageBox.Show("Please enter a valid payment amount.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
-            int unitId = residentUnits[cmbUnits.SelectedIndex].Item1;
+            if (amountPaid < totalAmount)
+            {
+                MessageBox.Show($"The amount paid (₱{amountPaid:N2}) is less than the total amount due (₱{totalAmount:N2}).", "Underpayment Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            decimal actualChangeGiven = 0;
+            if (cmbChange.SelectedItem?.ToString() != "(None)")
+            {
+                decimal.TryParse(cmbChange.Text, out actualChangeGiven);
+            }
+            decimal expectedChange = amountPaid - totalAmount;
+
+            if (Math.Abs(expectedChange - actualChangeGiven) > 0.01m)
+            {
+                string message = $"The change amount appears to be incorrect.\n\n" +
+                                 $"Amount Paid: {amountPaid:N2}\n" +
+                                 $"Total Due: {totalAmount:N2}\n" +
+                                 $"----------------------------------\n" +
+                                 $"Expected Change: {expectedChange:N2}\n" +
+                                 $"Entered Change: {actualChangeGiven:N2}\n\n" +
+                                 "A remark is required to proceed.";
+
+                MessageBox.Show(message, "Change Discrepancy Detected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                string reason;
+                do
+                {
+                    reason = Interaction.InputBox("Please provide a reason for the change discrepancy:", "Justification Required", "");
+                    if (string.IsNullOrWhiteSpace(reason))
+                    {
+                        var result = MessageBox.Show("A reason is required to proceed. Try again?", "Reason Required", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
+                        if (result == DialogResult.No) return;
+                    }
+                } while (string.IsNullOrWhiteSpace(reason));
+
+                decimal discrepancyAmount = Math.Abs(expectedChange - actualChangeGiven);
+                string discrepancyPrefix = actualChangeGiven < expectedChange ? $"Change Short by ₱{expectedChange - actualChangeGiven:N2}" : $"Change Over by ₱{actualChangeGiven - expectedChange:N2}";
+                string finalRemark = $"{discrepancyPrefix}: {reason}";
+                if (!cmbRemarks.Items.Contains(finalRemark)) { cmbRemarks.Items.Insert(cmbRemarks.Items.Count - 1, finalRemark); }
+                cmbRemarks.SelectedItem = finalRemark;
+            }
+
+            var unitInfo = displayedUnits[cmbUnits.SelectedIndex];
+            int unitId = unitInfo.Item1;
+            string payerType = cmbResidency.SelectedItem.ToString();
+            string payerName = (payerType != "Owner" && cmbNames.SelectedItem != null) ? cmbNames.SelectedItem.ToString() : null;
 
             using (SqlConnection conn = DatabaseHelper.GetConnection())
-            using (SqlCommand cmd = new SqlCommand("", conn))
             {
                 conn.Open();
                 foreach (var month in clbMissedMonths.CheckedItems)
                 {
                     string monthCovered = month.ToString();
 
-                    SqlCommand checkCmd = new SqlCommand(
-                        @"SELECT COUNT(*) FROM MonthlyDues 
-                          WHERE HomeownerId=@residentId AND UnitID=@unitId AND MonthCovered=@monthCovered", conn);
-                    checkCmd.Parameters.AddWithValue("@residentId", selectedHomeownerId);
-                    checkCmd.Parameters.AddWithValue("@unitId", unitId);
-                    checkCmd.Parameters.AddWithValue("@monthCovered", monthCovered);
-                    int exists = (int)checkCmd.ExecuteScalar();
-                    if (exists > 0)
+                    string insertQuery = @"INSERT INTO MonthlyDues (ResidentID, UnitID, PaymentDate, AmountPaid, DueRate, MonthCovered, ProcessedByUserID, Remarks, PaidByResidencyType, PaidByResidentName)
+                                           VALUES (@residentId, @unitId, @paymentDate, @amountPaid, @dueRate, @monthCovered, @processedBy, @remarks, @paidByResidencyType, @paidByResidentName)";
+                    using (SqlCommand cmd = new SqlCommand(insertQuery, conn))
                     {
-                        MessageBox.Show($"Month {monthCovered} is already paid.");
-                        continue;
+                        cmd.Parameters.AddWithValue("@residentId", currentOwnerResidentId);
+                        cmd.Parameters.AddWithValue("@unitId", unitId);
+                        cmd.Parameters.AddWithValue("@paymentDate", dtpPaymentDate.Value.Date);
+                        cmd.Parameters.AddWithValue("@amountPaid", dueRate);
+                        cmd.Parameters.AddWithValue("@dueRate", dueRate);
+                        cmd.Parameters.AddWithValue("@monthCovered", monthCovered);
+                        cmd.Parameters.AddWithValue("@processedBy", CurrentUser.UserId);
+                        cmd.Parameters.AddWithValue("@remarks", cmbRemarks.Text);
+                        cmd.Parameters.AddWithValue("@paidByResidencyType", payerType);
+                        cmd.Parameters.AddWithValue("@paidByResidentName", (object)payerName ?? DBNull.Value);
+                        cmd.ExecuteNonQuery();
                     }
-
-                    cmd.CommandText = @"INSERT INTO MonthlyDues
-                        (HomeownerId, UnitID, PaymentDate, AmountPaid, DueRate, MonthCovered)
-                        VALUES (@residentId, @unitId, @paymentDate, @amountPaid, @dueRate, @monthCovered)";
-
-                    cmd.Parameters.Clear();
-                    cmd.Parameters.AddWithValue("@residentId", selectedHomeownerId);
-                    cmd.Parameters.AddWithValue("@unitId", unitId);
-                    cmd.Parameters.AddWithValue("@paymentDate", dtpPaymentDate.Value);
-                    cmd.Parameters.AddWithValue("@amountPaid", decimal.Parse(lblTotalAmount.Text));
-                    cmd.Parameters.AddWithValue("@dueRate", dueRate);
-                    cmd.Parameters.AddWithValue("@monthCovered", monthCovered);
-
-                    cmd.ExecuteNonQuery();
                 }
             }
 
-            MessageBox.Show("Payment(s) saved successfully!");
-            LoadMissedMonths(residentUnits[cmbUnits.SelectedIndex].Item1);
+            MessageBox.Show("Payment(s) for missed months saved successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            ShowReceipt();
             OnPaymentSaved?.Invoke();
             this.Close();
         }
 
-        private void UpdateMonthlyDues_Load(object sender, EventArgs e)
+        private void ShowReceipt()
         {
+            using (var receiptForm = new Form())
+            {
+                receiptForm.Text = "Missed Payment Receipt";
+                receiptForm.StartPosition = FormStartPosition.CenterParent;
+                receiptForm.Width = 800;
+                receiptForm.Height = 600;
 
+                var reportViewer = new ReportViewer { Dock = DockStyle.Fill, ProcessingMode = ProcessingMode.Local };
+                receiptForm.Controls.Add(reportViewer);
+
+                reportViewer.LocalReport.ReportEmbeddedResource = "RECOMANAGESYS.PaymentReceipt.rdlc";
+
+                string monthsPaid = string.Join(", ", clbMissedMonths.CheckedItems.OfType<string>());
+
+                var parameters = new ReportParameter[]
+                {
+                    new ReportParameter("txtResidentName", lblResidentName.Text),
+                    new ReportParameter("txtHomeownerID", txtHomeownerIDDisplay.Text),
+                    new ReportParameter("txtPayment", cmbPaid.Text),
+                    new ReportParameter("txtChange", cmbChange.SelectedItem?.ToString() == "(None)" ? "" : cmbChange.Text),
+                    new ReportParameter("txtAmountCovered", lblTotalAmount.Text),
+                    new ReportParameter("txtMonthCovered", monthsPaid),
+                    new ReportParameter("txtRemarks", cmbRemarks.Text),
+                    new ReportParameter("txtDate", DateTime.Now.ToString("MMMM dd, yyyy, hh:mm tt")),
+                    new ReportParameter("txtOfficerName", CurrentUser.FullName),
+                    new ReportParameter("txtOfficerPosition", CurrentUser.Role)
+                };
+
+                reportViewer.LocalReport.SetParameters(parameters);
+                reportViewer.RefreshReport();
+                receiptForm.ShowDialog();
+            }
+        }
+
+        private void ResetPaymentUI()
+        {
+            clbMissedMonths.Items.Clear();
+            lblRemainingDebt.Text = "0.00";
+            lblTotalAmount.Text = "0.00";
+            lblUnitAddress.Text = "";
+            cmbNames.Items.Clear();
+            lblNames.Visible = false;
+            cmbNames.Visible = false;
+            UpdateToggleSelectAllButtonText();
+        }
+
+        private void cancelvisitor_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void cmbRemarks_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cmbRemarks.SelectedItem.ToString() == "Others...")
+            {
+                string input = Interaction.InputBox("Please specify your remark:", "Other Remark", "");
+                if (!string.IsNullOrWhiteSpace(input))
+                {
+                    if (!cmbRemarks.Items.Contains(input)) { cmbRemarks.Items.Insert(cmbRemarks.Items.Count - 1, input); }
+                    cmbRemarks.SelectedItem = input;
+                }
+                else { cmbRemarks.SelectedIndex = 0; }
+            }
+        }
+
+        private void PopulatePaymentComboBox(ComboBox cmb)
+        {
+            cmb.Items.Clear();
+            for (int i = 100; i <= 2000; i += 100) { cmb.Items.Add(i.ToString("F2")); }
+            cmb.Items.Add("Other...");
+            cmb.SelectedIndex = 0;
+        }
+
+        private void PopulateChangeComboBox(ComboBox cmb)
+        {
+            cmb.Items.Clear();
+            cmb.Items.Add("(None)");
+            cmb.Items.Add("0.00");
+            for (int i = 100; i <= 500; i += 100) { cmb.Items.Add(i.ToString("F2")); }
+            cmb.Items.Add("Other...");
+            cmb.SelectedIndex = 1;
+        }
+
+        private void cmbPayment_HandleOther(object sender, EventArgs e)
+        {
+            ComboBox cmb = sender as ComboBox;
+            if (cmb != null && cmb.SelectedItem?.ToString() == "Other...")
+            {
+                string input;
+                decimal value;
+                while (true)
+                {
+                    input = Interaction.InputBox("Please enter a specific amount:", "Enter Amount", "");
+                    if (string.IsNullOrWhiteSpace(input)) { cmb.SelectedIndex = 0; return; }
+                    if (decimal.TryParse(input, out value) && value >= 0)
+                    {
+                        string formattedValue = value.ToString("F2");
+                        if (!cmb.Items.Contains(formattedValue))
+                        {
+                            int otherIndex = cmb.Items.IndexOf("Other...");
+                            if (otherIndex > -1) { cmb.Items.Insert(otherIndex, formattedValue); }
+                        }
+                        cmb.SelectedItem = formattedValue;
+                        break;
+                    }
+                    else { MessageBox.Show("Invalid input. Please enter only positive numbers and decimals.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+                }
+            }
+        }
+        private void btnToggleSelectAll_Click(object sender, EventArgs e)
+        {
+            bool allAreChecked = (clbMissedMonths.CheckedItems.Count == clbMissedMonths.Items.Count);
+            bool shouldBeChecked = !allAreChecked;
+
+            for (int i = 0; i < clbMissedMonths.Items.Count; i++)
+            {
+                clbMissedMonths.SetItemChecked(i, shouldBeChecked);
+            }
+            UpdateTotalAmount();
+            UpdateToggleSelectAllButtonText();
+        }
+
+        private void UpdateToggleSelectAllButtonText()
+        {
+            if (clbMissedMonths.Items.Count == 0)
+            {
+                btnToggleSelectAll.Enabled = false;
+                btnToggleSelectAll.Text = "Select All";
+            }
+            else 
+            {
+                btnToggleSelectAll.Enabled = true;
+
+                if (clbMissedMonths.CheckedItems.Count == clbMissedMonths.Items.Count)
+                {
+                    btnToggleSelectAll.Text = "Deselect All";
+                }
+                else
+                {
+                    btnToggleSelectAll.Text = "Select All";
+                }
+            }
         }
     }
 }
