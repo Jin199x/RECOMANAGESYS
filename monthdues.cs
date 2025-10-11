@@ -428,34 +428,32 @@ namespace RECOMANAGESYS
                     }
                 }
 
-                SqlCommand cmdPayments = new SqlCommand(
-                    "SELECT MonthCovered, AmountPaid, PaymentDate FROM MonthlyDues WHERE HomeownerId=@residentId ORDER BY MonthCovered", conn);
-                cmdPayments.Parameters.AddWithValue("@residentId", residentId);
+        private void btnProcess_Click(object sender, EventArgs e)
+        {
+            if (lvResidents.CheckedItems.Count > 1)
+            {
+                int count = lvResidents.CheckedItems.Count;
+                string message = $"You are about to save statements for {count} residents as individual PDF files. Continue?";
 
                 if (MessageBox.Show(message, "Confirm Bulk Save", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
                     BulkSaveStatementsAsPDF(lvResidents.CheckedItems);
                 }
             }
-            // SCENARIO 2: Exactly ONE resident is HIGHLIGHTED (Single View Action)
             else if (lvResidents.SelectedItems.Count == 1)
             {
-                int residentId = Convert.ToInt32(lvResidents.SelectedItems[0].SubItems[0].Text);
-                ShowSingleReport(residentId);
+                int ResidentId = Convert.ToInt32(lvResidents.SelectedItems[0].SubItems[0].Text);
+                ShowSingleReport(ResidentId);
             }
-            // SCENARIO 3: No clear action
             else
             {
                 MessageBox.Show("Please select one resident to view their statement, or check the boxes for multiple residents to save their statements in bulk.", "Action Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
-
-        // --- GEMINI: This is the final, corrected version. Please replace your old method with this. ---
         private void BulkSaveStatementsAsPDF(ListView.CheckedListViewItemCollection itemsToSave)
         {
             try
-            {
-                // 1. Re-introduce the FolderBrowserDialog to let the user choose a location.
+            { 
                 using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
                 {
                     folderDialog.Description = "Please select a location where the report folder will be created.";
@@ -463,23 +461,15 @@ namespace RECOMANAGESYS
 
                     if (folderDialog.ShowDialog() == DialogResult.OK)
                     {
-                        // 2. Get the location the user chose (e.g., "C:\Users\YourName\Documents")
                         string selectedPath = folderDialog.SelectedPath;
                         string baseFolderName = "SOAReport_Residents";
-
-                        // 3. Combine the user's path with our base folder name.
                         string finalFolderPath = Path.Combine(selectedPath, baseFolderName);
                         int counter = 2;
-
-                        // 4. Check if that folder already exists inside the chosen location.
-                        // If it does, find the next available name like "(2)", "(3)", etc.
                         while (Directory.Exists(finalFolderPath))
                         {
                             finalFolderPath = Path.Combine(selectedPath, $"{baseFolderName} ({counter})");
                             counter++;
                         }
-
-                        // 5. Create the new, unique directory in the user's chosen location.
                         Directory.CreateDirectory(finalFolderPath);
 
                         int savedCount = 0;
@@ -509,8 +499,6 @@ namespace RECOMANAGESYS
                             File.WriteAllBytes(fileName, pdfBytes);
                             savedCount++;
                         }
-
-                        // 6. Inform the user of the exact full path where the files were saved.
                         MessageBox.Show($"{savedCount} statement(s) have been saved to the folder:\n\n{finalFolderPath}", "Bulk Save Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
