@@ -370,7 +370,7 @@ namespace RECOMANAGESYS
 
         private void GenerateMissingMonthlyDues() { /* Future use */ }
 
-        private ReportData GenerateReportData(int residentId)
+        private ReportData GenerateReportData(int ResidentId)
         {
             string fullName = "", address = "", contact = "";
             List<AccountDetail> accountDetails = new List<AccountDetail>();
