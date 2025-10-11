@@ -4,7 +4,6 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Windows.Forms;
 
 namespace RECOMANAGESYS
@@ -12,6 +11,7 @@ namespace RECOMANAGESYS
     public partial class Homeowners : UserControl
     {
         public monthdues MonthDuesControl { get; set; }
+
         public Homeowners()
         {
             InitializeComponent();
@@ -25,41 +25,52 @@ namespace RECOMANAGESYS
         private void Homeowners_Load(object sender, EventArgs e)
         {
             DGVResidents.CellDoubleClick += DGVResidents_CellDoubleClick;
-
             LoadHomeowners();
         }
 
         public void LoadHomeowners()
         {
+
             try
             {
                 using (SqlConnection conn = DatabaseHelper.GetConnection())
                 {
                     string query = @"
-                            SELECT
-                                r.HomeownerID,
-                                ISNULL(r.FirstName, '') AS FirstName,
-                                ISNULL(r.MiddleName, '') AS MiddleName,
-                                ISNULL(r.LastName, '') AS LastName,
-                                ISNULL(r.HomeAddress, '') AS HomeAddress,
-                                ISNULL(r.ContactNumber, '') AS ContactNumber,
-                                ISNULL(r.EmailAddress, '') AS EmailAddress,
-                                ISNULL(r.EmergencyContactPerson, '') AS EmergencyContactPerson,
-                                ISNULL(r.EmergencyContactNumber, '') AS EmergencyContactNumber,
-                                ISNULL(r.ResidencyType, '') AS ResidencyType,
-                              
-                                (SELECT TOP 1 ISNULL(hu.ApprovedByUserID, 0) 
-                                 FROM HomeownerUnits hu 
-                                 WHERE hu.HomeownerID = r.HomeownerID 
-                                 ORDER BY hu.DateOfOwnership DESC) AS ApprovedByUserID,
-                             
-                                (SELECT COUNT(*) 
-                                 FROM HomeownerUnits hu 
-                                 WHERE hu.HomeownerID = r.HomeownerID 
-                                   AND hu.IsCurrent = 1) AS UnitsAcquired
-                            FROM Residents r
-                            WHERE r.IsActive = 1
-                            ORDER BY r.HomeownerID;";
+                SELECT
+                    r.ResidentID,
+                    r.HomeownerID,
+                    ISNULL(r.FirstName, '') AS FirstName,
+                    ISNULL(r.MiddleName, '') AS MiddleName,
+                    ISNULL(r.LastName, '') AS LastName,
+                    ISNULL(r.HomeAddress, '') AS HomeAddress,
+                    ISNULL(r.ContactNumber, '') AS ContactNumber,
+                    ISNULL(r.EmailAddress, '') AS EmailAddress,
+                    ISNULL(r.EmergencyContactPerson, '') AS EmergencyContactPerson,
+                    ISNULL(r.EmergencyContactNumber, '') AS EmergencyContactNumber,
+                    ISNULL(r.ResidencyType, '') AS ResidencyType,
+                      
+                    CASE 
+                        WHEN r.IsActive = 1 THEN 'Active'
+                        ELSE 'Inactive'
+                    END AS Status,                 
+                    r.InactiveDate,
+                   
+                    (SELECT 
+                        STRING_AGG(CONCAT(FirstName, ' ', LastName, ' (', ResidencyType, ')'), ', ')
+                     FROM Residents r2
+                     WHERE r2.HomeownerID = r.HomeownerID 
+                       AND r2.ResidencyType IN ('Tenant', 'Caretaker')
+                       AND r2.IsActive = 1) AS ResidentsList
+
+                FROM Residents r
+                WHERE r.ResidencyType = 'Owner'  -- ✅ REMOVED IsActive = 1 filter
+                ORDER BY 
+                    CASE WHEN r.IsActive = 1 THEN 0 ELSE 1 END,  -- ✅ Active first
+                    r.HomeownerID, 
+                    CASE WHEN r.ResidencyType = 'Owner' THEN 1 
+                         WHEN r.ResidencyType = 'Tenant' THEN 2 
+                         ELSE 3 END,
+                    r.ResidentID;";
 
                     SqlDataAdapter adapter = new SqlDataAdapter(query, conn);
                     DataTable dt = new DataTable();
@@ -87,6 +98,7 @@ namespace RECOMANAGESYS
 
                     string query = @"
                         SELECT
+                            ResidentID,
                             HomeownerID,
                             FirstName,
                             LastName,
@@ -98,7 +110,7 @@ namespace RECOMANAGESYS
                             ResidencyType
                         FROM Residents
                         WHERE IsActive = 1
-                        ORDER BY LastName, FirstName";
+                        ORDER BY HomeownerID, ResidencyType DESC, LastName, FirstName";
 
                     SqlDataAdapter adapter = new SqlDataAdapter(query, conn);
                     DataTable dt = new DataTable();
@@ -121,10 +133,16 @@ namespace RECOMANAGESYS
             {
                 if (DGVResidents.Columns.Count > 0)
                 {
+               
+                    if (DGVResidents.Columns["ResidentID"] != null)
+                    {
+                        DGVResidents.Columns["ResidentID"].Visible = false;
+                    }
+
                     if (DGVResidents.Columns["HomeownerID"] != null)
                     {
                         DGVResidents.Columns["HomeownerID"].HeaderText = "Homeowner ID";
-                        DGVResidents.Columns["HomeownerID"].Width = 50;
+                        DGVResidents.Columns["HomeownerID"].Width = 100;
                     }
 
                     if (DGVResidents.Columns["FirstName"] != null)
@@ -180,13 +198,11 @@ namespace RECOMANAGESYS
                     if (DGVResidents.Columns["ResidencyType"] != null)
                     {
                         DGVResidents.Columns["ResidencyType"].HeaderText = "Residency Type";
-                        DGVResidents.Columns["ResidencyType"].Width = 80;
+                        DGVResidents.Columns["ResidencyType"].Width = 100;
                     }
 
                     if (DGVResidents.Columns["ApprovedByUserID"] != null)
                     {
-                        DGVResidents.Columns["ApprovedByUserID"].HeaderText = "Approved By UserID";
-                        DGVResidents.Columns["ApprovedByUserID"].Width = 120;
                         DGVResidents.Columns["ApprovedByUserID"].Visible = false;
                     }
 
@@ -195,17 +211,22 @@ namespace RECOMANAGESYS
                         DGVResidents.Columns["UnitsAcquired"].HeaderText = "Units Owned";
                         DGVResidents.Columns["UnitsAcquired"].Width = 80;
                     }
-
+                    if (DGVResidents.Columns["ResidentsList"] != null)
+                    {
+                        DGVResidents.Columns["ResidentsList"].HeaderText = "Residents/Tenants";
+                        DGVResidents.Columns["ResidentsList"].Width = 250;
+                    }
+                    if (DGVResidents.Columns["InactiveDate"] != null)
+                    {
+                        DGVResidents.Columns["InactiveDate"].Visible = false;
+                    }
 
 
                     DGVResidents.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells;
-
                     DGVResidents.ScrollBars = ScrollBars.Both;
-
                     DGVResidents.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
                     DGVResidents.ReadOnly = true;
                     DGVResidents.AllowUserToAddRows = false;
-
                     DGVResidents.MultiSelect = false;
 
                     DGVResidents.EnableHeadersVisualStyles = false;
@@ -219,7 +240,7 @@ namespace RECOMANAGESYS
                     DGVResidents.RowTemplate.Height = 40;
                     DGVResidents.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
 
-
+                    DGVResidents.CellFormatting += DGVResidents_CellFormatting;
                     DGVResidents.Dock = DockStyle.None;
                     DGVResidents.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
                 }
@@ -230,7 +251,36 @@ namespace RECOMANAGESYS
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
+        private void DGVResidents_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
 
+            try
+            {
+                DataGridViewRow row = DGVResidents.Rows[e.RowIndex];
+                if (row.Cells["Status"] != null && row.Cells["Status"].Value != null)
+                {
+                    string status = row.Cells["Status"].Value.ToString();
+
+                    if (status == "Inactive")
+                    {
+                        e.CellStyle.ForeColor = Color.Gray;
+                        e.CellStyle.BackColor = Color.FromArgb(245, 245, 245);
+                        e.CellStyle.Font = new Font(e.CellStyle.Font, FontStyle.Italic);
+                    }
+                    else
+                    {
+                        if (e.RowIndex % 2 == 1)
+                        {
+                            e.CellStyle.BackColor = Color.FromArgb(240, 240, 240);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
         private void SetupBasicColumns()
         {
             try
@@ -279,9 +329,24 @@ namespace RECOMANAGESYS
             {
                 try
                 {
-                    int homeownerId = Convert.ToInt32(DGVResidents.SelectedRows[0].Cells["HomeownerID"].Value);
+                    string status = DGVResidents.SelectedRows[0].Cells["Status"]?.Value?.ToString() ?? "Active";
 
-                    ResidencyRegisterfrm editForm = new ResidencyRegisterfrm(homeownerId);
+                    if (status == "Inactive")
+                    {
+                        var result = MessageBox.Show(
+                            "This resident is currently inactive (no active units).\n\n" +
+                            "Do you want to edit their information anyway?",
+                            "Edit Inactive Resident",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Question);
+
+                        if (result != DialogResult.Yes)
+                            return;
+                    }
+
+                    int residentId = Convert.ToInt32(DGVResidents.SelectedRows[0].Cells["ResidentID"].Value);
+
+                    ResidencyRegisterfrm editForm = new ResidencyRegisterfrm(residentId);
 
                     if (editForm.ShowDialog() == DialogResult.OK)
                     {
@@ -296,36 +361,38 @@ namespace RECOMANAGESYS
             }
             else
             {
-                MessageBox.Show("Please select a homeowner to edit.", "No Selection",
+                MessageBox.Show("Please select a resident to edit.", "No Selection",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
+
+
 
         private void Deletebtn_Click(object sender, EventArgs e)
         {
             if (DGVResidents.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Please select a homeowner first.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please select a resident first.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            int residentId = Convert.ToInt32(DGVResidents.SelectedRows[0].Cells["ResidentID"].Value);
 
-            int homeownerId = Convert.ToInt32(DGVResidents.SelectedRows[0].Cells["HomeownerID"].Value);
-
-            using (var unitsForm = new UnitsForm(homeownerId))
+            using (var unitsForm = new UnitsForm(residentId))
             {
                 if (unitsForm.ShowDialog() == DialogResult.OK)
                 {
                     foreach (int unitId in unitsForm.SelectedUnitIds)
                     {
-                        UnregisterUnit(homeownerId, unitId);
+                        UnregisterUnit(residentId, unitId);
                     }
 
                     MessageBox.Show("Selected unit(s) successfully unregistered.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    LoadHomeowners(); 
+                    LoadHomeowners();
                 }
             }
         }
-        private void UnregisterUnit(int homeownerId, int unitId)
+
+        private void UnregisterUnit(int residentId, int unitId)
         {
             try
             {
@@ -345,9 +412,9 @@ namespace RECOMANAGESYS
                             }
 
                             string residencyType;
-                            using (SqlCommand cmd = new SqlCommand("SELECT ResidencyType FROM Residents WHERE HomeownerID = @homeownerId", conn, tran))
+                            using (SqlCommand cmd = new SqlCommand("SELECT ResidencyType FROM Residents WHERE ResidentID = @residentId", conn, tran))
                             {
-                                cmd.Parameters.AddWithValue("@homeownerId", homeownerId);
+                                cmd.Parameters.AddWithValue("@residentId", residentId);
                                 object o = cmd.ExecuteScalar();
                                 residencyType = o == DBNull.Value || o == null ? "" : o.ToString();
                             }
@@ -355,11 +422,21 @@ namespace RECOMANAGESYS
                             using (SqlCommand cmd = new SqlCommand(
                                 @"UPDATE HomeownerUnits
                           SET IsCurrent = 0, DateOfOwnershipEnd = ISNULL(DateOfOwnershipEnd, GETDATE())
-                          WHERE HomeownerID = @homeownerId AND UnitID = @unitId AND IsCurrent = 1", conn, tran))
+                          WHERE ResidentID = @residentId AND UnitID = @unitId AND IsCurrent = 1", conn, tran))
                             {
-                                cmd.Parameters.AddWithValue("@homeownerId", homeownerId);
+                                cmd.Parameters.AddWithValue("@residentId", residentId);
                                 cmd.Parameters.AddWithValue("@unitId", unitId);
                                 cmd.ExecuteNonQuery();
+                            }
+
+                            if (unitType.Equals("Apartment", StringComparison.OrdinalIgnoreCase))
+                            {
+                                using (SqlCommand cmd = new SqlCommand(
+                                    "UPDATE TBL_Units SET AvailableRooms = TotalRooms WHERE UnitID = @unitId", conn, tran))
+                                {
+                                    cmd.Parameters.AddWithValue("@unitId", unitId);
+                                    cmd.ExecuteNonQuery();
+                                }
                             }
 
                             if (string.Equals(unitType, "Apartment", StringComparison.OrdinalIgnoreCase) &&
@@ -393,20 +470,34 @@ namespace RECOMANAGESYS
                             }
 
                             using (SqlCommand checkCmd = new SqlCommand(
-                                "SELECT COUNT(*) FROM HomeownerUnits WHERE HomeownerID = @homeownerId AND IsCurrent = 1", conn, tran))
+                                "SELECT COUNT(*) FROM HomeownerUnits WHERE ResidentID = @residentId AND IsCurrent = 1", conn, tran))
                             {
-                                checkCmd.Parameters.AddWithValue("@homeownerId", homeownerId);
+                                checkCmd.Parameters.AddWithValue("@residentId", residentId);
                                 int activeLinks = Convert.ToInt32(checkCmd.ExecuteScalar());
 
                                 if (activeLinks == 0)
                                 {
                                     using (SqlCommand deactivate = new SqlCommand(
-                                        "UPDATE Residents SET IsActive = 0, InactiveDate = GETDATE() WHERE HomeownerID = @homeownerId", conn, tran))
+                                        "UPDATE Residents SET IsActive = 0, InactiveDate = GETDATE() WHERE ResidentID = @residentId", conn, tran))
                                     {
-                                        deactivate.Parameters.AddWithValue("@homeownerId", homeownerId);
+                                        deactivate.Parameters.AddWithValue("@residentId", residentId);
                                         deactivate.ExecuteNonQuery();
                                     }
                                 }
+                            }
+
+                            using (SqlCommand cmd = new SqlCommand(@"
+                                UPDATE HomeownerUnits
+                                SET IsCurrent = 0, DateOfOwnershipEnd = ISNULL(DateOfOwnershipEnd, GETDATE())
+                                WHERE UnitID = @unitId
+                                  AND ResidentID IN (
+                                      SELECT ResidentID FROM Residents
+                                      WHERE ResidencyType IN ('Tenant', 'Caretaker')
+                                  )
+                                  AND IsCurrent = 1", conn, tran))
+                            {
+                                cmd.Parameters.AddWithValue("@unitId", unitId);
+                                cmd.ExecuteNonQuery();
                             }
 
                             tran.Commit();
@@ -425,14 +516,25 @@ namespace RECOMANAGESYS
             }
         }
 
-
-
         private void AddUnitbtn_Click(object sender, EventArgs e)
         {
             if (DGVResidents.SelectedRows.Count > 0)
             {
                 try
                 {
+                    string status = DGVResidents.SelectedRows[0].Cells["Status"]?.Value?.ToString() ?? "Active";
+
+                    if (status == "Inactive")
+                    {
+                        MessageBox.Show(
+                            "This resident is currently inactive.\n\n" +
+                            "Adding a unit will automatically reactivate them.",
+                            "confirm",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+                    }
+
+                    int residentId = Convert.ToInt32(DGVResidents.SelectedRows[0].Cells["ResidentID"].Value);
                     int homeownerId = Convert.ToInt32(DGVResidents.SelectedRows[0].Cells["HomeownerID"].Value);
                     string residencyType = DGVResidents.SelectedRows[0].Cells["ResidencyType"].Value.ToString();
 
@@ -453,11 +555,25 @@ namespace RECOMANAGESYS
                         }
                     }
 
-                    AddUnits addUnitsForm = new AddUnits(homeownerId, residencyType);
+                    AddUnits addUnitsForm = new AddUnits(residentId, homeownerId, residencyType);
                     if (addUnitsForm.ShowDialog() == DialogResult.OK)
                     {
+                        if (status == "Inactive")
+                        {
+                            using (SqlConnection conn = DatabaseHelper.GetConnection())
+                            {
+                                conn.Open();
+                                string reactivate = "UPDATE Residents SET IsActive = 1, InactiveDate = NULL WHERE ResidentID = @residentId";
+                                using (SqlCommand cmd = new SqlCommand(reactivate, conn))
+                                {
+                                    cmd.Parameters.AddWithValue("@residentId", residentId);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+                        }
+
                         LoadHomeowners();
-                        MessageBox.Show("Unit added successfully! Grid refreshed.", "Success",
+                        MessageBox.Show("Unit added successfully. Grid refreshed.", "Success",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
@@ -469,58 +585,77 @@ namespace RECOMANAGESYS
             }
             else
             {
-                MessageBox.Show("Please select a homeowner first.", "No Selection",
+                MessageBox.Show("Please select a resident first.", "No Selection",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
-        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
-        {
 
-        }
-
-        private void panel2_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
-
-        private void button3_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void button4_Click(object sender, EventArgs e)
-        {
-            OfficerInfo officerInfo = new OfficerInfo();
-            officerInfo.Show();
-        }
         private void DGVResidents_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0)
             {
-                int homeownerId = Convert.ToInt32(DGVResidents.Rows[e.RowIndex].Cells["HomeownerID"].Value);
-                ShowResidentUnits(homeownerId);
+                int residentId = Convert.ToInt32(DGVResidents.Rows[e.RowIndex].Cells["ResidentID"].Value);
+                ShowResidentUnits(residentId);
             }
         }
-        private void ShowResidentUnits(int homeownerId)
+
+        private void ShowResidentUnits(int residentId)
         {
             try
             {
                 using (SqlConnection conn = DatabaseHelper.GetConnection())
                 {
                     conn.Open();
+                    string residentName = "";
+                    int homeownerId = 0;
+
+                    using (SqlCommand cmdInfo = new SqlCommand("SELECT HomeownerID, CONCAT(FirstName, ' ', LastName) AS FullName FROM Residents WHERE ResidentID = @id", conn))
+                    {
+                        cmdInfo.Parameters.AddWithValue("@id", residentId);
+                        using (SqlDataReader reader = cmdInfo.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                homeownerId = Convert.ToInt32(reader["HomeownerID"]);
+                                residentName = reader["FullName"].ToString();
+                            }
+                        }
+                    }
 
                     string query = @"
-                        SELECT
-                            hu.DateOfOwnership,
+                                SELECT 
                             tu.UnitNumber,
                             tu.Block,
                             tu.UnitType,
-                            us.Lastname +' '+ Firstname AS ApprovedBy
-                        FROM HomeownerUnits hu
-                        INNER JOIN TBL_Units tu ON hu.UnitID = tu.UnitID
-                        LEFT JOIN Users us ON hu.ApprovedByUserID = us.UserID
-                        WHERE hu.HomeownerID = @homeownerId
-                        ORDER BY tu.UnitNumber;";
+
+                            MIN(CASE WHEN r.ResidencyType = 'Owner' THEN hu.DateOfOwnership END) AS [Start Date],
+                            MAX(CASE WHEN r.ResidencyType = 'Owner' THEN hu.DateOfOwnershipEnd END) AS [End Date],
+                            MAX(CASE WHEN r.ResidencyType = 'Owner' THEN CONCAT(r.FirstName, ' ', r.LastName) END) AS [Owner Name],
+
+                            STRING_AGG(
+                                CASE WHEN r.ResidencyType IN ('Tenant', 'Caretaker')
+                                    THEN CONCAT(r.FirstName, ' ', r.LastName, ' (', r.ResidencyType, ')')
+                                    ELSE NULL
+                                END,
+                                CHAR(13) + CHAR(10)
+                            ) AS [Residents (Tenants/Caretakers)],
+
+                            MAX(CASE WHEN r.ResidencyType = 'Owner' 
+                                THEN ISNULL(u.Lastname, '') + ' ' + ISNULL(u.Firstname, '') END) AS [Approved By]
+
+                        FROM TBL_Units tu
+                        INNER JOIN HomeownerUnits hu ON tu.UnitID = hu.UnitID
+                        INNER JOIN Residents r ON hu.ResidentID = r.ResidentID
+                        LEFT JOIN Users u ON hu.ApprovedByUserID = u.UserID
+                        WHERE r.HomeownerID = @homeownerId
+                        GROUP BY 
+                            tu.UnitID,
+                            tu.UnitNumber, 
+                            tu.Block, 
+                            tu.UnitType
+                        ORDER BY 
+                            TRY_CAST(tu.UnitNumber AS INT),
+                            tu.UnitNumber;";
 
                     SqlCommand cmd = new SqlCommand(query, conn);
                     cmd.Parameters.AddWithValue("@homeownerId", homeownerId);
@@ -529,18 +664,49 @@ namespace RECOMANAGESYS
                     DataTable dt = new DataTable();
                     adapter.Fill(dt);
 
-                    Form detailsForm = new Form();
-                    detailsForm.Text = "Resident Units Information";
-                    detailsForm.Width = 800;
-                    detailsForm.Height = 400;
+                    Form detailsForm = new Form
+                    {
+                        Text = $"Resident Units Information - {residentName}",
+                        Width = 1100,
+                        Height = 500,
+                        StartPosition = FormStartPosition.CenterParent
+                    };
 
                     DataGridView dgv = new DataGridView
                     {
                         Dock = DockStyle.Fill,
                         DataSource = dt,
                         ReadOnly = true,
-                        AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+                        AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                        ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing,
+                        ColumnHeadersHeight = 50,
+                        SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                        AllowUserToAddRows = false,
+                        AllowUserToResizeRows = true,
+                        AllowUserToResizeColumns = true,
+                        ScrollBars = ScrollBars.Both,
+                        DefaultCellStyle = new DataGridViewCellStyle
+                        {
+                            Font = new Font("Arial", 11F, FontStyle.Regular),
+                            WrapMode = DataGridViewTriState.True,
+                            Alignment = DataGridViewContentAlignment.TopLeft
+                        },
+                        AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells,
+                        RowTemplate = { Height = 80 }
                     };
+
+            
+                    dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(70, 130, 180);
+                    dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+                    dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Arial", 11F, FontStyle.Bold);
+                    dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    dgv.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.True;
+                    dgv.EnableHeadersVisualStyles = false;
+
+                    dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
+
+                    dgv.DefaultCellStyle.SelectionBackColor = Color.FromArgb(100, 149, 237);
+                    dgv.DefaultCellStyle.SelectionForeColor = Color.White;
 
                     detailsForm.Controls.Add(dgv);
                     detailsForm.ShowDialog();
@@ -560,27 +726,60 @@ namespace RECOMANAGESYS
                     conn.Open();
 
                     string query = @"
-                SELECT 
-                    UnitID,
-                    UnitNumber,
-                    Block,
-                    UnitType,
-                    TotalRooms,
-                    AvailableRooms,
-                    CASE 
-                        WHEN UnitType = 'Apartment' AND AvailableRooms > 0 AND AvailableRooms < TotalRooms 
-                            THEN 'Partially Occupied (' + CAST(AvailableRooms AS NVARCHAR(10)) + ' Available)'
-                        WHEN UnitType = 'Apartment' AND AvailableRooms = 0 
-                            THEN 'Fully Occupied'
-                        WHEN UnitType = 'Apartment' AND AvailableRooms = TotalRooms 
-                            THEN 'Available'
-                        WHEN IsOccupied = 1 THEN 'Occupied'
-                        ELSE 'Available'
-                    END AS Status
-                FROM TBL_Units
-                ORDER BY 
-                    TRY_CAST(UnitNumber AS INT),  
-                    UnitNumber;";
+                            SELECT 
+                                tu.UnitNumber,
+                                tu.Block,
+                                tu.UnitType,
+                                tu.TotalRooms,
+                                tu.AvailableRooms,
+
+                                (SELECT 
+                                    STRING_AGG(
+                                        CONCAT(
+                                            r.FirstName, ' ', r.LastName,
+                                            ' [Start: ', 
+                                            FORMAT(hu.DateOfOwnership, 'yyyy-MM-dd'), 
+                                            ISNULL(CONCAT(', End: ', FORMAT(hu.DateOfOwnershipEnd, 'yyyy-MM-dd')), ''),
+                                            CASE WHEN hu.IsCurrent = 1 THEN ' - CURRENT' ELSE '' END,
+                                            ']'
+                                        ), 
+                                        CHAR(13) + CHAR(10)
+                                    )
+                                 FROM HomeownerUnits hu
+                                 INNER JOIN Residents r ON hu.ResidentID = r.ResidentID
+                                 WHERE hu.UnitID = tu.UnitID 
+                                   AND r.ResidencyType = 'Owner') AS [Owner(s) History],
+
+                                (SELECT 
+                                    STRING_AGG(
+                                        CONCAT(
+                                            r2.FirstName, ' ', r2.LastName, 
+                                            ' (', r2.ResidencyType, ')'
+                                        ),
+                                        CHAR(13) + CHAR(10)
+                                    )
+                                 FROM HomeownerUnits hu2
+                                 INNER JOIN Residents r2 ON hu2.ResidentID = r2.ResidentID
+                                 WHERE hu2.UnitID = tu.UnitID
+                                   AND r2.ResidencyType IN ('Tenant', 'Caretaker')
+                                   AND r2.IsActive = 1) AS [Residents (Tenants/Caretakers)],
+
+                                CASE 
+                                    WHEN tu.UnitType = 'Apartment' AND tu.AvailableRooms > 0 AND tu.AvailableRooms < tu.TotalRooms 
+                                        THEN 'Partially Occupied (' + CAST(tu.AvailableRooms AS NVARCHAR(10)) + ' Available)'
+                                    WHEN tu.UnitType = 'Apartment' AND tu.AvailableRooms = 0 
+                                        THEN 'Fully Occupied'
+                                    WHEN tu.UnitType = 'Apartment' AND tu.AvailableRooms = tu.TotalRooms 
+                                        THEN 'Available'
+                                    WHEN tu.IsOccupied = 1 THEN 'Occupied'
+                                    ELSE 'Available'
+                                END AS [Status]
+
+                            FROM TBL_Units tu
+                            ORDER BY 
+                                TRY_CAST(tu.UnitNumber AS INT),  
+                                tu.UnitNumber;
+                        ";
 
                     SqlCommand cmd = new SqlCommand(query, conn);
                     SqlDataAdapter adapter = new SqlDataAdapter(cmd);
@@ -589,9 +788,9 @@ namespace RECOMANAGESYS
 
                     Form unitsForm = new Form
                     {
-                        Text = "All Units Information",
-                        Width = 1000,
-                        Height = 550,
+                        Text = "All Units Information (with Ownership History)",
+                        Width = 1300,
+                        Height = 700,
                         StartPosition = FormStartPosition.CenterScreen
                     };
 
@@ -601,13 +800,37 @@ namespace RECOMANAGESYS
                         DataSource = dt,
                         ReadOnly = true,
                         AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                        SelectionMode = DataGridViewSelectionMode.FullRowSelect
+                        ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing,
+                        ColumnHeadersHeight = 50,
+                        SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                        AllowUserToAddRows = false,
+                        AllowUserToResizeRows = true,
+                        AllowUserToResizeColumns = true,
+                        ScrollBars = ScrollBars.Both,
+                        DefaultCellStyle = new DataGridViewCellStyle
+                        {
+                            Font = new Font("Arial", 11F, FontStyle.Regular),
+                            WrapMode = DataGridViewTriState.True,
+                            Alignment = DataGridViewContentAlignment.TopLeft
+                        },
+                        AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells,
+                        RowTemplate = { Height = 80 }
                     };
 
                     dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(70, 130, 180);
                     dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+                    dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Arial", 11F, FontStyle.Bold);
+                    dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    dgv.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.True;
                     dgv.EnableHeadersVisualStyles = false;
-                    dgv.RowTemplate.Height = 35;
+
+                    dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
+
+                    dgv.DefaultCellStyle.SelectionBackColor = Color.FromArgb(100, 149, 237);
+                    dgv.DefaultCellStyle.SelectionForeColor = Color.White;
+
+
+
 
                     unitsForm.Controls.Add(dgv);
                     unitsForm.ShowDialog();
@@ -618,14 +841,21 @@ namespace RECOMANAGESYS
                 MessageBox.Show($"Error fetching units: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private void ViewUnitbtn_Click(object sender, EventArgs e)
         {
             ShowAllUnits();
         }
 
-        private void searchbtn_Click(object sender, EventArgs e)
+        private void button4_Click(object sender, EventArgs e)
         {
-
+            OfficerInfo officerInfo = new OfficerInfo();
+            officerInfo.Show();
         }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e) { }
+        private void panel2_Paint(object sender, PaintEventArgs e) { }
+        private void button3_Click(object sender, EventArgs e) { }
+        private void searchbtn_Click(object sender, EventArgs e) { }
     }
 }
