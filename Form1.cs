@@ -89,6 +89,11 @@ namespace RECOMANAGESYS
                 {
                     ShowDashboard();
                 }
+                else
+                {
+                    txtpassword.Clear();
+                    txtpassword.Focus();
+                }
             }
             catch (Exception ex)
             {
@@ -122,7 +127,7 @@ namespace RECOMANAGESYS
                 conn.Open();
 
                 string query = @"SELECT u.UserID, u.Username, u.PasswordHash, u.Firstname, u.Lastname, 
-                                u.RoleId, r.RoleName, u.FailedLoginAttempts, u.IsLocked
+                               u.RoleId, r.RoleName, u.FailedLoginAttempts, u.IsLocked
                          FROM Users u 
                          INNER JOIN TBL_Roles r ON u.RoleId = r.RoleId 
                          WHERE u.Username = @username";
@@ -159,10 +164,10 @@ namespace RECOMANAGESYS
                         storedHash = reader["PasswordHash"].ToString();
                         isLocked = reader["IsLocked"] != DBNull.Value ? Convert.ToBoolean(reader["IsLocked"]) : false;
                         attempts = reader["FailedLoginAttempts"] != DBNull.Value ? Convert.ToInt32(reader["FailedLoginAttempts"]) : 0;
-                    } // reader automatically closed here
+                    }
                 }
 
-                // Developer bypass: ignore failed attempts and lock
+                // BYPASS dev account even if its on LOCKED
                 if (dbUsername == "dev account" && password == "developer")
                 {
                     CurrentUser.UserId = userId;
@@ -171,22 +176,35 @@ namespace RECOMANAGESYS
                     CurrentUser.RoleId = roleId;
                     CurrentUser.Role = roleName;
                     CurrentUser.Permissions = LoadUserPermissions(roleId);
-                    return true;
+                    return true; // Bypasses all further checks
                 }
 
                 if (isLocked)
                 {
                     MessageBox.Show("Your account is locked. Please contact President or Developer to unlock.",
-                                    "Account Locked", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                      "Account Locked", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return false;
                 }
 
-                bool isValid = BCrypt.Net.BCrypt.Verify(password, storedHash);
+                bool isValid = false;
+                try
+                {
+                    isValid = BCrypt.Net.BCrypt.Verify(password, storedHash);
+                }
+                catch (BCrypt.Net.SaltParseException ex)
+                {
+                    Console.WriteLine($"A SaltParseException occurred for user '{username}'. The stored hash is likely corrupted. Error: {ex.Message}");
+                    isValid = false;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"An unexpected error occurred during password verification for user '{username}'. Error: {ex.Message}");
+                    isValid = false;
+                }
 
                 if (!isValid)
                 {
                     attempts++;
-
                     string updateAttemptsQuery = @"UPDATE Users 
                                            SET FailedLoginAttempts = @attempts,
                                                IsLocked = CASE WHEN @attempts >= 3 THEN 1 ELSE 0 END
@@ -208,8 +226,6 @@ namespace RECOMANAGESYS
 
                     return false;
                 }
-
-                // Reset failed attempts if login successful
                 string resetAttemptsQuery = @"UPDATE Users SET FailedLoginAttempts = 0 WHERE Username=@username";
                 using (SqlCommand resetCmd = new SqlCommand(resetAttemptsQuery, conn))
                 {
@@ -217,7 +233,6 @@ namespace RECOMANAGESYS
                     resetCmd.ExecuteNonQuery();
                 }
 
-                // Load user info
                 CurrentUser.UserId = userId;
                 CurrentUser.Username = dbUsername;
                 CurrentUser.FullName = $"{firstName} {lastName}";
@@ -228,7 +243,6 @@ namespace RECOMANAGESYS
                 return true;
             }
         }
-
         private List<string> LoadUserPermissions(int roleId)
         {
             List<string> permissions = new List<string>();
@@ -281,8 +295,8 @@ namespace RECOMANAGESYS
         {
             if (e.KeyCode == Keys.Enter)
             {
-                e.SuppressKeyPress = true; // Prevents new line in multiline TextBox
-                btnlogin.PerformClick();   // Triggers the login button click
+                e.SuppressKeyPress = true; 
+                btnlogin.PerformClick();   
             }
         }
 
