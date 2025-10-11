@@ -490,23 +490,6 @@ CREATE TABLE Homeowners (
     Status NVARCHAR(20) NOT NULL DEFAULT 'Active'
 );
 
---MONTHLY DUES
-CREATE TABLE MonthlyDues (
-    DueId INT PRIMARY KEY IDENTITY(1,1),
-    HomeownerId INT NOT NULL FOREIGN KEY REFERENCES Residents(HomeownerID),
-    UnitID INT NOT NULL FOREIGN KEY REFERENCES TBL_Units(UnitID),
-    PaymentDate DATE NULL,
-    AmountPaid DECIMAL(10,2) NOT NULL,
-    DueRate DECIMAL(10,2) NOT NULL,
-    MonthCovered VARCHAR(20) NOT NULL,
-    Remarks NVARCHAR(255) NULL,
-  -- (not used for now)  PaymentStatus NVARCHAR(20) DEFAULT 'Unpaid' NOT NULL
-);
-ALTER TABLE MonthlyDues
-ADD ProcessedByUserID INT NULL
-    FOREIGN KEY REFERENCES Users(UserID);
-
-
 -- Create Announcements with expiration date
 CREATE TABLE Announcements (
     Id INT PRIMARY KEY IDENTITY(1,1),
@@ -617,4 +600,25 @@ CREATE TABLE HomeownerUnits (
     CONSTRAINT FK_HomeownerUnits_User FOREIGN KEY (ApprovedByUserID) REFERENCES Users(UserID)
 );
 
+CREATE TABLE MonthlyDues (
+    DueId INT IDENTITY(1,1) PRIMARY KEY,
+    ResidentID INT NOT NULL,                       
+    UnitID INT NOT NULL,
+    PaymentDate DATE NOT NULL,
+    AmountPaid DECIMAL(10,2) NOT NULL,
+    DueRate DECIMAL(10,2) NOT NULL,
+    MonthCovered VARCHAR(20) NOT NULL,             
+    Remarks NVARCHAR(255) NULL,
+    DateRecorded DATETIME DEFAULT GETDATE(),
+    CONSTRAINT FK_MonthlyDues_Resident FOREIGN KEY (ResidentID) REFERENCES Residents(ResidentID),
+    CONSTRAINT FK_MonthlyDues_Unit FOREIGN KEY (UnitID) REFERENCES TBL_Units(UnitID),
+
+    INDEX IX_MonthlyDues_Resident (ResidentID),
+    INDEX IX_MonthlyDues_Unit (UnitID),
+    INDEX IX_MonthlyDues_Month (MonthCovered),
+    INDEX IX_MonthlyDues_Date (PaymentDate)
+);
+ALTER TABLE MonthlyDues
+ADD ProcessedByUserID INT NULL
+    FOREIGN KEY REFERENCES Users(UserID);
 */
