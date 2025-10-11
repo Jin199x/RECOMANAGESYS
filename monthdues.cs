@@ -400,7 +400,7 @@ namespace RECOMANAGESYS
 
         private void GenerateMissingMonthlyDues() { /* Future use */ }
 
-        private ReportData GenerateReportData(int residentId)
+        private ReportData GenerateReportData(int ResidentId)
         {
             string fullName = "", address = "", contact = "";
             List<AccountDetail> accountDetails = new List<AccountDetail>();
@@ -409,24 +409,70 @@ namespace RECOMANAGESYS
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
                 conn.Open();
-
-                SqlCommand cmdResident = new SqlCommand(
-                    "SELECT FirstName, MiddleName, LastName, HomeAddress FROM Residents WHERE HomeownerID=@residentId", conn);
-                cmdResident.Parameters.AddWithValue("@residentId", residentId);
-
-                using (SqlDataReader reader = cmdResident.ExecuteReader())
+                using (SqlCommand cmdResident = new SqlCommand("SELECT FirstName, MiddleName, LastName, HomeAddress, ContactNumber FROM Residents WHERE HomeownerID=@residentId", conn))
                 {
-                    if (reader.Read())
+                    cmdResident.Parameters.AddWithValue("@residentId", ResidentId);
+                    using (SqlDataReader reader = cmdResident.ExecuteReader())
                     {
-                        fullName = $"{reader["FirstName"]} {reader["MiddleName"]} {reader["LastName"]}";
-                        address = reader["HomeAddress"].ToString();
-                    }
-                    else
-                    {
-                        System.Windows.Forms.MessageBox.Show("Resident not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
+                        if (reader.Read())
+                        {
+                            fullName = $"{reader["FirstName"]} {reader["MiddleName"]} {reader["LastName"]}";
+                            address = reader["HomeAddress"].ToString();
+                            contact = reader["ContactNumber"].ToString();
+                        }
                     }
                 }
+                using (SqlCommand cmdPayments = new SqlCommand("SELECT MonthCovered, AmountPaid FROM MonthlyDues WHERE HomeownerId=@residentId ORDER BY MonthCovered", conn))
+                {
+                    cmdPayments.Parameters.AddWithValue("@residentId", ResidentId);
+                    using (SqlDataReader reader = cmdPayments.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            if (DateTime.TryParse(reader["MonthCovered"].ToString(), out DateTime monthDate))
+                            {
+                                DateTime monthKey = new DateTime(monthDate.Year, monthDate.Month, 1);
+                                decimal amt = Convert.ToDecimal(reader["AmountPaid"]);
+                                totalCreditFromDb += amt;
+                                if (monthPaid.ContainsKey(monthKey)) monthPaid[monthKey] += amt; else monthPaid[monthKey] = amt;
+                            }
+                        }
+                    }
+                }
+            }
+            const decimal monthlyDue = 100m;
+            decimal leftoverCredit = 0m;
+            DateTime currentMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            DateTime earliestMonth = monthPaid.Keys.Count > 0 ? monthPaid.Keys.Min() : currentMonth;
+            DateTime lastMonth = monthPaid.Keys.Count > 0 ? monthPaid.Keys.Max() : currentMonth;
+            if (lastMonth < currentMonth) lastMonth = currentMonth;
+            DateTime iter = earliestMonth;
+            while (iter <= lastMonth)
+            {
+                decimal paidForThisMonth = monthPaid.ContainsKey(iter) ? monthPaid[iter] : 0m;
+                decimal creditToApply = paidForThisMonth + leftoverCredit;
+                string status;
+                decimal balanceChange;
+                if (creditToApply >= monthlyDue) { status = "Paid"; leftoverCredit = creditToApply - monthlyDue; balanceChange = monthlyDue - creditToApply; }
+                else { status = "Missed"; leftoverCredit = 0; balanceChange = monthlyDue - creditToApply; }
+                if (iter > currentMonth && creditToApply > 0) status = "Advanced Paid";
+                runningBalance += balanceChange;
+                totalDebit += monthlyDue;
+                accountDetails.Add(new AccountDetail { Month = iter.ToString("MMMM yyyy"), Description = status, Debit = monthlyDue, Credit = creditToApply > monthlyDue ? monthlyDue : creditToApply, Balance = runningBalance });
+                iter = iter.AddMonths(1);
+            }
+            var sortedMonths = accountDetails.OrderBy(x => DateTime.ParseExact(x.Month, "MMMM yyyy", CultureInfo.InvariantCulture)).ToList();
+            var last6Months = sortedMonths.Skip(Math.Max(0, sortedMonths.Count - 6)).ToList();
+            var olderMonths = sortedMonths.Take(sortedMonths.Count - last6Months.Count).ToList();
+            var finalRows = new List<AccountDetail>();
+            if (olderMonths.Count > 0)
+            {
+                finalRows.Add(new AccountDetail { Month = "Summary", Description = $"Previous {olderMonths.Count} month(s)", Debit = olderMonths.Sum(x => x.Debit), Credit = olderMonths.Sum(x => x.Credit), Balance = olderMonths.LastOrDefault()?.Balance ?? 0 });
+            }
+            finalRows.AddRange(last6Months);
+            string balanceMessage = runningBalance > 0 ? "Please make payment of the remaining balance within this month. Thank you!" : "There's no remaining balance. All dues are cleared.";
+            return new ReportData { FullName = fullName, Address = address, Contact = contact, ResidentId = residentId.ToString(), AccountDetails = finalRows, TotalDebit = totalDebit, TotalCredit = totalCreditFromDb, RunningBalance = runningBalance, BalanceMessage = balanceMessage };
+        }
 
         private void btnProcess_Click(object sender, EventArgs e)
         {
@@ -453,7 +499,8 @@ namespace RECOMANAGESYS
         private void BulkSaveStatementsAsPDF(ListView.CheckedListViewItemCollection itemsToSave)
         {
             try
-            { 
+            {
+                // 1. Re-introduce the FolderBrowserDialog to let the user choose a location.
                 using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
                 {
                     folderDialog.Description = "Please select a location where the report folder will be created.";

@@ -172,14 +172,88 @@ namespace RECOMANAGESYS
                 return;
             }
 
-            int unitId = GetSelectedUnitID();
-
             if (!decimal.TryParse(lblAmountPaid.Text, out decimal totalAmount) || totalAmount <= 0)
             {
                 MessageBox.Show("No payment to save.");
                 return;
             }
+            decimal.TryParse(cmbPaid.Text, out decimal amountPaid);
+            if (amountPaid < totalAmount)
+            {
+                MessageBox.Show(
+                    $"The payment amount ({amountPaid:N2}) is less than the total amount due ({totalAmount:N2}).\n\nPlease correct the payment amount or the months covered.",
+                    "Underpayment Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return; 
+            }
 
+            decimal actualChangeGiven = 0;
+            if (cmbChange.SelectedItem?.ToString() != "(None)")
+            {
+                decimal.TryParse(cmbChange.Text, out actualChangeGiven);
+            }
+            decimal expectedChange = amountPaid - totalAmount;
+            if (expectedChange < 0)
+            {
+                expectedChange = 0;
+            }
+            if (Math.Abs(expectedChange - actualChangeGiven) > 0.01m)
+            {
+                string message = $"The change amount appears to be incorrect.\n\n" +
+                                 $"Amount Paid: {amountPaid:N2}\n" +
+                                 $"Total Due: {totalAmount:N2}\n" +
+                                 $"----------------------------------\n" +
+                                 $"Expected Change: {expectedChange:N2}\n" +
+                                 $"Entered Change: {actualChangeGiven:N2}\n\n" +
+                                 "A remark is required to proceed.";
+
+                MessageBox.Show(message, "Change Discrepancy Detected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                string reason = "";
+                do
+                {
+                    reason = Microsoft.VisualBasic.Interaction.InputBox(
+                        "Please specify the reason for the change discrepancy:",
+                        "Justification Required",
+                        "");
+
+                    if (string.IsNullOrWhiteSpace(reason))
+                    {
+                        var result = MessageBox.Show(
+                            "You must provide a reason to continue with this transaction. Do you want to try again?",
+                            "Reason Required",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Exclamation);
+
+                        if (result == DialogResult.No)
+                        {
+                            return;
+                        }
+                    }
+                } while (string.IsNullOrWhiteSpace(reason));
+
+                // Calculate the exact amount of the discrepancy.
+                decimal discrepancyAmount = Math.Abs(expectedChange - actualChangeGiven);
+                string discrepancyPrefix;
+                if (actualChangeGiven < expectedChange)
+                {
+                    discrepancyPrefix = $"Change Discrepancy (Less by {discrepancyAmount:N2})";
+                }
+                else
+                {
+                    discrepancyPrefix = $"Change Discrepancy (More by {discrepancyAmount:N2})";
+                }
+                string finalRemark = $"{discrepancyPrefix}: {reason}";
+
+                if (!cmbRemarks.Items.Contains(finalRemark))
+                {
+                    cmbRemarks.Items.Add(finalRemark);
+                }
+                cmbRemarks.SelectedItem = finalRemark;
+            }
+
+            int unitId = GetSelectedUnitID();
             DateTime startMonth = new DateTime(dtpPaymentDate.Value.Year, dtpPaymentDate.Value.Month, 1);
             DateTime endMonth = new DateTime(dtpEndMonth.Value.Year, dtpEndMonth.Value.Month, 1);
 
@@ -206,7 +280,7 @@ namespace RECOMANAGESYS
                     // Check if month already exists
                     using (SqlCommand checkCmd = new SqlCommand(
                         @"SELECT COUNT(*) FROM MonthlyDues 
-                          WHERE HomeownerId=@residentId AND UnitID=@unitId AND MonthCovered=@monthCovered", conn))
+                  WHERE HomeownerId=@residentId AND UnitID=@unitId AND MonthCovered=@monthCovered", conn))
                     {
                         checkCmd.Parameters.Clear();
                         checkCmd.Parameters.AddWithValue("@residentId", currentResidentId);
@@ -217,14 +291,12 @@ namespace RECOMANAGESYS
                         if (count > 0)
                         {
                             duplicateMonths.Add(monthCovered);
-                            continue; // skip duplicates
+                            continue;
                         }
                     }
-
-                    // Insert record
                     cmd.CommandText = @"INSERT INTO MonthlyDues 
-                        (HomeownerId, UnitID, PaymentDate, AmountPaid, DueRate, MonthCovered)
-                        VALUES (@residentId, @unitId, @paymentDate, @amountPaid, @dueRate, @monthCovered)";
+                (HomeownerId, UnitID, PaymentDate, AmountPaid, DueRate, MonthCovered, ProcessedByUserID)
+                VALUES (@residentId, @unitId, @paymentDate, @amountPaid, @dueRate, @monthCovered, @ProcessedByUserID)";
 
                     cmd.Parameters.Clear();
                     cmd.Parameters.AddWithValue("@residentId", currentResidentId);
@@ -250,8 +322,8 @@ namespace RECOMANAGESYS
                 using (var receipt = new Form())
                 {
                     receipt.Text = "Payment Receipt";
-                    receipt.StartPosition = FormStartPosition.CenterParent; 
-                    receipt.Width = 800;  
+                    receipt.StartPosition = FormStartPosition.CenterParent;
+                    receipt.Width = 800;
                     receipt.Height = 600;
 
                     var reportViewer = new Microsoft.Reporting.WinForms.ReportViewer
@@ -263,18 +335,24 @@ namespace RECOMANAGESYS
                     receipt.Controls.Add(reportViewer);
 
                     reportViewer.LocalReport.ReportEmbeddedResource = "RECOMANAGESYS.PaymentReceipt.rdlc";
-                    decimal.TryParse(txtChange.Text, out decimal changeAmount);
+                    string changeAmountForReport = cmbChange.Text;
+                    if (cmbChange.SelectedItem?.ToString() == "(None)")
+                    {
+                        changeAmountForReport = "";
+                    }
 
                     var parameters = new Microsoft.Reporting.WinForms.ReportParameter[]
                     {
-                      new Microsoft.Reporting.WinForms.ReportParameter("txtResidentID", txtResidentID.Text),
-                      new Microsoft.Reporting.WinForms.ReportParameter("txtResidentName", lblResidentName.Text),
-                      new Microsoft.Reporting.WinForms.ReportParameter("txtPayment", lblAmountPaid.Text),
-                      new Microsoft.Reporting.WinForms.ReportParameter("txtChange", changeAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)),
-                      new Microsoft.Reporting.WinForms.ReportParameter("txtRemarks", cmbRemarks.Text),
-                      new Microsoft.Reporting.WinForms.ReportParameter("txtDate", DateTime.Now.ToString("MMMM dd, yyyy")),
-                      new Microsoft.Reporting.WinForms.ReportParameter("txtOfficerName", CurrentUser.FullName),
-                      new Microsoft.Reporting.WinForms.ReportParameter("txtOfficerPosition", CurrentUser.Role)
+                new Microsoft.Reporting.WinForms.ReportParameter("txtResidentID", txtResidentID.Text),
+                new Microsoft.Reporting.WinForms.ReportParameter("txtResidentName", lblResidentName.Text),
+                new Microsoft.Reporting.WinForms.ReportParameter("txtPayment", cmbPaid.Text),
+                new Microsoft.Reporting.WinForms.ReportParameter("txtChange", changeAmountForReport), // Use the processed value
+                new Microsoft.Reporting.WinForms.ReportParameter("txtAmountCovered", lblAmountPaid.Text),
+                new Microsoft.Reporting.WinForms.ReportParameter("txtMonthCovered", lblMonthCovered.Text),
+                new Microsoft.Reporting.WinForms.ReportParameter("txtRemarks", cmbRemarks.Text),
+                new Microsoft.Reporting.WinForms.ReportParameter("txtDate", DateTime.Now.ToString("MMMM dd, yyyy")),
+                new Microsoft.Reporting.WinForms.ReportParameter("txtOfficerName", CurrentUser.FullName),
+                new Microsoft.Reporting.WinForms.ReportParameter("txtOfficerPosition", CurrentUser.Role)
                     };
                     reportViewer.LocalReport.SetParameters(parameters);
                     reportViewer.RefreshReport();
@@ -282,7 +360,7 @@ namespace RECOMANAGESYS
                     receipt.ShowDialog();
                 }
 
-                this.Close(); 
+                this.Close();
             }
         }
 
@@ -310,17 +388,17 @@ namespace RECOMANAGESYS
             UpdateMonthCoveredLabel();
             UpdateAmountPaidLabel();
         }
-
         private void frmPayment_Load(object sender, EventArgs e)
         {
             cmbRemarks.Items.Clear();
             cmbRemarks.Items.Add("N/A");
             cmbRemarks.Items.Add("Others");
-            cmbRemarks.SelectedIndex = 0; 
-
+            cmbRemarks.SelectedIndex = 0;
             cmbRemarks.SelectedIndexChanged += cmbRemarks_SelectedIndexChanged;
-            this.txtChange.KeyPress += new KeyPressEventHandler(this.txtChange_KeyPress);
-            this.txtChange.Leave += new EventHandler(this.txtChange_Leave);
+            PopulatePaymentComboBox(cmbPaid);
+            PopulateChangeComboBox(cmbChange);
+            this.cmbPaid.SelectedIndexChanged += new System.EventHandler(this.cmbPayment_HandleOther);
+            this.cmbChange.SelectedIndexChanged += new System.EventHandler(this.cmbPayment_HandleOther);
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
@@ -350,32 +428,74 @@ namespace RECOMANAGESYS
                 }
             }
         }
-        private void txtChange_KeyPress(object sender, KeyPressEventArgs e)
+        private void PopulatePaymentComboBox(ComboBox cmb)
         {
-            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar) && (e.KeyChar != '.'))
+            cmb.Items.Clear();
+            for (int i = 100; i <= 1000; i += 100)
             {
-                e.Handled = true; 
+                cmb.Items.Add(i.ToString("F2"));
             }
-            if ((e.KeyChar == '.') && ((sender as TextBox).Text.IndexOf('.') > -1))
-            {
-                e.Handled = true; 
-            }
+            cmb.Items.Add("Other");
+            cmb.SelectedIndex = 0; 
         }
-        private void txtChange_Leave(object sender, EventArgs e)
+        private void PopulateChangeComboBox(ComboBox cmb)
         {
-            TextBox tb = sender as TextBox;
-            if (string.IsNullOrWhiteSpace(tb.Text))
+            cmb.Items.Clear();
+            cmb.Items.Add("(None)"); 
+            cmb.Items.Add("0.00");    
+
+            for (int i = 100; i <= 1000; i += 100)
             {
-                tb.Text = "0.00";
+                cmb.Items.Add(i.ToString("F2"));
             }
-            else
+
+            cmb.Items.Add("Other");
+            cmb.SelectedIndex = 1;
+        }
+        private void cmbPayment_HandleOther(object sender, EventArgs e)
+        {
+            ComboBox cmb = sender as ComboBox;
+            if (cmb != null && cmb.SelectedItem?.ToString() == "Other")
             {
-                if (decimal.TryParse(tb.Text, out decimal value))
+                string input = "";
+                decimal value;
+
+                while (true)
                 {
-                    tb.Text = value.ToString("F2");
+                    input = Microsoft.VisualBasic.Interaction.InputBox(
+                        "Please enter a specific amount:", "Enter Amount", "");
+
+                    if (string.IsNullOrWhiteSpace(input))
+                    {
+                        cmb.SelectedIndex = 0; 
+                        return;
+                    }
+                    if (decimal.TryParse(input, out value) && value >= 0)
+                    {
+                        string formattedValue = value.ToString("F2");
+                        if (!cmb.Items.Contains(formattedValue))
+                        {
+                            int otherIndex = cmb.Items.IndexOf("Other");
+                            if (otherIndex > -1)
+                            {
+                                cmb.Items.Insert(otherIndex, formattedValue);
+                                cmb.SelectedItem = formattedValue;
+                            }
+                        }
+                        else
+                        {
+                            cmb.SelectedItem = formattedValue;
+                        }
+                        break; 
+                    }
+                    else
+                    {
+                        MessageBox.Show("Invalid input. Please enter only numbers and decimals.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
             }
         }
+    }
 
     }
-}
+
