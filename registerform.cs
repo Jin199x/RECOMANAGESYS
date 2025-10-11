@@ -490,23 +490,6 @@ CREATE TABLE Homeowners (
     Status NVARCHAR(20) NOT NULL DEFAULT 'Active'
 );
 
---MONTHLY DUES
-CREATE TABLE MonthlyDues (
-    DueId INT PRIMARY KEY IDENTITY(1,1),
-    HomeownerId INT NOT NULL FOREIGN KEY REFERENCES Residents(HomeownerID),
-    UnitID INT NOT NULL FOREIGN KEY REFERENCES TBL_Units(UnitID),
-    PaymentDate DATE NULL,
-    AmountPaid DECIMAL(10,2) NOT NULL,
-    DueRate DECIMAL(10,2) NOT NULL,
-    MonthCovered VARCHAR(20) NOT NULL,
-    Remarks NVARCHAR(255) NULL,
-  -- (not used for now)  PaymentStatus NVARCHAR(20) DEFAULT 'Unpaid' NOT NULL
-);
-ALTER TABLE MonthlyDues
-ADD ProcessedByUserID INT NULL
-    FOREIGN KEY REFERENCES Users(UserID);
-
-
 -- Create Announcements with expiration date
 CREATE TABLE Announcements (
     Id INT PRIMARY KEY IDENTITY(1,1),

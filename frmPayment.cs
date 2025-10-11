@@ -59,8 +59,8 @@ namespace RECOMANAGESYS
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             using (SqlCommand cmd = new SqlCommand(
                 @"SELECT FirstName, MiddleName, LastName, HomeAddress, IsActive 
-          FROM Residents 
-          WHERE HomeownerID = @residentId", conn))
+                FROM Residents 
+                WHERE HomeownerID = @residentId", conn))
             {
                 cmd.Parameters.AddWithValue("@residentId", residentId);
                 conn.Open();
@@ -91,9 +91,9 @@ namespace RECOMANAGESYS
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             using (SqlCommand cmd = new SqlCommand(
                 @"SELECT u.UnitID, u.UnitNumber, u.IsOccupied
-          FROM HomeownerUnits hu
-          INNER JOIN TBL_Units u ON hu.UnitID = u.UnitID
-          WHERE hu.HomeownerID = @residentId", conn))
+                FROM HomeownerUnits hu
+                INNER JOIN TBL_Units u ON hu.UnitID = u.UnitID
+                WHERE hu.HomeownerID = @residentId", conn))
             {
                 cmd.Parameters.AddWithValue("@residentId", residentId);
                 conn.Open();
@@ -133,8 +133,6 @@ namespace RECOMANAGESYS
 
             UpdateAmountPaidLabel();
         }
-
-
 
         private void cmbUnits_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -177,7 +175,9 @@ namespace RECOMANAGESYS
                 MessageBox.Show("No payment to save.");
                 return;
             }
+
             decimal.TryParse(cmbPaid.Text, out decimal amountPaid);
+
             if (amountPaid < totalAmount)
             {
                 MessageBox.Show(
@@ -185,7 +185,7 @@ namespace RECOMANAGESYS
                     "Underpayment Error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
-                return; 
+                return;
             }
 
             decimal actualChangeGiven = 0;
@@ -194,10 +194,7 @@ namespace RECOMANAGESYS
                 decimal.TryParse(cmbChange.Text, out actualChangeGiven);
             }
             decimal expectedChange = amountPaid - totalAmount;
-            if (expectedChange < 0)
-            {
-                expectedChange = 0;
-            }
+
             if (Math.Abs(expectedChange - actualChangeGiven) > 0.01m)
             {
                 string message = $"The change amount appears to be incorrect.\n\n" +
@@ -233,7 +230,6 @@ namespace RECOMANAGESYS
                     }
                 } while (string.IsNullOrWhiteSpace(reason));
 
-                // Calculate the exact amount of the discrepancy.
                 decimal discrepancyAmount = Math.Abs(expectedChange - actualChangeGiven);
                 string discrepancyPrefix;
                 if (actualChangeGiven < expectedChange)
@@ -280,10 +276,10 @@ namespace RECOMANAGESYS
                     // Check if month already exists
                     using (SqlCommand checkCmd = new SqlCommand(
                         @"SELECT COUNT(*) FROM MonthlyDues 
-                  WHERE HomeownerId=@residentId AND UnitID=@unitId AND MonthCovered=@monthCovered", conn))
+                        WHERE HomeownerId=@homeownerId AND UnitID=@unitId AND MonthCovered=@monthCovered", conn))
                     {
                         checkCmd.Parameters.Clear();
-                        checkCmd.Parameters.AddWithValue("@residentId", currentResidentId);
+                        checkCmd.Parameters.AddWithValue("@homeownerId", currentResidentId);
                         checkCmd.Parameters.AddWithValue("@unitId", unitId);
                         checkCmd.Parameters.AddWithValue("@monthCovered", monthCovered);
 
@@ -294,18 +290,23 @@ namespace RECOMANAGESYS
                             continue;
                         }
                     }
+
+                    // --- MODIFIED CODE START ---
+                    // Updated INSERT statement to include Remarks and match corrected table schema
                     cmd.CommandText = @"INSERT INTO MonthlyDues 
-                (HomeownerId, UnitID, PaymentDate, AmountPaid, DueRate, MonthCovered, ProcessedByUserID)
-                VALUES (@residentId, @unitId, @paymentDate, @amountPaid, @dueRate, @monthCovered, @ProcessedByUserID)";
+                        (HomeownerID, UnitID, PaymentDate, AmountPaid, DueRate, MonthCovered, ProcessedByUserID, Remarks)
+                        VALUES (@homeownerId, @unitId, @paymentDate, @amountPaid, @dueRate, @monthCovered, @processedByUserID, @remarks)";
 
                     cmd.Parameters.Clear();
-                    cmd.Parameters.AddWithValue("@residentId", currentResidentId);
+                    cmd.Parameters.AddWithValue("@homeownerId", currentResidentId);
                     cmd.Parameters.AddWithValue("@unitId", unitId);
-                    cmd.Parameters.AddWithValue("@paymentDate", dtpPaymentDate.Value);
+                    cmd.Parameters.AddWithValue("@paymentDate", dtpPaymentDate.Value.Date); // Send only the Date part
                     cmd.Parameters.AddWithValue("@amountPaid", BaseDueRate); // per month
                     cmd.Parameters.AddWithValue("@dueRate", BaseDueRate);
                     cmd.Parameters.AddWithValue("@monthCovered", monthCovered);
-                    cmd.Parameters.AddWithValue("@ProcessedByUserID", CurrentUser.UserId);
+                    cmd.Parameters.AddWithValue("@processedByUserID", CurrentUser.UserId);
+                    cmd.Parameters.AddWithValue("@remarks", cmbRemarks.Text); // Added parameter for Remarks
+                    // --- MODIFIED CODE END ---
 
                     cmd.ExecuteNonQuery();
                 }
@@ -343,16 +344,16 @@ namespace RECOMANAGESYS
 
                     var parameters = new Microsoft.Reporting.WinForms.ReportParameter[]
                     {
-                new Microsoft.Reporting.WinForms.ReportParameter("txtResidentID", txtResidentID.Text),
-                new Microsoft.Reporting.WinForms.ReportParameter("txtResidentName", lblResidentName.Text),
-                new Microsoft.Reporting.WinForms.ReportParameter("txtPayment", cmbPaid.Text),
-                new Microsoft.Reporting.WinForms.ReportParameter("txtChange", changeAmountForReport), // Use the processed value
-                new Microsoft.Reporting.WinForms.ReportParameter("txtAmountCovered", lblAmountPaid.Text),
-                new Microsoft.Reporting.WinForms.ReportParameter("txtMonthCovered", lblMonthCovered.Text),
-                new Microsoft.Reporting.WinForms.ReportParameter("txtRemarks", cmbRemarks.Text),
-                new Microsoft.Reporting.WinForms.ReportParameter("txtDate", DateTime.Now.ToString("MMMM dd, yyyy")),
-                new Microsoft.Reporting.WinForms.ReportParameter("txtOfficerName", CurrentUser.FullName),
-                new Microsoft.Reporting.WinForms.ReportParameter("txtOfficerPosition", CurrentUser.Role)
+                        new Microsoft.Reporting.WinForms.ReportParameter("txtResidentID", txtResidentID.Text),
+                        new Microsoft.Reporting.WinForms.ReportParameter("txtResidentName", lblResidentName.Text),
+                        new Microsoft.Reporting.WinForms.ReportParameter("txtPayment", cmbPaid.Text),
+                        new Microsoft.Reporting.WinForms.ReportParameter("txtChange", changeAmountForReport),
+                        new Microsoft.Reporting.WinForms.ReportParameter("txtAmountCovered", lblAmountPaid.Text),
+                        new Microsoft.Reporting.WinForms.ReportParameter("txtMonthCovered", lblMonthCovered.Text),
+                        new Microsoft.Reporting.WinForms.ReportParameter("txtRemarks", cmbRemarks.Text),
+                        new Microsoft.Reporting.WinForms.ReportParameter("txtDate", DateTime.Now.ToString("MMMM dd, yyyy")),
+                        new Microsoft.Reporting.WinForms.ReportParameter("txtOfficerName", CurrentUser.FullName),
+                        new Microsoft.Reporting.WinForms.ReportParameter("txtOfficerPosition", CurrentUser.Role)
                     };
                     reportViewer.LocalReport.SetParameters(parameters);
                     reportViewer.RefreshReport();
@@ -424,7 +425,7 @@ namespace RECOMANAGESYS
                 }
                 else
                 {
-                    cmbRemarks.SelectedIndex = 0; 
+                    cmbRemarks.SelectedIndex = 0;
                 }
             }
         }
@@ -436,13 +437,13 @@ namespace RECOMANAGESYS
                 cmb.Items.Add(i.ToString("F2"));
             }
             cmb.Items.Add("Other");
-            cmb.SelectedIndex = 0; 
+            cmb.SelectedIndex = 0;
         }
         private void PopulateChangeComboBox(ComboBox cmb)
         {
             cmb.Items.Clear();
-            cmb.Items.Add("(None)"); 
-            cmb.Items.Add("0.00");    
+            cmb.Items.Add("(None)");
+            cmb.Items.Add("0.00");
 
             for (int i = 100; i <= 1000; i += 100)
             {
@@ -467,7 +468,7 @@ namespace RECOMANAGESYS
 
                     if (string.IsNullOrWhiteSpace(input))
                     {
-                        cmb.SelectedIndex = 0; 
+                        cmb.SelectedIndex = 0;
                         return;
                     }
                     if (decimal.TryParse(input, out value) && value >= 0)
@@ -486,7 +487,7 @@ namespace RECOMANAGESYS
                         {
                             cmb.SelectedItem = formattedValue;
                         }
-                        break; 
+                        break;
                     }
                     else
                     {
@@ -496,6 +497,4 @@ namespace RECOMANAGESYS
             }
         }
     }
-
-    }
-
+}
