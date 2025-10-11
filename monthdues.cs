@@ -381,7 +381,7 @@ namespace RECOMANAGESYS
                 conn.Open();
                 using (SqlCommand cmdResident = new SqlCommand("SELECT FirstName, MiddleName, LastName, HomeAddress, ContactNumber FROM Residents WHERE HomeownerID=@residentId", conn))
                 {
-                    cmdResident.Parameters.AddWithValue("@residentId", residentId);
+                    cmdResident.Parameters.AddWithValue("@residentId", ResidentId);
                     using (SqlDataReader reader = cmdResident.ExecuteReader())
                     {
                         if (reader.Read())
@@ -394,7 +394,7 @@ namespace RECOMANAGESYS
                 }
                 using (SqlCommand cmdPayments = new SqlCommand("SELECT MonthCovered, AmountPaid FROM MonthlyDues WHERE HomeownerId=@residentId ORDER BY MonthCovered", conn))
                 {
-                    cmdPayments.Parameters.AddWithValue("@residentId", residentId);
+                    cmdPayments.Parameters.AddWithValue("@residentId", ResidentId);
                     using (SqlDataReader reader = cmdPayments.ExecuteReader())
                     {
                         while (reader.Read())
@@ -441,12 +441,11 @@ namespace RECOMANAGESYS
             }
             finalRows.AddRange(last6Months);
             string balanceMessage = runningBalance > 0 ? "Please make payment of the remaining balance within this month. Thank you!" : "There's no remaining balance. All dues are cleared.";
-            return new ReportData { FullName = fullName, Address = address, Contact = contact, ResidentId = residentId.ToString(), AccountDetails = finalRows, TotalDebit = totalDebit, TotalCredit = totalCreditFromDb, RunningBalance = runningBalance, BalanceMessage = balanceMessage };
+            return new ReportData { FullName = fullName, Address = address, Contact = contact, ResidentId = ResidentId.ToString(), AccountDetails = finalRows, TotalDebit = totalDebit, TotalCredit = totalCreditFromDb, RunningBalance = runningBalance, BalanceMessage = balanceMessage };
         }
 
         private void btnProcess_Click(object sender, EventArgs e)
         {
-            // SCENARIO 1: More than one resident is CHECKED (Bulk Save Action)
             if (lvResidents.CheckedItems.Count > 1)
             {
                 int count = lvResidents.CheckedItems.Count;
@@ -457,25 +456,20 @@ namespace RECOMANAGESYS
                     BulkSaveStatementsAsPDF(lvResidents.CheckedItems);
                 }
             }
-            // SCENARIO 2: Exactly ONE resident is HIGHLIGHTED (Single View Action)
             else if (lvResidents.SelectedItems.Count == 1)
             {
                 int residentId = Convert.ToInt32(lvResidents.SelectedItems[0].SubItems[0].Text);
                 ShowSingleReport(residentId);
             }
-            // SCENARIO 3: No clear action
             else
             {
                 MessageBox.Show("Please select one resident to view their statement, or check the boxes for multiple residents to save their statements in bulk.", "Action Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
-
-        // --- GEMINI: This is the final, corrected version. Please replace your old method with this. ---
         private void BulkSaveStatementsAsPDF(ListView.CheckedListViewItemCollection itemsToSave)
         {
             try
             {
-                // 1. Re-introduce the FolderBrowserDialog to let the user choose a location.
                 using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
                 {
                     folderDialog.Description = "Please select a location where the report folder will be created.";
@@ -483,23 +477,15 @@ namespace RECOMANAGESYS
 
                     if (folderDialog.ShowDialog() == DialogResult.OK)
                     {
-                        // 2. Get the location the user chose (e.g., "C:\Users\YourName\Documents")
                         string selectedPath = folderDialog.SelectedPath;
                         string baseFolderName = "SOAReport_Residents";
-
-                        // 3. Combine the user's path with our base folder name.
                         string finalFolderPath = Path.Combine(selectedPath, baseFolderName);
                         int counter = 2;
-
-                        // 4. Check if that folder already exists inside the chosen location.
-                        // If it does, find the next available name like "(2)", "(3)", etc.
                         while (Directory.Exists(finalFolderPath))
                         {
                             finalFolderPath = Path.Combine(selectedPath, $"{baseFolderName} ({counter})");
                             counter++;
                         }
-
-                        // 5. Create the new, unique directory in the user's chosen location.
                         Directory.CreateDirectory(finalFolderPath);
 
                         int savedCount = 0;
