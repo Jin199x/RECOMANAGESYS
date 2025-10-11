@@ -386,9 +386,9 @@ namespace RECOMANAGESYS
                 formattedAddress = $"Unit {unitNumber} Block {block}, {baseHomeAddress}";
 
                 string paymentQuery = @"SELECT MonthCovered, AmountPaid 
-                                FROM MonthlyDues 
-                                WHERE ResidentID=@residentId AND UnitID = @unitId
-                                ORDER BY CONVERT(DATETIME, '01 ' + MonthCovered)";
+                                        FROM MonthlyDues 
+                                        WHERE ResidentID=@residentId AND UnitID = @unitId
+                                        ORDER BY CONVERT(DATETIME, '01 ' + MonthCovered)";
                 using (SqlCommand cmdPayments = new SqlCommand(paymentQuery, conn))
                 {
                     cmdPayments.Parameters.AddWithValue("@residentId", residentId);

@@ -240,7 +240,7 @@
                   </TablixCells>
                 </TablixRow>
                 <TablixRow>
-                  <Height>0.25in</Height>
+                  <Height>0.25694in</Height>
                   <TablixCells>
                     <TablixCell>
                       <CellContents>
@@ -253,7 +253,7 @@
                                 <TextRun>
                                   <Value>=Fields!Month.Value</Value>
                                   <Style>
-                                    <FontSize>8pt</FontSize>
+                                    <FontSize>9pt</FontSize>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
@@ -287,12 +287,12 @@
                                 <TextRun>
                                   <Value>=Fields!Description.Value</Value>
                                   <Style>
-                                    <FontSize>8pt</FontSize>
+                                    <FontSize>9pt</FontSize>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style>
-                                <TextAlign>Center</TextAlign>
+                                <TextAlign>Left</TextAlign>
                               </Style>
                             </Paragraph>
                           </Paragraphs>
@@ -321,7 +321,7 @@
                                 <TextRun>
                                   <Value>=Fields!Debit.Value</Value>
                                   <Style>
-                                    <FontSize>8pt</FontSize>
+                                    <FontSize>9pt</FontSize>
                                     <Format>0.00;(0.00)</Format>
                                   </Style>
                                 </TextRun>
@@ -354,7 +354,7 @@
                                 <TextRun>
                                   <Value>=Fields!Credit.Value</Value>
                                   <Style>
-                                    <FontSize>8pt</FontSize>
+                                    <FontSize>9pt</FontSize>
                                     <Format>0.00;(0.00)</Format>
                                   </Style>
                                 </TextRun>
@@ -387,7 +387,7 @@
                                 <TextRun>
                                   <Value>=Fields!Balance.Value</Value>
                                   <Style>
-                                    <FontSize>8pt</FontSize>
+                                    <FontSize>9pt</FontSize>
                                     <Format>0.00;(0.00)</Format>
                                   </Style>
                                 </TextRun>
@@ -614,7 +614,7 @@
             <DataSetName>AccountDetails</DataSetName>
             <Top>3.49528in</Top>
             <Left>0.19667in</Left>
-            <Height>0.764in</Height>
+            <Height>0.77094in</Height>
             <Width>7.79752in</Width>
             <Style>
               <Border>
