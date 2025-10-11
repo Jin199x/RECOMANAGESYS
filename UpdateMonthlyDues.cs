@@ -17,6 +17,7 @@ namespace RECOMANAGESYS
         private string ownerFullName = "";
         private List<Tuple<int, string, string, string>> displayedUnits; // UnitID, UnitNumber, Block, HomeAddress
         private decimal dueRate = 100;
+        private bool _isUpdatingChecks = false;
 
         public UpdateMonthlyDues()
         {
@@ -299,6 +300,41 @@ namespace RECOMANAGESYS
 
         private void clbMissedMonths_ItemCheck(object sender, ItemCheckEventArgs e)
         {
+            if (_isUpdatingChecks)
+            {
+                return;
+            }
+
+            if (e.NewValue == CheckState.Checked)
+            {
+                if (e.Index > 0)
+                {
+                    if (!clbMissedMonths.GetItemChecked(e.Index - 1))
+                    {
+                        MessageBox.Show("Please select the months in chronological order.", "Invalid Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        e.NewValue = e.CurrentValue;
+                        return; 
+                    }
+                }
+            }
+
+            else if (e.NewValue == CheckState.Unchecked)
+            {
+                try
+                {
+                    _isUpdatingChecks = true; 
+
+                    for (int i = e.Index + 1; i < clbMissedMonths.Items.Count; i++)
+                    {
+                        clbMissedMonths.SetItemChecked(i, false);
+                    }
+                }
+                finally
+                {
+                    _isUpdatingChecks = false; 
+                }
+            }
+
             this.BeginInvoke((Action)(() =>
             {
                 UpdateTotalAmount();
@@ -526,10 +562,20 @@ namespace RECOMANAGESYS
             bool allAreChecked = (clbMissedMonths.CheckedItems.Count == clbMissedMonths.Items.Count);
             bool shouldBeChecked = !allAreChecked;
 
-            for (int i = 0; i < clbMissedMonths.Items.Count; i++)
+            try
             {
-                clbMissedMonths.SetItemChecked(i, shouldBeChecked);
+                _isUpdatingChecks = true; //chronological logic
+
+                for (int i = 0; i < clbMissedMonths.Items.Count; i++)
+                {
+                    clbMissedMonths.SetItemChecked(i, shouldBeChecked);
+                }
             }
+            finally
+            {
+                _isUpdatingChecks = false; 
+            }
+
             UpdateTotalAmount();
             UpdateToggleSelectAllButtonText();
         }
