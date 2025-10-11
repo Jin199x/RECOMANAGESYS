@@ -18,22 +18,13 @@ namespace RECOMANAGESYS
             this.AutoScaleMode = AutoScaleMode.Dpi;
         }
 
-        public void RefreshData()
-        {
-            LoadAnnouncement();
-        }
-
         private void button3_Click(object sender, EventArgs e) // btnPostAnnouncement
         {
             PostAnnouncement postForm = new PostAnnouncement(this);
 
-            // When PostAnnouncement changes something
             postForm.AnnouncementChanged += (s, args) =>
             {
-                // 1️⃣ Reload the current Announcement panel
                 this.LoadAnnouncement();
-
-                // 2️⃣ Notify any parent (dashboard) that an announcement changed
                 AnnouncementChanged?.Invoke(this, EventArgs.Empty);
             };
 
@@ -154,7 +145,7 @@ namespace RECOMANAGESYS
                     // Add container to panel
                     panel.Controls.Add(container);
 
-                    // Action to open the AnnouncementViewForm
+                    // open the AnnouncementViewForm
                     Action openAnnouncement = () =>
                     {
                         AnnouncementViewForm viewForm = new AnnouncementViewForm(
@@ -288,6 +279,15 @@ namespace RECOMANAGESYS
                 LoadAnnouncement();
                 AnnouncementChanged?.Invoke(this, EventArgs.Empty);
             }
+        }
+
+        private void panel2_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+        public void RefreshData()
+        {
+            LoadAnnouncement();
         }
     }
 }
