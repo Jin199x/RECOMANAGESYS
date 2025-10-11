@@ -230,6 +230,12 @@
     <Compile Include="frmPayment.Designer.cs">
       <DependentUpon>frmPayment.cs</DependentUpon>
     </Compile>
+    <Compile Include="frmSelectHomeowner.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmSelectHomeowner.Designer.cs">
+      <DependentUpon>frmSelectHomeowner.cs</DependentUpon>
+    </Compile>
     <Compile Include="Homeownersfrm.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -329,6 +335,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="frmPayment.resx">
       <DependentUpon>frmPayment.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmSelectHomeowner.resx">
+      <DependentUpon>frmSelectHomeowner.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Homeownersfrm.resx">
       <DependentUpon>Homeownersfrm.cs</DependentUpon>

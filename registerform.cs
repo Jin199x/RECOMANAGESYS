@@ -622,6 +622,8 @@ CREATE TABLE MonthlyDues (
     DueRate DECIMAL(10,2) NOT NULL,
     MonthCovered VARCHAR(20) NOT NULL,             
     Remarks NVARCHAR(255) NULL,
+    PaidByResidencyType NVARCHAR(50) NULL,
+    PaidByResidentName NVARCHAR(150) NULL,
     DateRecorded DATETIME DEFAULT GETDATE(),
     CONSTRAINT FK_MonthlyDues_Resident FOREIGN KEY (ResidentID) REFERENCES Residents(ResidentID),
     CONSTRAINT FK_MonthlyDues_Unit FOREIGN KEY (UnitID) REFERENCES TBL_Units(UnitID),
@@ -631,4 +633,7 @@ CREATE TABLE MonthlyDues (
     INDEX IX_MonthlyDues_Month (MonthCovered),
     INDEX IX_MonthlyDues_Date (PaymentDate)
 );
+ALTER TABLE MonthlyDues
+ADD ProcessedByUserID INT NULL
+    FOREIGN KEY REFERENCES Users(UserID);
 */
