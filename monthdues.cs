@@ -96,6 +96,7 @@ namespace RECOMANAGESYS
             UpdateMonthlyDues updateDues = new UpdateMonthlyDues();
             updateDues.OnPaymentSaved = () =>
             {
+                LoadResidentsList();
                 if (lastSelectedHomeownerId != -1 && homeownerToResidentIdMap.TryGetValue(lastSelectedHomeownerId, out int residentId))
                 {
                     LoadMonthlyDues(residentId, lastSelectedUnitId);
@@ -118,9 +119,7 @@ namespace RECOMANAGESYS
             {
                 foreach (ListViewItem item in lvResidents.Items)
                 {
-                    // <<< FIX STARTS HERE: Use int.TryParse for safety
                     int currentItemId;
-                    // Try to convert the text to a number. If it works, then compare it.
                     if (int.TryParse(item.SubItems[0].Text, out currentItemId))
                     {
                         if (currentItemId == selectedHomeownerId)
@@ -143,6 +142,7 @@ namespace RECOMANAGESYS
 
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
+                // The only change is adding '+ 1' to the DATEDIFF calculation
                 string query = @"
             WITH UnitPaymentSummary AS (
                 SELECT
@@ -157,11 +157,12 @@ namespace RECOMANAGESYS
                 u.UnitID, u.UnitNumber, u.Block, u.UnitType,
                 r_owner.HomeAddress,
                 ups.TotalPaid,
-                DATEDIFF(
+                -- <<< THIS IS THE FIX: Added + 1 to make the count inclusive
+                (DATEDIFF(
                     month, 
                     ISNULL(hu_owner.DateOfOwnership, ups.FirstPaymentDate), 
                     GETDATE()
-                ) - ISNULL(ups.PaidMonthsCount, 0) AS TotalMissed,
+                ) + 1) - ISNULL(ups.PaidMonthsCount, 0) AS TotalMissed,
                 r_owner.ResidentID,
                 r_owner.HomeownerID,
                 COALESCE(r_owner.FirstName + ' ' + r_owner.MiddleName + ' ' + r_owner.LastName, 'Currently no owner') AS FullName,
@@ -341,7 +342,12 @@ namespace RECOMANAGESYS
             HashSet<string> paidMonths = new HashSet<string>();
             foreach (var p in payments)
             {
-                string paidByDisplay = $"{p.PayerType} ({p.PayerName})";
+                string paidByDisplay = p.PayerType; 
+                if (!string.IsNullOrWhiteSpace(p.PayerName) && p.PayerName != "N/A")
+                {
+                    paidByDisplay += $" ({p.PayerName})";
+                }
+
                 var item = new ListViewItem(p.Month);
                 item.SubItems.Add("Paid");
                 item.SubItems.Add(paidByDisplay);

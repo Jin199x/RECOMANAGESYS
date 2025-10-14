@@ -15,17 +15,19 @@ namespace RECOMANAGESYS
         public Action OnPaymentSaved;
         private int currentOwnerResidentId = -1;
         private string ownerFullName = "";
-        private List<Tuple<int, string, string, string>> displayedUnits; // UnitID, UnitNumber, Block, HomeAddress
+        private List<Tuple<int, string, string, string>> displayedUnits;
         private decimal dueRate = 100;
         private bool _isUpdatingChecks = false;
+
+        // <<< ADD THIS FIELD
+        private int _initialHomeownerId = -1;
 
         public UpdateMonthlyDues()
         {
             InitializeComponent();
             this.AutoScaleMode = AutoScaleMode.Dpi;
-
             displayedUnits = new List<Tuple<int, string, string, string>>();
-
+            // Leave the event handlers here
             this.Load += UpdateMonthlyDues_Load;
             btnSelectHomeowner.Click += btnSelectHomeowner_Click;
             cmbResidency.SelectedIndexChanged += cmbResidency_SelectedIndexChanged;
@@ -251,24 +253,28 @@ namespace RECOMANAGESYS
         {
             clbMissedMonths.Items.Clear();
             var paidMonths = new HashSet<string>();
-            DateTime? dateRegistered = null;
+            DateTime? dateOfOwnership = null; // start date 
 
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
                 conn.Open();
-                using (SqlCommand cmd = new SqlCommand("SELECT DateRegistered FROM Residents WHERE ResidentID = @residentId", conn))
+                string ownershipQuery = "SELECT DateOfOwnership FROM HomeownerUnits WHERE ResidentID = @residentId AND UnitID = @unitId AND IsCurrent = 1";
+                using (SqlCommand cmd = new SqlCommand(ownershipQuery, conn))
                 {
                     cmd.Parameters.AddWithValue("@residentId", currentOwnerResidentId);
+                    cmd.Parameters.AddWithValue("@unitId", unitId);
                     var result = cmd.ExecuteScalar();
-                    if (result != DBNull.Value) dateRegistered = Convert.ToDateTime(result);
+                    if (result != DBNull.Value)
+                    {
+                        dateOfOwnership = Convert.ToDateTime(result);
+                    }
                 }
 
-                if (!dateRegistered.HasValue)
+                if (!dateOfOwnership.HasValue)
                 {
-                    MessageBox.Show("Could not determine resident registration date.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Could not determine the Date of Ownership for this unit. Cannot calculate missed months.", "Data Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-
                 using (SqlCommand cmd = new SqlCommand("SELECT MonthCovered FROM MonthlyDues WHERE ResidentID=@residentId AND UnitID=@unitId", conn))
                 {
                     cmd.Parameters.AddWithValue("@residentId", currentOwnerResidentId);
@@ -284,7 +290,7 @@ namespace RECOMANAGESYS
             }
 
             DateTime now = DateTime.Now;
-            for (DateTime monthIterator = dateRegistered.Value; monthIterator < now; monthIterator = monthIterator.AddMonths(1))
+            for (DateTime monthIterator = dateOfOwnership.Value; monthIterator < now; monthIterator = monthIterator.AddMonths(1))
             {
                 string monthName = monthIterator.ToString("MMMM yyyy");
                 if (!paidMonths.Contains(monthName))
