@@ -319,25 +319,20 @@ namespace RECOMANAGESYS
                     {
                         MessageBox.Show("Please select the months in chronological order.", "Invalid Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         e.NewValue = e.CurrentValue;
-                        return; 
+                        return;
                     }
                 }
             }
-
             else if (e.NewValue == CheckState.Unchecked)
             {
-                try
+                if (e.Index < clbMissedMonths.Items.Count - 1)
                 {
-                    _isUpdatingChecks = true; 
-
-                    for (int i = e.Index + 1; i < clbMissedMonths.Items.Count; i++)
+                    if (clbMissedMonths.GetItemChecked(e.Index + 1))
                     {
-                        clbMissedMonths.SetItemChecked(i, false);
+                        MessageBox.Show("Please deselect later months first before deselecting this one.", "Invalid Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        e.NewValue = e.CurrentValue;
+                        return;
                     }
-                }
-                finally
-                {
-                    _isUpdatingChecks = false; 
                 }
             }
 
