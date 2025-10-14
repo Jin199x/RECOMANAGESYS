@@ -52,7 +52,7 @@ namespace RECOMANAGESYS
 
             this.dtpPaymentDate.ValueChanged += new System.EventHandler(this.dtpPaymentDate_ValueChanged);
             this.clbAdvanceMonths.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.clbAdvanceMonths_ItemCheck);
-            this.btnToggleSelectAll.Click += new System.EventHandler(this.btnToggleSelectAll_Click);
+           // this.btnToggleSelectAll.Click += new System.EventHandler(this.btnToggleSelectAll_Click);
         }
 
         private void btnSelectHomeowner_Click(object sender, EventArgs e)
@@ -291,7 +291,7 @@ namespace RECOMANAGESYS
             }
             UpdateAmountPaidLabel();
             UpdateMonthCoveredLabel();
-            UpdateToggleSelectAllButtonText();
+            //UpdateToggleSelectAllButtonText();
         }
 
         private void dtpPaymentDate_ValueChanged(object sender, EventArgs e)
@@ -311,7 +311,7 @@ namespace RECOMANAGESYS
 
             UpdateAmountPaidLabel();
             UpdateMonthCoveredLabel();
-            UpdateToggleSelectAllButtonText();
+           // UpdateToggleSelectAllButtonText();
         }
         private void clbAdvanceMonths_ItemCheck(object sender, ItemCheckEventArgs e)
         {
@@ -339,7 +339,7 @@ namespace RECOMANAGESYS
             {
                 UpdateAmountPaidLabel();
                 UpdateMonthCoveredLabel();
-                UpdateToggleSelectAllButtonText();
+               // UpdateToggleSelectAllButtonText();
             }));
         }
 
@@ -600,9 +600,9 @@ namespace RECOMANAGESYS
 
             UpdateAmountPaidLabel();
             UpdateMonthCoveredLabel();
-            UpdateToggleSelectAllButtonText();
+           // UpdateToggleSelectAllButtonText();
         }
-        private void UpdateToggleSelectAllButtonText()
+      /*  private void UpdateToggleSelectAllButtonText()
         {
             if (clbAdvanceMonths.Items.Count == 0)
             {
@@ -621,7 +621,7 @@ namespace RECOMANAGESYS
                     btnToggleSelectAll.Text = "Select All";
                 }
             }
-        }
+        }*/
 
         private void btnCancel_Click(object sender, EventArgs e) { this.Close(); }
 

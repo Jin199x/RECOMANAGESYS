@@ -33,11 +33,12 @@ namespace RECOMANAGESYS
             clbMissedMonths.ItemCheck += clbMissedMonths_ItemCheck;
             btnToggleSelectAll.Click += btnToggleSelectAll_Click;
         }
-
         private void UpdateMonthlyDues_Load(object sender, EventArgs e)
         {
+            cmbResidency.Items.Clear();
             cmbResidency.Items.AddRange(new object[] { "Owner", "Tenant", "Caretaker" });
             cmbResidency.SelectedIndex = 0;
+
             lblNames.Visible = false;
             cmbNames.Visible = false;
 
@@ -50,7 +51,6 @@ namespace RECOMANAGESYS
             cmbChange.SelectedIndexChanged += cmbPayment_HandleOther;
             cmbRemarks.SelectedIndexChanged += cmbRemarks_SelectedIndexChanged;
         }
-
         private void btnSelectHomeowner_Click(object sender, EventArgs e)
         {
             using (frmSelectHomeowner selectForm = new frmSelectHomeowner())

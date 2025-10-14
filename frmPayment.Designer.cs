@@ -61,7 +61,6 @@
             this.btnSelectHomeowner = new System.Windows.Forms.Button();
             this.txtHomeownerIDDisplay = new System.Windows.Forms.TextBox();
             this.clbAdvanceMonths = new System.Windows.Forms.CheckedListBox();
-            this.btnToggleSelectAll = new System.Windows.Forms.Button();
             this.dtpPaymentDate = new System.Windows.Forms.DateTimePicker();
             this.SuspendLayout();
             // 
@@ -386,16 +385,6 @@
             this.clbAdvanceMonths.TabIndex = 52;
             this.clbAdvanceMonths.SelectedIndexChanged += new System.EventHandler(this.clbAdvanceMonths_SelectedIndexChanged);
             // 
-            // btnToggleSelectAll
-            // 
-            this.btnToggleSelectAll.Location = new System.Drawing.Point(466, 529);
-            this.btnToggleSelectAll.Name = "btnToggleSelectAll";
-            this.btnToggleSelectAll.Size = new System.Drawing.Size(112, 29);
-            this.btnToggleSelectAll.TabIndex = 65;
-            this.btnToggleSelectAll.Text = "Select All";
-            this.btnToggleSelectAll.UseVisualStyleBackColor = true;
-            this.btnToggleSelectAll.Click += new System.EventHandler(this.btnToggleSelectAll_Click);
-            // 
             // dtpPaymentDate
             // 
             this.dtpPaymentDate.Location = new System.Drawing.Point(240, 664);
@@ -411,7 +400,6 @@
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(1196, 829);
             this.Controls.Add(this.dtpPaymentDate);
-            this.Controls.Add(this.btnToggleSelectAll);
             this.Controls.Add(this.clbAdvanceMonths);
             this.Controls.Add(this.txtHomeownerIDDisplay);
             this.Controls.Add(this.btnSelectHomeowner);
@@ -487,7 +475,6 @@
         private System.Windows.Forms.Button btnSelectHomeowner;
         private System.Windows.Forms.TextBox txtHomeownerIDDisplay;
         private System.Windows.Forms.CheckedListBox clbAdvanceMonths;
-        private System.Windows.Forms.Button btnToggleSelectAll;
         private System.Windows.Forms.DateTimePicker dtpPaymentDate;
     }
 }

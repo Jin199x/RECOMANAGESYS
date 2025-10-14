@@ -110,8 +110,8 @@ namespace RECOMANAGESYS
             string currentFilter = cmbResidentFilter.SelectedItem?.ToString();
             int selectedHomeownerId = lastSelectedHomeownerId;
             bool? isActive = null;
-            if (currentFilter == "Active Residents") isActive = true;
-            else if (currentFilter == "Inactive Residents") isActive = false;
+            if (currentFilter == "Active Units") isActive = true;
+            else if (currentFilter == "Inactive Units") isActive = false;
 
             LoadResidents(isActive, txtSearch.Text.Trim());
 
@@ -142,7 +142,6 @@ namespace RECOMANAGESYS
 
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
-                // This query uses your original filtering logic.
                 string query = @"
         WITH UnitPaymentSummary AS (
             SELECT
@@ -371,9 +370,9 @@ namespace RECOMANAGESYS
         private void monthdues_Load(object sender, EventArgs e)
         {
             txtSearch.TextChanged += txtSearch_TextChanged;
-            cmbResidentFilter.Items.Add("All Residents");
-            cmbResidentFilter.Items.Add("Active Residents");
-            cmbResidentFilter.Items.Add("Inactive Residents");
+            cmbResidentFilter.Items.Add("All Units");
+            cmbResidentFilter.Items.Add("Active Units");
+            cmbResidentFilter.Items.Add("Inactive Units");
             cmbResidentFilter.SelectedIndex = 1;
             UpdateToggleSelectButton();
         }
