@@ -1,9 +1,11 @@
-﻿using System;
+﻿using Microsoft.Reporting.WinForms;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.Globalization;
+using System.Linq;
 using System.Windows.Forms;
-using Microsoft.Reporting.WinForms;
 using static RECOMANAGESYS.loginform;
 
 namespace RECOMANAGESYS
@@ -15,7 +17,7 @@ namespace RECOMANAGESYS
         private string ownerFullName;
         private string homeAddress;
         private List<Tuple<int, string, bool, string, string, int, int>> displayedUnits;
-
+        private bool _isUpdatingChecks = false;
         private const decimal BaseDueRate = 100;
 
         public frmPayment()
@@ -23,8 +25,6 @@ namespace RECOMANAGESYS
             InitializeComponent();
             this.AutoScaleMode = AutoScaleMode.Dpi;
             displayedUnits = new List<Tuple<int, string, bool, string, string, int, int>>();
-            this.dtpPaymentDate.ValueChanged += new EventHandler(this.dtpPaymentDate_ValueChanged);
-            this.dtpEndMonth.ValueChanged += new EventHandler(this.dtpEndMonth_ValueChanged);
         }
 
         private void frmPayment_Load(object sender, EventArgs e)
@@ -49,6 +49,10 @@ namespace RECOMANAGESYS
 
             this.cmbPaid.SelectedIndexChanged += new System.EventHandler(this.cmbPayment_HandleOther);
             this.cmbChange.SelectedIndexChanged += new System.EventHandler(this.cmbPayment_HandleOther);
+
+            this.dtpPaymentDate.ValueChanged += new System.EventHandler(this.dtpPaymentDate_ValueChanged);
+            this.clbAdvanceMonths.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.clbAdvanceMonths_ItemCheck);
+            this.btnToggleSelectAll.Click += new System.EventHandler(this.btnToggleSelectAll_Click);
         }
 
         private void btnSelectHomeowner_Click(object sender, EventArgs e)
@@ -58,7 +62,6 @@ namespace RECOMANAGESYS
                 if (selectForm.ShowDialog() == DialogResult.OK)
                 {
                     int selectedId = selectForm.SelectedHomeownerId;
-
                     txtHomeownerIDDisplay.Text = selectedId.ToString();
                     LoadHomeownerData(selectedId);
                 }
@@ -67,7 +70,6 @@ namespace RECOMANAGESYS
 
         private void LoadHomeownerData(int homeownerId)
         {
-            // Reset the entire form state
             lblResidentName.Text = "";
             lblResidentAddress.Text = "";
             lblUnitStatus.Text = "";
@@ -106,6 +108,7 @@ namespace RECOMANAGESYS
             }
             FilterAndDisplayUnits();
         }
+
         private void FilterAndDisplayUnits()
         {
             cmbUnits.Items.Clear();
@@ -122,25 +125,27 @@ namespace RECOMANAGESYS
                 string query;
                 if (payerType == "Owner")
                 {
-                    query = @"SELECT u.UnitID, u.UnitNumber, u.IsOccupied, u.Block, u.UnitType, u.TotalRooms, u.AvailableRooms
-                              FROM HomeownerUnits hu
-                              INNER JOIN TBL_Units u ON hu.UnitID = u.UnitID
-                              WHERE hu.ResidentID = @ownerResidentId AND hu.IsCurrent = 1";
+                    query = @"SELECT u.UnitID, u.UnitNumber, u.IsOccupied, u.Block, u.UnitType, u.TotalRooms, 
+                            (SELECT COUNT(*) FROM HomeownerUnits hu_c JOIN Residents r_c ON hu_c.ResidentID = r_c.ResidentID WHERE hu_c.UnitID = u.UnitID AND hu_c.IsCurrent = 1 AND r_c.IsActive = 1 AND r_c.ResidencyType != 'Owner') AS OccupantCount
+                      FROM HomeownerUnits hu
+                      INNER JOIN TBL_Units u ON hu.UnitID = u.UnitID
+                      WHERE hu.ResidentID = @ownerResidentId AND hu.IsCurrent = 1";
                 }
                 else
                 {
-                    query = @"SELECT u.UnitID, u.UnitNumber, u.IsOccupied, u.Block, u.UnitType, u.TotalRooms, u.AvailableRooms
-                              FROM TBL_Units u
-                              JOIN HomeownerUnits hu_owner ON u.UnitID = hu_owner.UnitID
-                              WHERE hu_owner.ResidentID = @ownerResidentId AND hu_owner.IsCurrent = 1
-                              AND EXISTS (
-                                  SELECT 1
-                                  FROM HomeownerUnits hu_other
-                                  JOIN Residents r_other ON hu_other.ResidentID = r_other.ResidentID
-                                  WHERE hu_other.UnitID = u.UnitID
-                                    AND r_other.ResidencyType = @payerType
-                                    AND r_other.IsActive = 1
-                              )";
+                    query = @"SELECT u.UnitID, u.UnitNumber, u.IsOccupied, u.Block, u.UnitType, u.TotalRooms,
+                            (SELECT COUNT(*) FROM HomeownerUnits hu_c JOIN Residents r_c ON hu_c.ResidentID = r_c.ResidentID WHERE hu_c.UnitID = u.UnitID AND hu_c.IsCurrent = 1 AND r_c.IsActive = 1 AND r_c.ResidencyType != 'Owner') AS OccupantCount
+                      FROM TBL_Units u
+                      JOIN HomeownerUnits hu_owner ON u.UnitID = hu_owner.UnitID
+                      WHERE hu_owner.ResidentID = @ownerResidentId AND hu_owner.IsCurrent = 1
+                      AND EXISTS (
+                          SELECT 1
+                          FROM HomeownerUnits hu_other
+                          JOIN Residents r_other ON hu_other.ResidentID = r_other.ResidentID
+                          WHERE hu_other.UnitID = u.UnitID
+                            AND r_other.ResidencyType = @payerType
+                            AND r_other.IsActive = 1
+                      )";
                 }
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -163,7 +168,7 @@ namespace RECOMANAGESYS
                                 reader["Block"].ToString(),
                                 reader["UnitType"].ToString(),
                                 reader["TotalRooms"] == DBNull.Value ? 0 : Convert.ToInt32(reader["TotalRooms"]),
-                                reader["AvailableRooms"] == DBNull.Value ? 0 : Convert.ToInt32(reader["AvailableRooms"])
+                                reader["OccupantCount"] == DBNull.Value ? 0 : Convert.ToInt32(reader["OccupantCount"])
                             ));
                             cmbUnits.Items.Add($"Unit {reader["UnitNumber"]} Block {reader["Block"]}");
                         }
@@ -193,36 +198,154 @@ namespace RECOMANAGESYS
             currentUnitId = selectedUnit.Item1;
             string unitNumber = selectedUnit.Item2;
             string block = selectedUnit.Item4;
-            string unitType = selectedUnit.Item5;
-            int totalRooms = selectedUnit.Item6;
-            int availableRooms = selectedUnit.Item7;
 
             lblResidentAddress.Text = $"Unit {unitNumber} Block {block}, {homeAddress}";
+            UpdateUnitStatusLabel();
 
-            if (unitType == "Apartment")
+            lblDueRate.Text = BaseDueRate.ToString("N2");
+            if (cmbResidency.SelectedIndex != 0)
             {
-                int occupiedRooms = totalRooms - availableRooms;
-                lblUnitStatus.Text = $"{occupiedRooms}/{totalRooms} Occupied Rooms";
-                lblUnitStatus.ForeColor = Color.Green;
+                cmbResidency.SelectedIndex = 0;
             }
             else
             {
-                lblUnitStatus.Text = "Occupied";
-                lblUnitStatus.ForeColor = Color.Green;
+                cmbResidency_SelectedIndexChanged(null, null);
             }
 
-            lblDueRate.Text = BaseDueRate.ToString("N2");
+            SetValidStartDate();
+        }
 
-            cmbResidency_SelectedIndexChanged(null, null); 
+        private void UpdateUnitStatusLabel()
+        {
+            if (cmbUnits.SelectedIndex == -1)
+            {
+                lblUnitStatus.Text = "";
+                return;
+            }
+
+            var selectedUnit = displayedUnits[cmbUnits.SelectedIndex];
+            string unitType = selectedUnit.Item5;
+            int totalRooms = selectedUnit.Item6;
+            int occupantCount = selectedUnit.Item7;
+            string residencyType = cmbResidency.SelectedItem.ToString();
+
+            if (unitType == "Apartment")
+            {
+                lblUnitStatus.Text = $"{occupantCount}/{totalRooms} Occupied Rooms";
+                lblUnitStatus.ForeColor = Color.Green;
+            }
+            else 
+            {
+                if (residencyType == "Owner")
+                {
+                    lblUnitStatus.Text = "Occupied";
+                    lblUnitStatus.ForeColor = Color.Green;
+                }
+                else 
+                {
+                    lblUnitStatus.Text = occupantCount > 0 ? "Occupied" : "Vacant";
+                    lblUnitStatus.ForeColor = occupantCount > 0 ? Color.Green : Color.Red;
+                }
+            }
+        }
+
+        private void SetValidStartDate()
+        {
+            if (currentOwnerResidentId <= 0 || currentUnitId <= 0) return;
+
+            DateTime lastPaidMonth = DateTime.MinValue;
+            DateTime nextDueMonth;
+
+            using (SqlConnection conn = DatabaseHelper.GetConnection())
+            {
+                conn.Open();
+                string query = @"SELECT TOP 1 MonthCovered 
+                         FROM MonthlyDues 
+                         WHERE ResidentID = @residentId AND UnitID = @unitId 
+                         ORDER BY CONVERT(DATETIME, '01 ' + MonthCovered) DESC";
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@residentId", currentOwnerResidentId);
+                    cmd.Parameters.AddWithValue("@unitId", currentUnitId);
+                    var result = cmd.ExecuteScalar();
+                    if (result != null && result != DBNull.Value)
+                    {
+                        lastPaidMonth = DateTime.ParseExact(result.ToString(), "MMMM yyyy", CultureInfo.InvariantCulture);
+                    }
+                }
+            }
+
+            if (lastPaidMonth != DateTime.MinValue)
+            {
+                nextDueMonth = lastPaidMonth.AddMonths(1);
+            }
+            else
+            {
+                nextDueMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            }
+
+            clbAdvanceMonths.Items.Clear();
+            for (int i = 0; i < 12; i++)
+            {
+                clbAdvanceMonths.Items.Add(nextDueMonth.AddMonths(i).ToString("MMMM yyyy"));
+            }
             UpdateAmountPaidLabel();
+            UpdateMonthCoveredLabel();
+            UpdateToggleSelectAllButtonText();
+        }
+
+        private void dtpPaymentDate_ValueChanged(object sender, EventArgs e)
+        {
+            PopulateAdvanceMonths();
+        }
+
+        private void PopulateAdvanceMonths()
+        {
+            clbAdvanceMonths.Items.Clear();
+            DateTime startDate = dtpPaymentDate.Value;
+
+            for (int i = 0; i < 12; i++)
+            {
+                clbAdvanceMonths.Items.Add(startDate.AddMonths(i).ToString("MMMM yyyy"));
+            }
+
+            UpdateAmountPaidLabel();
+            UpdateMonthCoveredLabel();
+            UpdateToggleSelectAllButtonText();
+        }
+        private void clbAdvanceMonths_ItemCheck(object sender, ItemCheckEventArgs e)
+        {
+            if (_isUpdatingChecks) return;
+            if (e.NewValue == CheckState.Checked)
+            {
+                if (e.Index > 0 && !clbAdvanceMonths.GetItemChecked(e.Index - 1))
+                {
+                    MessageBox.Show("Please select the months in chronological order.", "Invalid Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    e.NewValue = e.CurrentValue;
+                    return;
+                }
+            }
+            else if (e.NewValue == CheckState.Unchecked)
+            {
+                if (e.Index < clbAdvanceMonths.Items.Count - 1 && clbAdvanceMonths.GetItemChecked(e.Index + 1))
+                {
+                    MessageBox.Show("Please deselect later months first before deselecting this one.", "Invalid Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    e.NewValue = e.CurrentValue;
+                    return;
+                }
+            }
+
+            this.BeginInvoke((Action)(() =>
+            {
+                UpdateAmountPaidLabel();
+                UpdateMonthCoveredLabel();
+                UpdateToggleSelectAllButtonText();
+            }));
         }
 
         private void cmbResidency_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (sender != null)
-            {
-                FilterAndDisplayUnits();
-            }
+            UpdateUnitStatusLabel();
 
             string selection = cmbResidency.SelectedItem.ToString();
             if (selection == "Owner")
@@ -291,9 +414,14 @@ namespace RECOMANAGESYS
                 MessageBox.Show("Please select an owner and a unit first.", "Missing Information", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            if (clbAdvanceMonths.CheckedItems.Count == 0)
+            {
+                MessageBox.Show("No payment to save. Please select at least one month.", "Selection Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
             if (!decimal.TryParse(lblAmountPaid.Text, out decimal totalAmount) || totalAmount <= 0)
             {
-                MessageBox.Show("No payment to save. Please select a valid month range.", "Invalid Amount", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("No payment to save. Please select a valid month.", "Invalid Amount", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             string payerType = cmbResidency.SelectedItem.ToString();
@@ -307,24 +435,17 @@ namespace RECOMANAGESYS
                 MessageBox.Show("Please enter a valid payment amount.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-
             if (amountPaid < totalAmount)
             {
                 MessageBox.Show(
                     $"The payment amount (₱{amountPaid:N2}) is less than the total amount due (₱{totalAmount:N2}).\n\nPlease correct the payment amount or the months covered.",
-                    "Underpayment Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                    "Underpayment Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
+            decimal actualChangeGiven;
+            decimal.TryParse(cmbChange.Text, out actualChangeGiven);
 
-            decimal actualChangeGiven = 0;
-            if (cmbChange.SelectedItem?.ToString() != "(None)")
-            {
-                decimal.TryParse(cmbChange.Text, out actualChangeGiven);
-            }
             decimal expectedChange = amountPaid - totalAmount;
-
             if (Math.Abs(expectedChange - actualChangeGiven) > 0.01m)
             {
                 string message = $"The change amount appears to be incorrect.\n\n" +
@@ -351,26 +472,21 @@ namespace RECOMANAGESYS
                 if (!cmbRemarks.Items.Contains(finalRemark)) { cmbRemarks.Items.Add(finalRemark); }
                 cmbRemarks.SelectedItem = finalRemark;
             }
-
             string payerName = null;
             if (payerType != "Owner")
             {
                 payerName = cmbNames.SelectedItem.ToString();
             }
 
-            DateTime startMonth = new DateTime(dtpPaymentDate.Value.Year, dtpPaymentDate.Value.Month, 1);
-            DateTime endMonth = new DateTime(dtpEndMonth.Value.Year, dtpEndMonth.Value.Month, 1);
-            int monthsToCover = ((endMonth.Year - startMonth.Year) * 12) + endMonth.Month - startMonth.Month + 1;
             List<string> duplicateMonths = new List<string>();
             int monthsSaved = 0;
 
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
                 conn.Open();
-                for (int i = 0; i < monthsToCover; i++)
+                foreach (var item in clbAdvanceMonths.CheckedItems)
                 {
-                    DateTime month = startMonth.AddMonths(i);
-                    string monthCovered = month.ToString("MMMM yyyy");
+                    string monthCovered = item.ToString();
                     string checkQuery = "SELECT COUNT(*) FROM MonthlyDues WHERE ResidentID=@residentId AND UnitID=@unitId AND MonthCovered=@monthCovered";
                     using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
                     {
@@ -379,7 +495,6 @@ namespace RECOMANAGESYS
                         checkCmd.Parameters.AddWithValue("@monthCovered", monthCovered);
                         if ((int)checkCmd.ExecuteScalar() > 0) { duplicateMonths.Add(monthCovered); continue; }
                     }
-
                     string insertQuery = @"INSERT INTO MonthlyDues (ResidentID, UnitID, PaymentDate, AmountPaid, DueRate, MonthCovered, ProcessedByUserID, Remarks, PaidByResidencyType, PaidByResidentName)
                                            VALUES (@residentId, @unitId, @paymentDate, @amountPaid, @dueRate, @monthCovered, @processedByUserID, @remarks, @paidByResidencyType, @paidByResidentName)";
                     using (SqlCommand cmd = new SqlCommand(insertQuery, conn))
@@ -399,7 +514,6 @@ namespace RECOMANAGESYS
                     }
                 }
             }
-
             string finalMessage = "";
             if (monthsSaved > 0)
             {
@@ -422,7 +536,7 @@ namespace RECOMANAGESYS
                 var reportViewer = new ReportViewer { Dock = DockStyle.Fill, ProcessingMode = ProcessingMode.Local };
                 receipt.Controls.Add(reportViewer);
                 reportViewer.LocalReport.ReportEmbeddedResource = "RECOMANAGESYS.PaymentReceipt.rdlc";
-                string changeAmountForReport = cmbChange.SelectedItem?.ToString() == "(None)" ? "" : cmbChange.Text;
+                string changeAmountForReport = cmbChange.Text;
 
                 var parameters = new ReportParameter[]
                 {
@@ -445,24 +559,70 @@ namespace RECOMANAGESYS
 
         private void UpdateAmountPaidLabel()
         {
-            DateTime startMonth = new DateTime(dtpPaymentDate.Value.Year, dtpPaymentDate.Value.Month, 1);
-            DateTime endMonth = new DateTime(dtpEndMonth.Value.Year, dtpEndMonth.Value.Month, 1);
-            if (endMonth < startMonth) { lblAmountPaid.Text = "0.00"; return; }
-            int monthsToPay = ((endMonth.Year - startMonth.Year) * 12) + endMonth.Month - startMonth.Month + 1;
-            lblAmountPaid.Text = (monthsToPay * BaseDueRate).ToString("F2");
+            lblAmountPaid.Text = (clbAdvanceMonths.CheckedItems.Count * BaseDueRate).ToString("F2");
         }
 
         private void UpdateMonthCoveredLabel()
         {
-            DateTime startMonth = new DateTime(dtpPaymentDate.Value.Year, dtpPaymentDate.Value.Month, 1);
-            DateTime endMonth = new DateTime(dtpEndMonth.Value.Year, dtpEndMonth.Value.Month, 1);
-            if (endMonth < startMonth) lblMonthCovered.Text = "Invalid range";
-            else if (startMonth == endMonth) lblMonthCovered.Text = startMonth.ToString("MMMM yyyy");
-            else lblMonthCovered.Text = $"{startMonth:MMMM yyyy} - {endMonth:MMMM yyyy}";
+            if (clbAdvanceMonths.CheckedItems.Count == 0)
+            {
+                lblMonthCovered.Text = "No months selected";
+            }
+            else if (clbAdvanceMonths.CheckedItems.Count == 1)
+            {
+                lblMonthCovered.Text = clbAdvanceMonths.CheckedItems[0].ToString();
+            }
+            else
+            {
+                string firstMonth = clbAdvanceMonths.CheckedItems[0].ToString();
+                string lastMonth = clbAdvanceMonths.CheckedItems[clbAdvanceMonths.CheckedItems.Count - 1].ToString();
+                lblMonthCovered.Text = $"{firstMonth} - {lastMonth}";
+            }
+        }
+        private void btnToggleSelectAll_Click(object sender, EventArgs e)
+        {
+            bool allAreChecked = (clbAdvanceMonths.CheckedItems.Count == clbAdvanceMonths.Items.Count);
+            bool shouldBeChecked = !allAreChecked;
+
+            try
+            {
+                _isUpdatingChecks = true;
+
+                for (int i = 0; i < clbAdvanceMonths.Items.Count; i++)
+                {
+                    clbAdvanceMonths.SetItemChecked(i, shouldBeChecked);
+                }
+            }
+            finally
+            {
+                _isUpdatingChecks = false;
+            }
+
+            UpdateAmountPaidLabel();
+            UpdateMonthCoveredLabel();
+            UpdateToggleSelectAllButtonText();
+        }
+        private void UpdateToggleSelectAllButtonText()
+        {
+            if (clbAdvanceMonths.Items.Count == 0)
+            {
+                btnToggleSelectAll.Enabled = false;
+                btnToggleSelectAll.Text = "Select All";
+            }
+            else
+            {
+                btnToggleSelectAll.Enabled = true;
+                if (clbAdvanceMonths.CheckedItems.Count == clbAdvanceMonths.Items.Count)
+                {
+                    btnToggleSelectAll.Text = "Deselect All";
+                }
+                else
+                {
+                    btnToggleSelectAll.Text = "Select All";
+                }
+            }
         }
 
-        private void dtpPaymentDate_ValueChanged(object sender, EventArgs e) { UpdateMonthCoveredLabel(); UpdateAmountPaidLabel(); }
-        private void dtpEndMonth_ValueChanged(object sender, EventArgs e) { UpdateMonthCoveredLabel(); UpdateAmountPaidLabel(); }
         private void btnCancel_Click(object sender, EventArgs e) { this.Close(); }
 
         private void cmbRemarks_SelectedIndexChanged(object sender, EventArgs e)
@@ -490,11 +650,10 @@ namespace RECOMANAGESYS
         private void PopulateChangeComboBox(ComboBox cmb)
         {
             cmb.Items.Clear();
-            cmb.Items.Add("(None)");
             cmb.Items.Add("0.00");
             for (int i = 100; i <= 500; i += 100) { cmb.Items.Add(i.ToString("F2")); }
             cmb.Items.Add("Other...");
-            cmb.SelectedIndex = 1;
+            cmb.SelectedIndex = 0; 
         }
 
         private void cmbPayment_HandleOther(object sender, EventArgs e)
@@ -523,8 +682,8 @@ namespace RECOMANAGESYS
                 }
             }
         }
-            
-            private void lblResidentName_TextChanged(object sender, EventArgs e)
+
+        private void lblResidentName_TextChanged(object sender, EventArgs e)
         {
             if (lblResidentName.Text == "<- Select a name")
             {
@@ -534,9 +693,7 @@ namespace RECOMANAGESYS
             {
                 lblResidentName.ForeColor = SystemColors.ControlText;
             }
-
         }
+        private void clbAdvanceMonths_SelectedIndexChanged(object sender, EventArgs e) { }
     }
- }
-
-
+}

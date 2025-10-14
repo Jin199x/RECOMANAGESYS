@@ -19,7 +19,6 @@ namespace RECOMANAGESYS
         private decimal dueRate = 100;
         private bool _isUpdatingChecks = false;
 
-        // <<< ADD THIS FIELD
         private int _initialHomeownerId = -1;
 
         public UpdateMonthlyDues()
@@ -27,7 +26,6 @@ namespace RECOMANAGESYS
             InitializeComponent();
             this.AutoScaleMode = AutoScaleMode.Dpi;
             displayedUnits = new List<Tuple<int, string, string, string>>();
-            // Leave the event handlers here
             this.Load += UpdateMonthlyDues_Load;
             btnSelectHomeowner.Click += btnSelectHomeowner_Click;
             cmbResidency.SelectedIndexChanged += cmbResidency_SelectedIndexChanged;
@@ -601,6 +599,11 @@ namespace RECOMANAGESYS
                     btnToggleSelectAll.Text = "Select All";
                 }
             }
+        }
+
+        private void clbMissedMonths_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

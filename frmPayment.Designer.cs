@@ -40,7 +40,6 @@
             this.lblUnitStatus = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
-            this.dtpPaymentDate = new System.Windows.Forms.DateTimePicker();
             this.label5 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
@@ -48,7 +47,6 @@
             this.lblDueRate = new System.Windows.Forms.Label();
             this.lblMonthCovered = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
-            this.dtpEndMonth = new System.Windows.Forms.DateTimePicker();
             this.lblAmountPaid = new System.Windows.Forms.Label();
             this.label10 = new System.Windows.Forms.Label();
             this.label11 = new System.Windows.Forms.Label();
@@ -62,6 +60,9 @@
             this.lblNames = new System.Windows.Forms.Label();
             this.btnSelectHomeowner = new System.Windows.Forms.Button();
             this.txtHomeownerIDDisplay = new System.Windows.Forms.TextBox();
+            this.clbAdvanceMonths = new System.Windows.Forms.CheckedListBox();
+            this.btnToggleSelectAll = new System.Windows.Forms.Button();
+            this.dtpPaymentDate = new System.Windows.Forms.DateTimePicker();
             this.SuspendLayout();
             // 
             // btnSave
@@ -186,23 +187,15 @@
             this.label4.TabIndex = 27;
             this.label4.Text = "Resident Address:";
             // 
-            // dtpPaymentDate
-            // 
-            this.dtpPaymentDate.Location = new System.Drawing.Point(263, 470);
-            this.dtpPaymentDate.Name = "dtpPaymentDate";
-            this.dtpPaymentDate.Size = new System.Drawing.Size(200, 26);
-            this.dtpPaymentDate.TabIndex = 28;
-            this.dtpPaymentDate.ValueChanged += new System.EventHandler(this.dtpPaymentDate_ValueChanged);
-            // 
             // label5
             // 
             this.label5.AutoSize = true;
             this.label5.BackColor = System.Drawing.Color.Transparent;
-            this.label5.Location = new System.Drawing.Point(117, 470);
+            this.label5.Location = new System.Drawing.Point(117, 664);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(111, 20);
+            this.label5.Size = new System.Drawing.Size(114, 20);
             this.label5.TabIndex = 29;
-            this.label5.Text = "Payment date:";
+            this.label5.Text = "Payment Date:";
             // 
             // label6
             // 
@@ -258,18 +251,11 @@
             // 
             this.label9.AutoSize = true;
             this.label9.BackColor = System.Drawing.Color.Transparent;
-            this.label9.Location = new System.Drawing.Point(117, 505);
+            this.label9.Location = new System.Drawing.Point(117, 529);
             this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(87, 20);
+            this.label9.Size = new System.Drawing.Size(88, 20);
             this.label9.TabIndex = 36;
-            this.label9.Text = "End Month";
-            // 
-            // dtpEndMonth
-            // 
-            this.dtpEndMonth.Location = new System.Drawing.Point(263, 505);
-            this.dtpEndMonth.Name = "dtpEndMonth";
-            this.dtpEndMonth.Size = new System.Drawing.Size(200, 26);
-            this.dtpEndMonth.TabIndex = 37;
+            this.label9.Text = "Pay Month:";
             // 
             // lblAmountPaid
             // 
@@ -391,6 +377,32 @@
             this.txtHomeownerIDDisplay.TabIndex = 51;
             this.txtHomeownerIDDisplay.TabStop = false;
             // 
+            // clbAdvanceMonths
+            // 
+            this.clbAdvanceMonths.FormattingEnabled = true;
+            this.clbAdvanceMonths.Location = new System.Drawing.Point(240, 529);
+            this.clbAdvanceMonths.Name = "clbAdvanceMonths";
+            this.clbAdvanceMonths.Size = new System.Drawing.Size(220, 119);
+            this.clbAdvanceMonths.TabIndex = 52;
+            this.clbAdvanceMonths.SelectedIndexChanged += new System.EventHandler(this.clbAdvanceMonths_SelectedIndexChanged);
+            // 
+            // btnToggleSelectAll
+            // 
+            this.btnToggleSelectAll.Location = new System.Drawing.Point(466, 529);
+            this.btnToggleSelectAll.Name = "btnToggleSelectAll";
+            this.btnToggleSelectAll.Size = new System.Drawing.Size(112, 29);
+            this.btnToggleSelectAll.TabIndex = 65;
+            this.btnToggleSelectAll.Text = "Select All";
+            this.btnToggleSelectAll.UseVisualStyleBackColor = true;
+            this.btnToggleSelectAll.Click += new System.EventHandler(this.btnToggleSelectAll_Click);
+            // 
+            // dtpPaymentDate
+            // 
+            this.dtpPaymentDate.Location = new System.Drawing.Point(240, 664);
+            this.dtpPaymentDate.Name = "dtpPaymentDate";
+            this.dtpPaymentDate.Size = new System.Drawing.Size(220, 26);
+            this.dtpPaymentDate.TabIndex = 66;
+            // 
             // frmPayment
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -398,6 +410,9 @@
             this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(1196, 829);
+            this.Controls.Add(this.dtpPaymentDate);
+            this.Controls.Add(this.btnToggleSelectAll);
+            this.Controls.Add(this.clbAdvanceMonths);
             this.Controls.Add(this.txtHomeownerIDDisplay);
             this.Controls.Add(this.btnSelectHomeowner);
             this.Controls.Add(this.lblNames);
@@ -411,7 +426,6 @@
             this.Controls.Add(this.label11);
             this.Controls.Add(this.label10);
             this.Controls.Add(this.lblAmountPaid);
-            this.Controls.Add(this.dtpEndMonth);
             this.Controls.Add(this.label9);
             this.Controls.Add(this.lblMonthCovered);
             this.Controls.Add(this.lblDueRate);
@@ -419,7 +433,6 @@
             this.Controls.Add(this.label7);
             this.Controls.Add(this.label6);
             this.Controls.Add(this.label5);
-            this.Controls.Add(this.dtpPaymentDate);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.lblUnitStatus);
@@ -453,7 +466,6 @@
         private System.Windows.Forms.Label lblUnitStatus;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.DateTimePicker dtpPaymentDate;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.Label label7;
@@ -461,7 +473,6 @@
         private System.Windows.Forms.Label lblDueRate;
         private System.Windows.Forms.Label lblMonthCovered;
         private System.Windows.Forms.Label label9;
-        private System.Windows.Forms.DateTimePicker dtpEndMonth;
         private System.Windows.Forms.Label lblAmountPaid;
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.Label label11;
@@ -475,5 +486,8 @@
         private System.Windows.Forms.Label lblNames;
         private System.Windows.Forms.Button btnSelectHomeowner;
         private System.Windows.Forms.TextBox txtHomeownerIDDisplay;
+        private System.Windows.Forms.CheckedListBox clbAdvanceMonths;
+        private System.Windows.Forms.Button btnToggleSelectAll;
+        private System.Windows.Forms.DateTimePicker dtpPaymentDate;
     }
 }

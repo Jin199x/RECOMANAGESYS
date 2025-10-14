@@ -177,6 +177,7 @@
             this.clbMissedMonths.Name = "clbMissedMonths";
             this.clbMissedMonths.Size = new System.Drawing.Size(229, 142);
             this.clbMissedMonths.TabIndex = 18;
+            this.clbMissedMonths.SelectedIndexChanged += new System.EventHandler(this.clbMissedMonths_SelectedIndexChanged);
             // 
             // label1
             // 
