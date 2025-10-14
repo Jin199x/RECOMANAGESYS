@@ -54,7 +54,7 @@ namespace RECOMANAGESYS
             lvResidents.Columns.Add("Owner's Full Name", 200);
             lvResidents.Columns.Add("Address", 350);
             lvResidents.Columns.Add("Total Paid", 100);
-            lvResidents.Columns.Add("Total Missed", 100);
+           // lvResidents.Columns.Add("Total Missed", 100);
             lvResidents.Columns.Add("Unit Type", 120);
             lvResidents.Columns.Add("Status", 100);
 
@@ -142,56 +142,55 @@ namespace RECOMANAGESYS
 
             using (SqlConnection conn = DatabaseHelper.GetConnection())
             {
-                // The only change is adding '+ 1' to the DATEDIFF calculation
+                // This query uses your original filtering logic.
                 string query = @"
-            WITH UnitPaymentSummary AS (
-                SELECT
-                    UnitID,
-                    SUM(AmountPaid) AS TotalPaid,
-                    MIN(CONVERT(DATETIME, '01 ' + MonthCovered)) AS FirstPaymentDate,
-                    COUNT(DueId) AS PaidMonthsCount
-                FROM MonthlyDues
-                GROUP BY UnitID
-            )
+        WITH UnitPaymentSummary AS (
             SELECT
-                u.UnitID, u.UnitNumber, u.Block, u.UnitType,
-                r_owner.HomeAddress,
-                ups.TotalPaid,
-                -- <<< THIS IS THE FIX: Added + 1 to make the count inclusive
-                (DATEDIFF(
-                    month, 
-                    ISNULL(hu_owner.DateOfOwnership, ups.FirstPaymentDate), 
-                    GETDATE()
-                ) + 1) - ISNULL(ups.PaidMonthsCount, 0) AS TotalMissed,
-                r_owner.ResidentID,
-                r_owner.HomeownerID,
-                COALESCE(r_owner.FirstName + ' ' + r_owner.MiddleName + ' ' + r_owner.LastName, 'Currently no owner') AS FullName,
-                CASE 
-                    WHEN r_owner.ResidentID IS NOT NULL AND r_owner.IsActive = 1 THEN 1 
-                    ELSE 0 
-                END AS EffectiveIsActive
-            FROM TBL_Units u
-            INNER JOIN UnitPaymentSummary ups ON u.UnitID = ups.UnitID
-            LEFT JOIN HomeownerUnits hu_owner ON u.UnitID = hu_owner.UnitID AND hu_owner.IsCurrent = 1
-            LEFT JOIN Residents r_owner ON hu_owner.ResidentID = r_owner.ResidentID AND r_owner.ResidencyType = 'Owner'
-            WHERE
-                (
-                    (@isActive IS NULL AND (
-                        (r_owner.ResidentID IS NOT NULL AND r_owner.IsActive = 1)
-                        OR 
-                        (NOT EXISTS (
-                            SELECT 1 FROM HomeownerUnits hu_check JOIN Residents r_check ON hu_check.ResidentID = r_check.ResidentID
-                            WHERE hu_check.UnitID = u.UnitID AND hu_check.IsCurrent = 1 AND r_check.IsActive = 1
-                        ))
-                    )) OR
-                    (@isActive = 1 AND r_owner.ResidentID IS NOT NULL AND r_owner.IsActive = 1) OR
-                    (@isActive = 0 AND NOT EXISTS (
+                UnitID,
+                SUM(AmountPaid) AS TotalPaid,
+                MIN(CONVERT(DATETIME, '01 ' + MonthCovered)) AS FirstPaymentDate,
+                COUNT(DISTINCT MonthCovered) AS PaidMonthsCount 
+            FROM MonthlyDues
+            GROUP BY UnitID
+        )
+        SELECT
+            u.UnitID, u.UnitNumber, u.Block, u.UnitType,
+            r_owner.HomeAddress,
+            ISNULL(ups.TotalPaid, 0) AS TotalPaid,
+            CASE
+                WHEN COALESCE(hu_owner.DateOfOwnership, ups.FirstPaymentDate) IS NOT NULL
+                THEN (DATEDIFF(month, COALESCE(hu_owner.DateOfOwnership, ups.FirstPaymentDate), GETDATE()) + 1) - ISNULL(ups.PaidMonthsCount, 0)
+                ELSE 0
+            END AS TotalMissed,
+            r_owner.ResidentID,
+            r_owner.HomeownerID,
+            COALESCE(r_owner.FirstName + ' ' + r_owner.MiddleName + ' ' + r_owner.LastName, 'Currently no owner') AS FullName,
+            CASE 
+                WHEN r_owner.ResidentID IS NOT NULL AND r_owner.IsActive = 1 THEN 1 
+                ELSE 0 
+            END AS EffectiveIsActive
+        FROM TBL_Units u
+        LEFT JOIN UnitPaymentSummary ups ON u.UnitID = ups.UnitID
+        LEFT JOIN HomeownerUnits hu_owner ON u.UnitID = hu_owner.UnitID AND hu_owner.IsCurrent = 1
+        LEFT JOIN Residents r_owner ON hu_owner.ResidentID = r_owner.ResidentID AND r_owner.ResidencyType = 'Owner'
+        WHERE
+            (
+                (@isActive IS NULL AND (
+                    (r_owner.ResidentID IS NOT NULL AND r_owner.IsActive = 1)
+                    OR 
+                    (NOT EXISTS (
                         SELECT 1 FROM HomeownerUnits hu_check JOIN Residents r_check ON hu_check.ResidentID = r_check.ResidentID
                         WHERE hu_check.UnitID = u.UnitID AND hu_check.IsCurrent = 1 AND r_check.IsActive = 1
                     ))
-                )
-                AND (@keyword IS NULL OR (r_owner.FirstName LIKE @keyword OR r_owner.LastName LIKE @keyword OR r_owner.HomeownerID LIKE @keyword OR u.UnitNumber LIKE @keyword OR u.Block LIKE @keyword))
-            ORDER BY u.Block, u.UnitNumber";
+                )) OR
+                (@isActive = 1 AND r_owner.ResidentID IS NOT NULL AND r_owner.IsActive = 1) OR
+                (@isActive = 0 AND NOT EXISTS (
+                    SELECT 1 FROM HomeownerUnits hu_check JOIN Residents r_check ON hu_check.ResidentID = r_check.ResidentID
+                    WHERE hu_check.UnitID = u.UnitID AND hu_check.IsCurrent = 1 AND r_check.IsActive = 1
+                ))
+            )
+            AND (@keyword IS NULL OR (r_owner.FirstName LIKE @keyword OR r_owner.LastName LIKE @keyword OR r_owner.HomeownerID LIKE @keyword OR u.UnitNumber LIKE @keyword OR u.Block LIKE @keyword))
+        ORDER BY u.Block, u.UnitNumber";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -206,7 +205,6 @@ namespace RECOMANAGESYS
                             int homeownerId = reader["HomeownerID"] == DBNull.Value ? 0 : Convert.ToInt32(reader["HomeownerID"]);
                             int residentId = reader["ResidentID"] == DBNull.Value ? 0 : Convert.ToInt32(reader["ResidentID"]);
                             int unitId = Convert.ToInt32(reader["UnitID"]);
-
                             string fullName = reader["FullName"].ToString();
                             bool effectiveStatus = Convert.ToBoolean(reader["EffectiveIsActive"]);
                             string unitNumber = reader["UnitNumber"].ToString();
@@ -216,25 +214,19 @@ namespace RECOMANAGESYS
                             int totalMissed = Convert.ToInt32(reader["TotalMissed"]);
 
                             string residentHomeAddress = reader["HomeAddress"] == DBNull.Value ? "" : reader["HomeAddress"].ToString();
-                            string formattedAddress;
-                            if (string.IsNullOrWhiteSpace(residentHomeAddress))
-                            {
-                                formattedAddress = $"Unit {unitNumber} Block {block}";
-                            }
-                            else
-                            {
-                                formattedAddress = $"Unit {unitNumber} Block {block}, {residentHomeAddress}";
-                            }
+                            string formattedAddress = string.IsNullOrWhiteSpace(residentHomeAddress)
+                                ? $"Unit {unitNumber} Block {block}"
+                                : $"Unit {unitNumber} Block {block}, {residentHomeAddress}";
 
                             homeownerToResidentIdMap[homeownerId] = residentId;
 
-                            ListViewItem item = new ListViewItem(homeownerId == 0 ? "N/A" : homeownerId.ToString());
-                            item.SubItems.Add(fullName);
-                            item.SubItems.Add(formattedAddress);
-                            item.SubItems.Add(totalPaid.ToString("F2"));
-                            item.SubItems.Add(Math.Max(0, totalMissed).ToString());
-                            item.SubItems.Add(unitType);
-                            item.SubItems.Add(effectiveStatus ? "Active" : "Inactive");
+                            ListViewItem item = new ListViewItem(homeownerId == 0 ? "N/A" : homeownerId.ToString()); 
+                            item.SubItems.Add(fullName);                                                            
+                            item.SubItems.Add(formattedAddress);                                                 
+                            item.SubItems.Add(totalPaid.ToString("F2"));                                          
+                            //item.SubItems.Add(Math.Max(0, totalMissed) > 0 ? Math.Max(0, totalMissed).ToString() : "");
+                            item.SubItems.Add(unitType);                                                          
+                            item.SubItems.Add(effectiveStatus ? "Active" : "Inactive");                           
 
                             item.Tag = new { UnitId = unitId, UnitNumber = unitNumber, ResidentId = residentId };
 
@@ -257,7 +249,7 @@ namespace RECOMANAGESYS
             int unitId = tagData.UnitId;
             int.TryParse(selected.SubItems[0].Text, out int homeownerId);
 
-            lastSelectedHomeownerId = homeownerId; 
+            lastSelectedHomeownerId = homeownerId;
             lastSelectedUnitId = unitId;
             LoadMonthlyDues(residentId, unitId);
         }
@@ -342,7 +334,7 @@ namespace RECOMANAGESYS
             HashSet<string> paidMonths = new HashSet<string>();
             foreach (var p in payments)
             {
-                string paidByDisplay = p.PayerType; 
+                string paidByDisplay = p.PayerType;
                 if (!string.IsNullOrWhiteSpace(p.PayerName) && p.PayerName != "N/A")
                 {
                     paidByDisplay += $" ({p.PayerName})";
