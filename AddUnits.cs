@@ -158,11 +158,11 @@ namespace RECOMANAGESYS
                     {
                         conn.Open();
                         string query = @"
-                            SELECT u.UserID, u.Username, r.RoleName 
-                            FROM Users u 
-                            INNER JOIN TBL_Roles r ON u.RoleID = r.RoleID 
-                            WHERE u.IsActive = 1 
-                            ORDER BY r.RoleName, u.Username";
+                    SELECT u.UserID, u.Username, r.RoleName 
+                    FROM Users u 
+                    INNER JOIN TBL_Roles r ON u.RoleID = r.RoleID 
+                    WHERE u.IsActive = 1 AND r.RoleName <> 'developer'  
+                    ORDER BY r.RoleName, u.Username";
 
                         SqlCommand cmd = new SqlCommand(query, conn);
 
