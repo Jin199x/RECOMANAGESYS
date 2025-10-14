@@ -11,7 +11,6 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-// Make sure you have this using statement for the loginform static class
 using static RECOMANAGESYS.loginform;
 
 
@@ -95,73 +94,6 @@ namespace RECOMANAGESYS
                                  MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
-
-        // --- YOUR OLD METHOD (Commented out for reference) ---
-        /*
-        private void LoadRolesIntoComboBox()
-        {
-            try
-            {
-                using (SqlConnection conn = DatabaseHelper.GetConnection())
-                {
-                    conn.Open();
-                    string query = "SELECT RoleId, RoleName FROM TBL_Roles ORDER BY RoleName";
-
-                    using (SqlDataAdapter da = new SqlDataAdapter(query, conn))
-                    {
-                        DataTable dt = new DataTable();
-                        da.Fill(dt);
-
-                        // Hide Developer role if current user is not Developer
-                        if (!loginform.CurrentUser.Role.Equals("Developer", StringComparison.OrdinalIgnoreCase))
-                        {
-                            DataRow[] devRows = dt.Select("RoleName = 'Developer'");
-                            foreach (DataRow dr in devRows)
-                                dt.Rows.Remove(dr);
-                        }
-
-                        // Hide President if already exists
-                        string checkPresidentQuery = "SELECT COUNT(*) FROM Users U INNER JOIN TBL_Roles R ON U.RoleId = R.RoleId WHERE R.RoleName = 'President' AND U.IsActive = 1";
-                        using (SqlCommand cmd = new SqlCommand(checkPresidentQuery, conn))
-                        {
-                            int presidentCount = Convert.ToInt32(cmd.ExecuteScalar());
-                            if (presidentCount > 0)
-                            {
-                                DataRow[] presRows = dt.Select("RoleName = 'President'");
-                                foreach (DataRow dr in presRows)
-                                    dt.Rows.Remove(dr);
-                            }
-                        }
-
-                        // Hide Vice President if already exists
-                        string checkVPQuery = "SELECT COUNT(*) FROM Users U INNER JOIN TBL_Roles R ON U.RoleId = R.RoleId WHERE R.RoleName = 'Vice President' AND U.IsActive = 1";
-                        using (SqlCommand cmd = new SqlCommand(checkVPQuery, conn))
-                        {
-                            int vpCount = Convert.ToInt32(cmd.ExecuteScalar());
-                            if (vpCount > 0)
-                            {
-                                DataRow[] vpRows = dt.Select("RoleName = 'Vice President'");
-                                foreach (DataRow dr in vpRows)
-                                    dt.Rows.Remove(dr);
-                            }
-                        }
-
-                        cmbRole.DataSource = dt;
-                        cmbRole.DisplayMember = "RoleName";
-                        cmbRole.ValueMember = "RoleId";
-                        cmbRole.SelectedIndex = -1; // no preselection
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading roles: {ex.Message}", "Error",
-                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-        */
-
 
         private void btnregister_Click(object sender, EventArgs e)
         {
