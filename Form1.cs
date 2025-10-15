@@ -300,5 +300,9 @@ namespace RECOMANAGESYS
             }
         }
 
+        private void button1_Click(object sender, EventArgs e) //btnExit
+        {
+            Application.Exit();
+        }
     }
 }

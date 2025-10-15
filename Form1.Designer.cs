@@ -37,6 +37,7 @@
             this.btnlogin = new System.Windows.Forms.Button();
             this.hide = new System.Windows.Forms.Button();
             this.unhide = new System.Windows.Forms.Button();
+            this.btnExit = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -142,6 +143,18 @@
             this.unhide.UseVisualStyleBackColor = true;
             this.unhide.Click += new System.EventHandler(this.unhide_Click);
             // 
+            // btnExit
+            // 
+            this.btnExit.BackColor = System.Drawing.Color.Red;
+            this.btnExit.ForeColor = System.Drawing.Color.White;
+            this.btnExit.Location = new System.Drawing.Point(1358, 12);
+            this.btnExit.Name = "btnExit";
+            this.btnExit.Size = new System.Drawing.Size(28, 27);
+            this.btnExit.TabIndex = 10;
+            this.btnExit.Text = "X";
+            this.btnExit.UseVisualStyleBackColor = false;
+            this.btnExit.Click += new System.EventHandler(this.button1_Click);
+            // 
             // loginform
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -149,6 +162,7 @@
             this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(1398, 878);
+            this.Controls.Add(this.btnExit);
             this.Controls.Add(this.unhide);
             this.Controls.Add(this.hide);
             this.Controls.Add(this.btnlogin);
@@ -177,6 +191,7 @@
         private System.Windows.Forms.Button btnlogin;
         private System.Windows.Forms.Button hide;
         private System.Windows.Forms.Button unhide;
+        private System.Windows.Forms.Button btnExit;
     }
 }
 
