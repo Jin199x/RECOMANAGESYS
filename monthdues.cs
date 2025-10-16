@@ -493,10 +493,10 @@ namespace RECOMANAGESYS
         }
         private void btnProcess_Click(object sender, EventArgs e)
         {
-            if (lvResidents.CheckedItems.Count > 1)
+            if (lvResidents.CheckedItems.Count > 1) 
             {
                 int count = lvResidents.CheckedItems.Count;
-                string message = $"You are about to save statements for {count} owners as individual PDF files. Continue?";
+                string message = $"You are about to save statements for {count} owner(s) as individual PDF files. Continue?";
                 if (MessageBox.Show(message, "Confirm Bulk Save", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
                     BulkSaveStatementsAsPDF(lvResidents.CheckedItems);
@@ -504,16 +504,21 @@ namespace RECOMANAGESYS
             }
             else if (lvResidents.SelectedItems.Count == 1)
             {
-                int homeownerId = Convert.ToInt32(lvResidents.SelectedItems[0].SubItems[0].Text);
-                var unitInfo = ((int unitId, string unitNumber))lvResidents.SelectedItems[0].Tag;
-                if (homeownerToResidentIdMap.TryGetValue(homeownerId, out int residentId))
+                var selectedItem = lvResidents.SelectedItems[0];
+                if (int.TryParse(selectedItem.SubItems[0].Text, out int homeownerId))
                 {
-                    ShowSingleReport(residentId, unitInfo.unitId);
+                    var tagData = (dynamic)selectedItem.Tag; 
+                    int unitId = tagData.UnitId;             
+
+                    if (homeownerToResidentIdMap.TryGetValue(homeownerId, out int residentId))
+                    {
+                        ShowSingleReport(residentId, unitId);
+                    }
                 }
             }
             else
             {
-                MessageBox.Show("Please select one owner to view their statement, or check the boxes for multiple owners to save their statements in bulk.", "Action Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Please select one owner to view their statement, or check the boxes for one or more owners to save their statements in bulk.", "Action Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
@@ -540,28 +545,32 @@ namespace RECOMANAGESYS
                         int savedCount = 0;
                         foreach (ListViewItem item in itemsToSave)
                         {
-                            int homeownerId = Convert.ToInt32(item.SubItems[0].Text);
-                            var unitInfo = ((int unitId, string unitNumber))item.Tag;
-
-                            if (homeownerToResidentIdMap.TryGetValue(homeownerId, out int residentId))
+                            if (int.TryParse(item.SubItems[0].Text, out int homeownerId))
                             {
-                                ReportData data = GenerateReportData(residentId, unitInfo.unitId);
-                                LocalReport report = new LocalReport();
-                                report.ReportEmbeddedResource = "RECOMANAGESYS.SOAReport.rdlc";
-                                report.DataSources.Add(new ReportDataSource("AccountDetails", data.AccountDetails));
-                                ReportParameter[] parameters = {
-                                    new ReportParameter("txtResident", data.FullName), new ReportParameter("txtAddress", data.Address), new ReportParameter("txtContact", data.Contact),
-                                    new ReportParameter("txtDate", DateTime.Now.ToString("MMMM dd, yyyy")), new ReportParameter("txtHomeownerId", data.HomeownerId),
-                                    new ReportParameter("txtDebit", data.TotalDebit.ToString("F2")), new ReportParameter("txtCredits", data.TotalCredit.ToString("F2")),
-                                    new ReportParameter("txtRemaining", data.RunningBalance.ToString("F2")), new ReportParameter("totalBalance", data.RunningBalance.ToString("F2")),
-                                    new ReportParameter("txtBal", data.RunningBalance.ToString("F2")), new ReportParameter("txtMessage", data.BalanceMessage)
-                                };
-                                report.SetParameters(parameters);
-                                byte[] pdfBytes = report.Render("PDF");
-                                string safeName = string.Join("_", data.FullName.Split(Path.GetInvalidFileNameChars()));
-                                string fileName = Path.Combine(finalFolderPath, $"SOAReport_{safeName}_Unit_{unitInfo.unitNumber}.pdf");
-                                File.WriteAllBytes(fileName, pdfBytes);
-                                savedCount++;
+                                var tagData = (dynamic)item.Tag; 
+                                int unitId = tagData.UnitId;   
+                                string unitNumber = tagData.UnitNumber;
+
+                                if (homeownerToResidentIdMap.TryGetValue(homeownerId, out int residentId))
+                                {
+                                    ReportData data = GenerateReportData(residentId, unitId);
+                                    LocalReport report = new LocalReport();
+                                    report.ReportEmbeddedResource = "RECOMANAGESYS.SOAReport.rdlc";
+                                    report.DataSources.Add(new ReportDataSource("AccountDetails", data.AccountDetails));
+                                    ReportParameter[] parameters = {
+                                new ReportParameter("txtResident", data.FullName), new ReportParameter("txtAddress", data.Address), new ReportParameter("txtContact", data.Contact),
+                                new ReportParameter("txtDate", DateTime.Now.ToString("MMMM dd, yyyy")), new ReportParameter("txtHomeownerId", data.HomeownerId),
+                                new ReportParameter("txtDebit", data.TotalDebit.ToString("F2")), new ReportParameter("txtCredits", data.TotalCredit.ToString("F2")),
+                                new ReportParameter("txtRemaining", data.RunningBalance.ToString("F2")), new ReportParameter("totalBalance", data.RunningBalance.ToString("F2")),
+                                new ReportParameter("txtBal", data.RunningBalance.ToString("F2")), new ReportParameter("txtMessage", data.BalanceMessage)
+                            };
+                                    report.SetParameters(parameters);
+                                    byte[] pdfBytes = report.Render("PDF");
+                                    string safeName = string.Join("_", data.FullName.Split(Path.GetInvalidFileNameChars()));
+                                    string fileName = Path.Combine(finalFolderPath, $"SOAReport_{safeName}_Unit_{unitNumber}.pdf");
+                                    File.WriteAllBytes(fileName, pdfBytes);
+                                    savedCount++;
+                                }
                             }
                         }
                         MessageBox.Show($"{savedCount} statement(s) have been saved to the folder:\n\n{finalFolderPath}", "Bulk Save Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
